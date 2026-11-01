@@ -39,6 +39,12 @@ De atrás adelante (cada carpeta es una capa; cada PNG, una variante):
 `fstocky` (hombros más estrechos, cintura marcada, cadera más ancha y pecho; de perfil, pecho y
 glúteo). Las jugadoras usan siempre las femeninas.
 
+**Poses (rodillas y codos)**: brazos y piernas no se dibujan como palos. El generador usa una persona
+de referencia en 3D (`src/render/pixel/skeleton.ts`): ángulos de muslo, espinilla, brazo y antebrazo
+para cada fotograma, con un ciclo de carrera clásico (contacto → paso → contacto → paso), y los
+proyecta a cada vista. Para cambiar cómo corre o celebra alguien, toca esos ángulos y vuelve a hacer
+el bake; para retocar un píxel concreto, edita la PNG.
+
 **Críos**: no hay hojas aparte. Al componer, el juego quita filas del abdomen y de las espinillas
 según la edad (14 años = 7 filas menos) y los hace algo más bajitos: misma cabeza, cuerpo más
 corto. Cada temporada crecen y vuelven poco a poco a las proporciones adultas.

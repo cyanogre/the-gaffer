@@ -1,3 +1,4 @@
+import { ARM_POSES, LEG_POSES, project } from './skeleton';
 import type { Accessory, Body, Facial, HairStyle, KitPattern, Nose } from '../../content/look';
 
 /**
@@ -163,6 +164,23 @@ export class Px {
         if (d <= r * r + 0.4) this.set(x, y, shadeC && x - cx + (y - cy) > r * 0.5 ? shadeC : c);
       }
   }
+  /** Segmento grueso centrado: el grosor va en horizontal si baja, en vertical si va de lado. */
+  limb(x0: number, y0: number, x1: number, y1: number, w: number, color: (t: number, k: number) => string) {
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const n = Math.max(Math.abs(dx), Math.abs(dy), 1);
+    const steep = Math.abs(dy) >= Math.abs(dx);
+    const off = Math.floor(w / 2);
+    for (let i = 0; i <= Math.ceil(n); i++) {
+      const t = Math.min(1, i / n);
+      const x = Math.round(x0 + dx * t);
+      const y = Math.round(y0 + dy * t);
+      for (let k = 0; k < w; k++) {
+        if (steep) this.set(x + k - off, y, color(t, k));
+        else this.set(x, y + k - off, color(t, k));
+      }
+    }
+  }
   line(x0: number, y0: number, x1: number, y1: number, w: number, color: (t: number, k: number) => string) {
     const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
     for (let i = 0; i <= n; i++) {
@@ -239,40 +257,33 @@ function figure(v: VariantSet, s: Spec, layer?: LayerId): Px {
     return [cx - half, cx + half];
   };
 
-  // ── brazos (10 filas: manga 4, antebrazo 4, mano 2)
-  const armCol = (t: number, lit: boolean) => {
-    const row = t * 9;
-    if (row < 3.5) return lit ? K.shirt.b : K.shirt.s;
-    if (row < 4.5) return K.trim;
-    if (row > 7.5) return lit ? K.skin.l : K.skin.b;
+  // ── brazos con codo (brazo 5 px + antebrazo y mano 5 px), posados con el esqueleto de referencia
+  const ARM_U = 5;
+  const ARM_F = 5;
+  const armColor = (d: number, lit: boolean, k: number) => {
+    if (v.trousers && d < 4.5) return lit ? K.shirt.b : K.shirt.s; // manga larga de calle
+    if (d < 3.2) return lit ? (k === 0 ? K.shirt.l : K.shirt.b) : K.shirt.s;
+    if (d < 4.2) return K.trim;
+    if (d > 8.4) return lit ? K.skin.l : K.skin.b; // mano
+    if (d > 4.6 && d < 5.6) return K.skin.s; // pliegue del codo
     return lit ? K.skin.b : K.skin.s;
   };
-  const drawArm = (x: number, lit: boolean, dir: number, swing: number) => {
-    const y = tt + 1;
-    const w = B.arm;
-    switch (s.arms) {
-      case 'up':
-        g.line(x, y, x + dir * 2, y - 10, w, (t) => armCol(1 - t, lit));
-        break;
-      case 'up2':
-        g.line(x, y, x + dir * 4, y - 9, w, (t) => armCol(1 - t, lit));
-        break;
-      case 'out':
-        for (let i = 0; i < 10; i++) g.rect(dir > 0 ? x + i : x - i, y, 1, 2, i < 4 ? (lit ? K.shirt.b : K.shirt.s) : i === 4 ? K.trim : i > 7 ? K.skin.l : lit ? K.skin.b : K.skin.s);
-        break;
-      case 'ear':
-        if (lit) g.line(x, y, x - dir * 3, y - 9, w, (t) => armCol(1 - t, lit));
-        else g.line(x, y, x, y + 9, w, (t) => armCol(t, lit));
-        break;
-      default:
-        g.line(x, y, x + swing, y + 9, w, (t) => armCol(t, lit));
-    }
-  };
-  const swingA = s.arms === 'swingL' ? 3 : s.arms === 'swingR' ? -3 : 0;
   const [sx0, sx1] = torsoSpan(1);
+  const armPair = ARM_POSES[s.arms] ?? ARM_POSES.down;
+  const drawArm = (i: 0 | 1, lit: boolean) => {
+    const w = B.arm;
+    const root = side ? { x: i === 0 ? cx - 1 : cx, y: tt + 1 } : { x: i === 0 ? sx0 - Math.ceil(w / 2) : sx1 + 1 + Math.floor(w / 2), y: tt + 1 };
+    const sideSign = i === 0 ? -1 : 1;
+    const { mid, end } = project(s.view, root, armPair[i], sideSign, ARM_U, ARM_F);
+    g.limb(root.x, root.y, mid.x, mid.y, w, (t, k) => armColor(t * ARM_U, lit, k));
+    g.limb(mid.x, mid.y, end.x, end.y, w, (t, k) => armColor(ARM_U + t * ARM_F, lit, k));
+    // codo: sombra en la articulación (y su punta hacia fuera)
+    g.set(mid.x, mid.y, lit ? K.skin.s : K.skin.d);
+    if (!side) g.set(mid.x + (i === 0 ? -1 : 1) * (w > 2 ? 1 : 0), mid.y + 1, K.skin.d);
+  };
   if (on('arm_back')) {
-    if (side) drawArm(cx - 1, false, 1, -swingA);
-    else drawArm(sx0 - B.arm, true, -1, 0);
+    if (side) drawArm(0, false);
+    else drawArm(0, true);
   }
 
   // ── pelo trasero
@@ -319,68 +330,62 @@ function figure(v: VariantSet, s: Spec, layer?: LayerId): Px {
     }
   }
 
-  // ── piernas, medias y botas
+  // ── piernas con rodilla (muslo 7 px, espinilla 7 px), medias y botas
   if (on('legs')) {
     const down = v.accessory === 'socksDown';
-    const leg = (x0: number, x1: number, lift: number, lit: boolean) => {
-      const yEnd = 44 - lift;
-      const len = yEnd - lt;
-      g.line(x0, lt, x1, yEnd, 3, (t, k) => {
-        const y = t * len;
-        const shade = k === 2 || !lit;
-        if (v.trousers) return shade ? K.shorts.s : K.shorts.b;
-        let c: string;
-        if (y < 4) c = shade ? K.skin.s : K.skin.b;
-        else if (y < 5) c = shade ? K.skin.d : K.skin.s;
-        else if (down) c = y > len - 3 ? (shade ? K.socks.s : K.socks.b) : shade ? K.skin.s : K.skin.b;
-        else if (y < 7) c = K.trim;
-        else c = shade ? K.socks.s : K.socks.b;
-        if (k === 0 && lit && c === K.socks.b) c = K.socks.l;
-        return c;
-      });
-      // bota: empeine, cordones y suela
+    const T = 7;
+    const legPair = LEG_POSES[s.legs] ?? LEG_POSES.stand;
+    const roots = side ? [{ x: cx - 1, y: lt }, { x: cx + 1, y: lt }] : [{ x: cx - 3, y: lt }, { x: cx + 2, y: lt }];
+    // la espinilla se estira o encoge un poco para que el pie de apoyo pise el suelo (fila 44)
+    const base = [0, 1].map((i) => project(s.view, roots[i], legPair[i], i === 0 ? -1 : 1, T, 7));
+    const lowest = base[0].end.y > base[1].end.y ? 0 : 1;
+    const shinDy = (base[lowest].end.y - base[lowest].mid.y) / 7;
+    const S = Math.max(5, Math.min(10, 7 + (44 - base[lowest].end.y) / Math.max(0.4, shinDy)));
+    const legColor = (d: number, lit: boolean, k: number) => {
+      const shade = k === 2 || !lit;
+      if (v.trousers) return Math.abs(d - T) < 0.6 ? K.shorts.s : shade ? K.shorts.s : K.shorts.b;
+      if (d < T - 0.6) return shade ? K.skin.s : K.skin.b; // muslo
+      if (d < T + 0.6) return k < 2 ? K.skin.l : K.skin.b; // rótula
+      if (d < T + 1.4) return K.skin.d; // sombra bajo la rótula
+      if (down) {
+        if (d > T + S - 3) return shade ? K.socks.s : K.socks.b;
+        if (d > T + S - 3.8) return K.trim;
+        return shade ? K.skin.s : K.skin.b;
+      }
+      if (d < T + 2.4) return K.trim; // borde de la media
+      const c = shade ? K.socks.s : K.socks.b;
+      return k === 0 && lit && c === K.socks.b ? K.socks.l : c;
+    };
+    const drawLeg = (i: 0 | 1, lit: boolean) => {
+      const root = roots[i];
+      const { mid, end } = project(s.view, root, legPair[i], i === 0 ? -1 : 1, T, S);
+      g.limb(root.x, root.y, mid.x, mid.y, 3, (t, k) => legColor(t * T, lit, k));
+      g.limb(mid.x, mid.y, end.x, end.y, 3, (t, k) => legColor(T + t * S, lit, k));
+      // bota: de perfil, punta hacia delante (o hacia abajo si el pie va levantado detrás)
+      const fx = Math.round(end.x);
+      const fy = Math.round(end.y);
       if (side) {
-        g.rect(x1, yEnd + 1, 5, 2, lit ? K.boots.b : K.boots.s);
-        g.rect(x1 + 1, yEnd + 1, 2, 1, K.boots.l);
-        g.rect(x1, yEnd + 3, 5, 1, K.boots.d);
+        if (legPair[i].lower[0] < -45) {
+          g.rect(fx - 2, fy, 3, 3, lit ? K.boots.b : K.boots.s);
+          g.rect(fx - 3, fy, 1, 3, K.boots.d);
+        } else {
+          g.rect(fx - 1, fy + 1, 5, 2, lit ? K.boots.b : K.boots.s);
+          g.rect(fx, fy + 1, 2, 1, K.boots.l);
+          g.rect(fx - 1, fy + 3, 5, 1, K.boots.d);
+        }
       } else {
-        const bx = x1 + (x1 < cx ? -1 : 0);
-        g.rect(bx, yEnd + 1, 4, 2, lit ? K.boots.b : K.boots.s);
-        g.set(bx + 1, yEnd + 1, K.boots.l);
-        g.rect(bx, yEnd + 3, 4, 1, K.boots.d);
+        const bx = fx - 2 + (i === 0 ? 0 : 1);
+        g.rect(bx, fy + 1, 4, 2, lit ? K.boots.b : K.boots.s);
+        g.set(bx + 1, fy + 1, K.boots.l);
+        g.rect(bx, fy + 3, 4, 1, K.boots.d);
       }
     };
     if (side) {
-      switch (s.legs) {
-        case 'runA':
-          leg(cx - 2, cx - 6, 1, false);
-          leg(cx, cx + 4, 0, true);
-          break;
-        case 'runB':
-          leg(cx - 2, cx - 1, 0, false);
-          leg(cx, cx - 1, 3, true);
-          break;
-        case 'runC':
-          leg(cx - 2, cx + 3, 0, false);
-          leg(cx, cx - 5, 1, true);
-          break;
-        case 'runD':
-          leg(cx - 2, cx - 3, 3, false);
-          leg(cx, cx + 1, 0, true);
-          break;
-        case 'kick':
-          leg(cx - 2, cx - 2, 0, false);
-          g.line(cx, lt, cx + 9, lt + 6, 3, (t) => (t < 0.3 ? K.skin.b : t < 0.42 ? K.trim : K.socks.b));
-          g.rect(cx + 10, lt + 5, 3, 3, K.boots.b);
-          g.rect(cx + 10, lt + 8, 3, 1, K.boots.d);
-          break;
-        default:
-          leg(cx - 2, cx - 2, 0, false);
-          leg(cx, cx, 0, true);
-      }
+      drawLeg(0, false);
+      drawLeg(1, true);
     } else {
-      leg(cx - 4, cx - 4, s.legs === 'liftL' ? 3 : 0, true);
-      leg(cx + 1, cx + 1, s.legs === 'liftR' ? 3 : 0, !back);
+      drawLeg(0, true);
+      drawLeg(1, !back);
     }
   }
 
@@ -648,10 +653,7 @@ function figure(v: VariantSet, s: Spec, layer?: LayerId): Px {
   }
 
   // ── brazo delantero
-  if (on('arm_front')) {
-    if (side) drawArm(cx, true, 1, swingA);
-    else drawArm(sx1 + 1, false, 1, 0);
-  }
+  if (on('arm_front')) drawArm(1, side ? true : false);
   return g;
 }
 
