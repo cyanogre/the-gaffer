@@ -57,15 +57,19 @@ describe('motor de partido', () => {
     expect(avgLine(2)).toBeGreaterThan(avgLine(0) + 0.05);
   });
 
-  it('la presión total cansa más que el bloque bajo', () => {
+  it('la presión total cansa más que no usarla (media de varios partidos)', () => {
     const fatigue = (press: boolean) => {
-      const sim = new MatchSim(5, buildTeams(5));
-      for (let i = 0; i < 3000; i++) {
-        if (press && i % 1500 === 10) sim.command({ kind: 'signal', team: 0, signal: 'press' });
-        sim.step();
+      let total = 0;
+      for (const seed of [5, 11, 17, 23]) {
+        const sim = new MatchSim(seed, buildTeams(seed));
+        for (let i = 0; i < 6000; i++) {
+          if (press && i % 300 === 0) sim.command({ kind: 'signal', team: 0, signal: 'press' });
+          sim.step();
+        }
+        const team = sim.players.filter((p) => p.team === 0 && p.slot !== 0);
+        total += team.reduce((s, p) => s + p.fatigue, 0) / team.length;
       }
-      const team = sim.players.filter((p) => p.team === 0);
-      return team.reduce((s, p) => s + p.fatigue, 0) / team.length;
+      return total / 4;
     };
     expect(fatigue(true)).toBeGreaterThan(fatigue(false));
   });

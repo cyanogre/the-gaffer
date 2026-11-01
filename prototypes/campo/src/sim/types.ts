@@ -1,4 +1,4 @@
-import type { Kit, Look } from '../content/look';
+import type { Gender, Kit, Look } from '../content/look';
 
 export type Role = 'POR' | 'DEF' | 'MED' | 'DEL';
 export type TeamSide = 0 | 1;
@@ -49,6 +49,7 @@ export interface TeamProfile {
   id: string;
   name: string;
   short: string;
+  gender: Gender;
   kit: Kit;
   gkKit: Kit;
   players: PlayerProfile[];

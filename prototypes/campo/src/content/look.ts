@@ -5,7 +5,11 @@ import type { Rng } from '../sim/rng';
  * interpreta a su manera (píxeles, mallas 3D o recortables). Generar un jugador nuevo
  * es generar este objeto: no hace falta dibujar ni modelar nada a mano.
  */
+export type Gender = 'm' | 'f';
 export type HairStyle =
+  | 'bun'
+  | 'braids'
+  | 'pixie'
   | 'bald'
   | 'buzz'
   | 'short'
@@ -24,6 +28,7 @@ export type Nose = 'small' | 'big' | 'hook';
 export type Brows = 'thin' | 'thick' | 'uni';
 
 export interface Look {
+  gender: Gender;
   skin: string;
   hair: HairStyle;
   hairColor: string;
@@ -54,13 +59,17 @@ export const HAIR_COLORS = ['#1f1a17', '#3b2a1e', '#6b4428', '#a8743c', '#d8b25c
 const ACC = ['#e23b3b', '#ffffff', '#2f6fd6', '#f2c230', '#25a55f'];
 const BOOTS = ['#1b1b1f', '#f4f4f4', '#ff4fa3', '#33d17a', '#ffb000', '#3a7bff'];
 
-export function randomLook(rng: Rng, overrides: Partial<Look> = {}): Look {
-  const hair = rng.pick<HairStyle>(['bald', 'buzz', 'short', 'short', 'afro', 'mohawk', 'long', 'ponytail', 'mullet', 'curly', 'combover']);
+const HAIR_M: HairStyle[] = ['bald', 'buzz', 'short', 'short', 'afro', 'mohawk', 'long', 'ponytail', 'mullet', 'curly', 'combover'];
+const HAIR_F: HairStyle[] = ['ponytail', 'ponytail', 'bun', 'braids', 'pixie', 'long', 'afro', 'curly', 'mullet', 'short'];
+
+export function randomLook(rng: Rng, gender: Gender, overrides: Partial<Look> = {}): Look {
+  const f = gender === 'f';
   return {
+    gender,
     skin: rng.pick(SKINS),
-    hair,
+    hair: rng.pick(f ? HAIR_F : HAIR_M),
     hairColor: rng.pick(HAIR_COLORS),
-    facial: rng.pick<Facial>(['none', 'none', 'mustache', 'beard', 'goatee', 'stubble']),
+    facial: f ? 'none' : rng.pick<Facial>(['none', 'none', 'mustache', 'beard', 'goatee', 'stubble']),
     body: rng.pick<Body>(['slim', 'normal', 'normal', 'stocky', 'belly']),
     height: rng.range(0.93, 1.07),
     accessory: rng.pick<Accessory>(['none', 'none', 'none', 'headband', 'glasses', 'socksDown']),
@@ -68,9 +77,26 @@ export function randomLook(rng: Rng, overrides: Partial<Look> = {}): Look {
     celebration: rng.pick<Celebration>(['arms', 'plane', 'knees', 'dance', 'ear']),
     boots: rng.pick(BOOTS),
     nose: rng.pick<Nose>(['small', 'small', 'big', 'hook']),
-    brows: rng.pick<Brows>(['thin', 'thick', 'thick', 'uni']),
+    brows: rng.pick<Brows>(f ? ['thin', 'thin', 'thick', 'uni'] : ['thin', 'thick', 'thick', 'uni']),
     ...overrides,
   };
+}
+
+/** Gesto por defecto de la cara: la personalidad se ve antes de leer la ficha. */
+export type Expression = 'neutral' | 'smug' | 'angry' | 'sleepy' | 'nervous' | 'happy' | 'dreamy' | 'dramatic';
+const EXPRESSION_OF: Record<string, Expression> = {
+  goleadorNato: 'smug',
+  egoista: 'smug',
+  lenero: 'angry',
+  padel: 'sleepy',
+  nervioso: 'nervous',
+  pulmon: 'happy',
+  artista: 'dreamy',
+  piscinero: 'dramatic',
+};
+export function expressionOf(traits: readonly string[]): Expression {
+  for (const t of traits) if (EXPRESSION_OF[t]) return EXPRESSION_OF[t];
+  return 'neutral';
 }
 
 export function shade(hex: string, f: number): string {

@@ -5,11 +5,12 @@ export default defineConfig({
   build: {
     target: 'es2022',
     cssCodeSplit: false,
+    // Las hojas de sprites son PNG pequeñas: se incrustan en el JS para que la página sea autocontenida.
+    assetsInlineLimit: 200_000,
     rollupOptions: {
       output: {
-        entryFileNames: 'lab.js',
+        entryFileNames: (chunk) => (chunk.name === 'bake-sprites' ? 'bake-sprites.js' : 'lab.js'),
         assetFileNames: 'lab.[ext]',
-        inlineDynamicImports: true,
       },
     },
   },

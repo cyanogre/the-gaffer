@@ -35,6 +35,7 @@ const NEUTRAL: TraitMods = {
 
 export interface TraitInfo {
   label: string;
+  labelF: string;
   desc: string;
   mods: Partial<TraitMods>;
 }
@@ -42,41 +43,49 @@ export interface TraitInfo {
 export const TRAITS: Record<TraitId, TraitInfo> = {
   goleadorNato: {
     label: 'Goleador nato (según él)',
+    labelF: 'Goleadora nata (según ella)',
     desc: 'Tira desde cualquier sitio. Su puntería no ha leído el informe.',
     mods: { shootBias: 2.4, shootRange: 1.45 },
   },
   egoista: {
     label: 'Chupón',
+    labelF: 'Chupona',
     desc: 'Pasar el balón le parece una forma de rendirse.',
     mods: { passBias: 0.6, dribbleBias: 1.6 },
   },
   lenero: {
     label: 'Leñero',
+    labelF: 'Leñera',
     desc: 'Entra a todo. A veces, incluso al balón.',
     mods: { foulMult: 2.6, slideMult: 3, pressBias: 1.25 },
   },
   padel: {
     label: 'Ha descubierto el pádel',
+    labelF: 'Ha descubierto el pádel',
     desc: 'Tiene la cabeza en la pista de cristal. Presiona lo justo.',
     mods: { pressBias: 0.3 },
   },
   pulmon: {
     label: 'Pulmón',
+    labelF: 'Pulmón',
     desc: 'Corre por tres. Nadie sabe muy bien hacia dónde.',
     mods: { staminaMult: 0.5, pressBias: 1.6 },
   },
   artista: {
     label: 'Artista',
+    labelF: 'Artista',
     desc: 'Prefiere un caño a un pase de gol.',
     mods: { dribbleBias: 1.3, riskyPass: 1.7 },
   },
   piscinero: {
     label: 'Piscinero',
+    labelF: 'Piscinera',
     desc: 'Se tira. Mucho. Con estilo.',
     mods: { diveChance: 0.4 },
   },
   nervioso: {
     label: 'Nervioso',
+    labelF: 'Nerviosa',
     desc: 'Con un rival cerca, sus pies olvidan cómo funcionan.',
     mods: { composure: 0.55 },
   },
@@ -99,4 +108,8 @@ export function modsOf(p: SimPlayer): TraitMods {
   for (const t of p.profile.traits) apply(TRAITS[t].mods);
   apply(FREEDOM_MODS[p.freedom]);
   return m;
+}
+
+export function traitLabel(t: TraitId, gender: 'm' | 'f') {
+  return gender === 'f' ? TRAITS[t].labelF : TRAITS[t].label;
 }

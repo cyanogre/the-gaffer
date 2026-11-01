@@ -112,7 +112,15 @@ export class CromosRenderer implements MatchRenderer {
     this.stadium = buildStadium('paper', [sim.teams[0].profile.kit, sim.teams[1].profile.kit]);
     this.scene.add(this.stadium.group);
     for (const p of sim.players) {
-      const set = paintCutout(p.profile.look, sim.kitOf(p), CHEST[sim.teams[p.team].profile.id] ?? 'FC', p.idx * 31 + 7);
+      const set = paintCutout({
+        look: p.profile.look,
+        kit: sim.kitOf(p),
+        traits: p.profile.traits,
+        num: p.profile.num,
+        chest: CHEST[sim.teams[p.team].profile.id] ?? 'FC',
+        keeper: sim.isGK(p),
+        seed: p.idx * 31 + 7,
+      });
       this.puppets.push(this.buildPuppet(set, p.profile.look.height));
     }
   }
@@ -138,7 +146,9 @@ export class CromosRenderer implements MatchRenderer {
     const headMat = new THREE.MeshBasicMaterial({ map: texOf(set.head.canvas), alphaTest: 0.45, side: THREE.DoubleSide });
     const shoutMat = new THREE.MeshBasicMaterial({ map: texOf(set.headShout.canvas), alphaTest: 0.45, side: THREE.DoubleSide });
     const head = partMesh(set.head, headMat);
-    head.position.set(0.04, 0.66, 0.04);
+    // proporciones humanas: cabeza más pequeña que en una caricatura de cabezón
+    head.scale.setScalar(0.66);
+    head.position.set(0.04, 0.68, 0.04);
     torso.add(head);
     const armA = limb(set.armFront, 0.02, 0.62, 0.06, torso);
     root.scale.setScalar(0.95 * height);

@@ -3,198 +3,170 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Laboratorio del campo</title>
+    <title>The Gaffer · Laboratorio del campo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Bangers&family=Barlow+Condensed:wght@600;700&family=Barlow:ital,wght@0,400;0,600;0,700;0,800;1,600&family=Bowlby+One&family=Silkscreen&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bangers&family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,600&family=Barlow:wght@400;600;700&family=Bowlby+One&family=Silkscreen&display=swap"
     />
   </head>
   <body>
     <!--LAB-START-->
     <div class="page">
-      <header class="masthead">
+      <header class="intro">
         <p class="eyebrow">The Gaffer · laboratorio del campo</p>
-        <h1>Un partido, tres maneras de dibujarlo</h1>
+        <h1>Noche de partido en el Barrizal</h1>
         <p class="lede">
-          El Atlético Barriobajo y el Deportivo Polígono juegan un partido simulado de verdad: cada futbolista decide por su cuenta
-          según su puesto, sus atributos y su personalidad. Cambia de estilo cuando quieras: el partido sigue en el mismo segundo,
-          porque el motor y el dibujo están separados.
+          Un partido simulado de verdad: cada futbolista decide según su puesto, sus atributos y su personalidad. Tú eres el
+          míster: cambia la táctica, lanza señales y habla con tus jugadores. Debajo, el mismo partido se puede ver con las tres
+          estéticas que comparamos.
         </p>
+        <nav class="styles" id="styles" role="tablist" aria-label="Estilo visual">
+          <button role="tab" data-r="pixel" aria-selected="false"><b>Pixel HD</b><small>recomendado</small></button>
+          <button role="tab" data-r="lowpoly" aria-selected="false"><b>3D estilizado</b><small>Three.js</small></button>
+          <button role="tab" data-r="cromos" aria-selected="false"><b>2.5D cromos</b><small>Three.js</small></button>
+        </nav>
       </header>
 
-      <nav class="styles" id="styles" role="tablist" aria-label="Estilo visual">
-        <button role="tab" data-r="pixel" aria-selected="false">
-          <span class="tab-n">1</span>
-          <b>Pixel art 2D</b>
-          <small>Canvas 2D · sprites generados con código</small>
-        </button>
-        <button role="tab" data-r="lowpoly" aria-selected="false">
-          <span class="tab-n">2</span>
-          <b>3D estilizado</b>
-          <small>Three.js · figuras de vinilo, sombras reales</small>
-        </button>
-        <button role="tab" data-r="cromos" aria-selected="false">
-          <span class="tab-n">3</span>
-          <b>2.5D cromos</b>
-          <small>Estadio 3D · futbolistas recortables</small>
-        </button>
-      </nav>
+      <section class="game" aria-label="Pantalla de partido">
+        <header class="g-top panel">
+          <div class="g-team g-home">
+            <canvas class="crest" id="crestHome" width="24" height="28"></canvas>
+            <div class="g-team-txt"><b id="nameHome">ATLÉTICO BARRIOBAJO</b><small id="tagHome">CF</small></div>
+          </div>
+          <div class="g-score" aria-live="polite"><span id="scoreHome">0</span><i>–</i><span id="scoreAway">0</span></div>
+          <div class="g-team g-away">
+            <div class="g-team-txt"><b id="nameAway">DEPORTIVO POLÍGONO</b><small id="tagAway">CD</small></div>
+            <canvas class="crest" id="crestAway" width="24" height="28"></canvas>
+          </div>
+          <div class="g-clock" id="clock">0:00</div>
+          <div class="g-half" id="half">1ª PARTE</div>
+          <div class="g-venue"><span class="moon" aria-hidden="true"></span><span><b>14 °C</b><small>Campo Municipal El Barrizal</small></span></div>
+          <div class="g-gender seg" id="gender" role="group" aria-label="Competición">
+            <button type="button" data-g="m">Masculino</button>
+            <button type="button" data-g="f">Femenino</button>
+          </div>
+        </header>
 
-      <section class="stage-wrap" aria-label="Partido">
-        <div class="stage" id="stage">
-          <div class="overlay" id="overlay"></div>
-          <div class="scorebug" aria-live="polite">
-            <span class="sb-team sb-home" id="sbHome">BAR</span>
-            <span class="sb-score" id="sbScore">0 – 0</span>
-            <span class="sb-team sb-away" id="sbAway">POL</span>
-            <span class="sb-clock" id="sbClock">0:00</span>
-          </div>
-          <div class="signal-chip" id="signalChip" hidden></div>
-          <div class="goal-banner" id="banner" hidden>
-            <span class="gb-word">¡GOOOL!</span>
-            <span class="gb-who" id="bannerWho"></span>
-          </div>
-          <div class="fulltime" id="fulltime" hidden>
-            <p class="ft-label">Final del partido</p>
-            <p class="ft-score" id="ftScore"></p>
-            <button type="button" id="again">Jugar otro partido</button>
-          </div>
-        </div>
-        <div class="toolbar">
-          <div class="btn-group" id="cams" aria-label="Cámara"></div>
-          <div class="btn-group" id="speed" aria-label="Velocidad">
-            <button type="button" data-speed="0" aria-pressed="false">Pausa</button>
-            <button type="button" data-speed="1" aria-pressed="true">×1</button>
-            <button type="button" data-speed="2" aria-pressed="false">×2</button>
-            <button type="button" data-speed="4" aria-pressed="false">×4</button>
-          </div>
-          <p class="perf" id="perf"></p>
-        </div>
-        <p class="hint-line">Toca a cualquier jugador para ver su ficha. Las órdenes del banquillo cambian cómo piensan tus jugadores, no sus números.</p>
-      </section>
+        <aside class="g-left panel" aria-labelledby="ordersTitle">
+          <h2 id="ordersTitle">Órdenes tácticas</h2>
+          <ul class="orders" id="orders"></ul>
+          <h3>Formación</h3>
+          <div class="seg seg-sm" id="formation"></div>
+          <h2>Señales especiales</h2>
+          <ul class="orders" id="signals"></ul>
+        </aside>
 
-      <main class="desk">
-        <section class="panel bench" aria-labelledby="benchTitle">
-          <h2 id="benchTitle">Banquillo · Atlético Barriobajo</h2>
-          <div class="field">
-            <span class="label">Formación</span>
-            <div class="seg" id="formation"></div>
-          </div>
-          <div class="field">
-            <span class="label">Bloque defensivo</span>
-            <div class="seg" id="block"></div>
-            <p class="hint">Sube o baja la línea y decide cuántos salen a presionar.</p>
-          </div>
-          <div class="field">
-            <span class="label">Estilo de pase</span>
-            <div class="seg" id="passStyle"></div>
-          </div>
-          <div class="field">
-            <span class="label">Señales coordinadas</span>
-            <div class="signals">
-              <button type="button" id="sigPress"><b>¡Presión total!</b><small></small></button>
-              <button type="button" id="sigCounter"><b>¡Contraataque!</b><small></small></button>
+        <div class="g-pitch">
+          <div class="stage" id="stage">
+            <div class="overlay" id="overlay"></div>
+            <div class="signal-chip" id="signalChip" hidden></div>
+            <div class="goal-banner" id="banner" hidden>
+              <span class="gb-word">¡GOOOL!</span>
+              <span class="gb-who" id="bannerWho"></span>
+            </div>
+            <div class="fulltime" id="fulltime" hidden>
+              <p class="ft-label">Final del partido</p>
+              <p class="ft-score" id="ftScore"></p>
+              <button type="button" id="again">Jugar otro partido</button>
             </div>
           </div>
-          <table class="stats">
-            <thead>
-              <tr><th scope="col">BAR</th><th scope="col"></th><th scope="col">POL</th></tr>
-            </thead>
-            <tbody id="statsBody"></tbody>
-          </table>
-        </section>
+        </div>
 
-        <section class="panel card" id="card" data-empty="true" aria-labelledby="cardName">
-          <p class="card-empty">Toca un jugador en el campo para ver su ficha.</p>
+        <aside class="g-right panel" id="card" data-empty="true" aria-label="Ficha del jugador">
+          <p class="card-empty">Toca un jugador para ver su ficha.</p>
           <div class="card-body">
-            <div class="card-head">
-              <div id="cardPortrait" class="portrait-box"></div>
-              <div class="card-id">
-                <h2 id="cardName"></h2>
-                <p class="nick" id="cardNick"></p>
-                <p class="meta" id="cardMeta"></p>
-                <p class="cards" id="cardCards"></p>
-              </div>
+            <header class="card-head">
+              <h2 id="cardName">#9 · Peralta</h2>
+              <span class="pos" id="cardPos">DC</span>
+            </header>
+            <div class="card-main">
+              <div class="portrait-box" id="cardPortrait"></div>
+              <dl class="stats-col" id="cardAttrs"></dl>
             </div>
-            <p class="quirk" id="cardQuirk"></p>
+            <p class="nick" id="cardNick"></p>
             <ul class="traits" id="cardTraits"></ul>
-            <div class="attrs" id="cardAttrs"></div>
-            <div class="attr fatigue">
+            <div class="bar-row">
               <span>Físico</span>
-              <meter id="cardFatigue" min="0" max="1" low="0.35" high="0.6" optimum="1" value="1"></meter>
+              <div class="bar"><i id="cardFatigue"></i></div>
               <b id="cardFatigueTxt">Fresco</b>
             </div>
-            <div class="field" id="cardOrders">
-              <span class="label">Instrucción individual</span>
-              <div class="seg" id="freedom">
-                <button type="button" data-v="-1">Juega simple</button>
+            <p class="comment"><span class="speech" aria-hidden="true"></span><span id="cardComment"></span></p>
+            <p class="quirk" id="cardQuirk"></p>
+            <div id="cardOrders">
+              <h3>Instrucción individual</h3>
+              <div class="seg seg-sm" id="freedom">
+                <button type="button" data-v="-1">Simple</button>
                 <button type="button" data-v="0">Normal</button>
                 <button type="button" data-v="1">Libertad</button>
               </div>
             </div>
           </div>
-        </section>
+        </aside>
 
-        <section class="panel feed-panel" aria-labelledby="feedTitle">
-          <h2 id="feedTitle">Crónica</h2>
-          <ol class="feed" id="feed" aria-live="polite"></ol>
-        </section>
-      </main>
+        <footer class="g-bottom">
+          <section class="panel squad" aria-labelledby="squadTitle">
+            <h2 id="squadTitle">Tu once</h2>
+            <ul class="squad-list" id="squad"></ul>
+          </section>
+          <section class="panel events" aria-labelledby="eventsTitle">
+            <h2 id="eventsTitle">Eventos del partido</h2>
+            <ol class="feed" id="feed" aria-live="polite"></ol>
+          </section>
+          <section class="panel mini" aria-label="Minimapa">
+            <canvas id="minimap" width="168" height="108"></canvas>
+          </section>
+          <div class="controls">
+            <button type="button" class="big" id="btnPause"><span class="ico ico-pause" aria-hidden="true"></span><b>Pausa</b></button>
+            <button type="button" class="big" id="btnSpeed"><span class="ico ico-ff" aria-hidden="true"></span><b>Acelerar</b><small id="speedTxt">×1</small></button>
+            <button type="button" class="big" id="btnCam"><span class="ico ico-cam" aria-hidden="true"></span><b>Cámara</b><small id="camTxt">Estadio</small></button>
+            <button type="button" class="big hot" id="btnNew"><span class="ico ico-new" aria-hidden="true"></span><b>Nuevo</b><small>partido</small></button>
+          </div>
+        </footer>
+      </section>
+      <p class="perf" id="perf"></p>
 
       <section class="compare" aria-labelledby="cmpTitle">
-        <h2 id="cmpTitle">Comparativa</h2>
-        <p class="lede small">
+        <h2 id="cmpTitle">Comparativa de estilos</h2>
+        <p class="lede">
           Puntuación de 1 a 5 (5 es mejor) para un equipo de dos personas que trabaja con Claude Code y sin herramientas de pago.
-          El rendimiento real de cada estilo lo ves arriba, junto a la velocidad.
+          El pixel HD gana porque es lo que mejor sostiene el tono de Punch Club con un coste de arte asumible, y porque todo el
+          arte es editable en hojas de sprites por capas.
         </p>
         <div class="table-scroll">
           <table class="cmp">
             <thead>
               <tr>
                 <th scope="col">Criterio</th>
-                <th scope="col">Pixel art 2D</th>
+                <th scope="col" class="win">Pixel HD</th>
                 <th scope="col">3D estilizado</th>
-                <th scope="col" class="win">2.5D cromos</th>
+                <th scope="col">2.5D cromos</th>
               </tr>
             </thead>
             <tbody>
-              <tr><th scope="row">Desarrollo con Claude Code</th><td data-s="4"></td><td data-s="3"></td><td data-s="5" class="win"></td></tr>
-              <tr><th scope="row">Sencillez técnica</th><td data-s="5"></td><td data-s="2"></td><td data-s="4" class="win"></td></tr>
-              <tr><th scope="row">Rendimiento</th><td data-s="5"></td><td data-s="3"></td><td data-s="4" class="win"></td></tr>
-              <tr><th scope="row">Crear y retocar arte sin pagar</th><td data-s="3"></td><td data-s="2"></td><td data-s="5" class="win"></td></tr>
-              <tr><th scope="row">Posibilidades de animación</th><td data-s="3"></td><td data-s="5"></td><td data-s="4" class="win"></td></tr>
-              <tr><th scope="row">Escalabilidad</th><td data-s="3"></td><td data-s="4"></td><td data-s="5" class="win"></td></tr>
-              <tr><th scope="row">Mantenimiento del código</th><td data-s="4"></td><td data-s="3"></td><td data-s="4" class="win"></td></tr>
-              <tr><th scope="row">Potencial visual y comercial</th><td data-s="3"></td><td data-s="4"></td><td data-s="5" class="win"></td></tr>
-              <tr><th scope="row">Personajes, historia y humor</th><td data-s="3"></td><td data-s="3"></td><td data-s="5" class="win"></td></tr>
+              <tr><th scope="row">Desarrollo con Claude Code</th><td class="win" data-s="5"></td><td data-s="3"></td><td data-s="4"></td></tr>
+              <tr><th scope="row">Sencillez técnica</th><td class="win" data-s="4"></td><td data-s="2"></td><td data-s="4"></td></tr>
+              <tr><th scope="row">Rendimiento</th><td class="win" data-s="5"></td><td data-s="3"></td><td data-s="4"></td></tr>
+              <tr><th scope="row">Crear y retocar arte sin pagar</th><td class="win" data-s="5"></td><td data-s="2"></td><td data-s="4"></td></tr>
+              <tr><th scope="row">Posibilidades de animación</th><td class="win" data-s="3"></td><td data-s="5"></td><td data-s="4"></td></tr>
+              <tr><th scope="row">Escalabilidad</th><td class="win" data-s="4"></td><td data-s="4"></td><td data-s="4"></td></tr>
+              <tr><th scope="row">Mantenimiento del código</th><td class="win" data-s="4"></td><td data-s="3"></td><td data-s="4"></td></tr>
+              <tr><th scope="row">Potencial visual y comercial</th><td class="win" data-s="5"></td><td data-s="4"></td><td data-s="4"></td></tr>
+              <tr><th scope="row">Personajes reconocibles y humor</th><td class="win" data-s="4"></td><td data-s="3"></td><td data-s="5"></td></tr>
             </tbody>
             <tfoot>
-              <tr><th scope="row">Total (de 45)</th><td>33</td><td>29</td><td class="win">41</td></tr>
+              <tr><th scope="row">Total (de 45)</th><td class="win">39</td><td>29</td><td>37</td></tr>
             </tfoot>
           </table>
-        </div>
-        <div class="verdicts">
-          <article>
-            <h3>Pixel art 2D</h3>
-            <p>Lo más barato y rápido. Encaja con Punch Club, pero en el campo cada cara tiene unos pocos píxeles: la personalidad se queda en los retratos. Cada animación nueva multiplica fotogramas por cada tipo de jugador.</p>
-          </article>
-          <article>
-            <h3>3D estilizado</h3>
-            <p>La mejor animación y cámara libre. A cambio, es el camino más caro: modelar, rigging, variedad de caras y rendimiento en portátiles modestos. Sin modelador en el equipo, el aspecto tiende a quedarse en "juguete genérico".</p>
-          </article>
-          <article class="win">
-            <h3>2.5D cromos · recomendado</h3>
-            <p>Cámara de televisión en un estadio 3D y futbolistas caricaturizados como cromos del álbum. Las caras se leen a distancia, el arte es 2D (lo más fácil de producir y retocar) y el mismo recortable sirve para el campo, la ficha, el álbum de la plantilla y las cartas de fichajes.</p>
-          </article>
         </div>
       </section>
 
       <footer class="foot">
         <p>
-          Todo lo que ves está generado con código: campo, público, vallas, camisetas y los 22 futbolistas salen de un "ADN visual"
-          de una docena de rasgos. Sin sprites hechos a mano, sin modelos descargados y sin servicios de pago.
+          Todo lo que ves sale de código y de hojas de sprites editables: 69 PNG por capas (cuerpo, equipación, pelo, cara,
+          accesorios) pintadas en colores clave que el juego repinta con la piel, el pelo y la camiseta de cada jugador.
+          Sin servicios de pago.
         </p>
       </footer>
     </div>

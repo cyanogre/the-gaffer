@@ -642,7 +642,7 @@ export class MatchSim {
     // Un disparo raso que bota antes de la línea también va a puerta.
     const onTarget = yL > GOAL_Y0 && yL < GOAL_Y1 && zL < GOAL_H;
     if (!onTarget) return;
-    let pSave = Math.pow(clamp(1 - lateral / reach, 0, 1), 0.3) * (0.75 + (K / 20) * 0.25) * clamp(1.2 - speed / 60, 0.7, 1);
+    let pSave = Math.pow(clamp(1 - lateral / reach, 0, 1), 0.25) * (0.8 + (K / 20) * 0.2) * clamp(1.2 - speed / 60, 0.75, 1);
     if (zL > 1.9 && lateral > 1.8) pSave *= 0.7;
     if (this.rng.next() >= pSave) return;
     const catchIt = speed < 20 && lateral < 1.4 && this.rng.next() < 0.6;

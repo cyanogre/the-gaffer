@@ -424,7 +424,7 @@ export function decideCarrier(sim: MatchSim, c: SimPlayer) {
 
   const canShoot = !gk && (!restrict || restrict === 'freekick');
   if (canShoot && dist(c.x, c.y, gx, MID) < 34 * m.shootRange && sim.toU(team, c.x) > 0.6) {
-    opts.push({ kind: 'shoot', util: shotXg(sim, c) * 0.8 * m.shootBias + g() });
+    opts.push({ kind: 'shoot', util: shotXg(sim, c) * 0.7 * m.shootBias + g() });
   }
 
   const off = sim.offsideLineU(team);

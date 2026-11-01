@@ -1,0 +1,63 @@
+import type { Kit } from '../content/look';
+
+/** Iconos y escudos pixel art para la interfaz (sin imágenes externas). */
+const ICONS: Record<string, string[]> = {
+  shield: ['.#######.', '#########', '#########', '##.###.##', '#########', '.#######.', '..#####..', '...###...', '....#....'],
+  lines: ['.........', '#.#.#.#.#', '.........', '.#.#.#.#.', '.........', '#.#.#.#.#', '.........', '.#.#.#.#.', '.........'],
+  run: ['.....##..', '.....##..', '...####..', '..#.###..', '....#.#..', '...##..#.', '..#...#..', '.#....#..', '.....##..'],
+  dots: ['.........', '##.......', '##.......', '..#......', '...###...', '......#..', '.......##', '.......##', '.........'],
+  zig: ['.........', '#........', '.#...#...', '..#.#.#..', '...#...#.', '........#', '.........', '.........', '.........'],
+  arrow: ['.........', '......#..', '.......#.', '#########', '.......#.', '......#..', '.........', '.........', '.........'],
+  flame: ['....#....', '...##....', '...###...', '..####.#.', '.#######.', '.###.###.', '.##...##.', '..##.##..', '...###...'],
+  bolt: ['.....###.', '....###..', '...###...', '..######.', '....###..', '...###...', '..##.....', '.##......', '#........'],
+};
+
+export function iconSvg(name: string, color = 'currentColor') {
+  const m = ICONS[name] ?? ICONS.shield;
+  let rects = '';
+  m.forEach((row, y) => row.split('').forEach((c, x) => c === '#' && (rects += `<rect x="${x}" y="${y}" width="1" height="1"/>`)));
+  return `<svg viewBox="0 0 9 9" width="18" height="18" fill="${color}" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
+}
+
+/** Escudo de 24×28 con los colores y el patrón de la camiseta, y la inicial del club. */
+export function drawCrest(cv: HTMLCanvasElement, kit: Kit, letter: string) {
+  const g = cv.getContext('2d')!;
+  const W = 24;
+  const H = 28;
+  g.clearRect(0, 0, W, H);
+  const inside = (x: number, y: number) => {
+    if (y < 1 || y > 26) return false;
+    if (y < 18) return x >= 2 && x <= 21 && !(y === 1 && (x < 4 || x > 19));
+    const half = 10 - (y - 18) * 1.2;
+    return Math.abs(x - 11.5) <= half;
+  };
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      if (inside(x, y)) {
+        let c = kit.shirt;
+        if (kit.pattern === 'stripes' && Math.floor((x - 2) / 3) % 2 === 1) c = kit.shirt2;
+        if (kit.pattern === 'hoops' && Math.floor(y / 3) % 2 === 1) c = kit.shirt2;
+        if (kit.pattern === 'half' && x < 12) c = kit.shirt2;
+        if (kit.pattern === 'sash' && Math.abs(x + y - 26) < 3) c = kit.shirt2;
+        g.fillStyle = c;
+        g.fillRect(x, y, 1, 1);
+      } else if (inside(x - 1, y) || inside(x + 1, y) || inside(x, y - 1) || inside(x, y + 1)) {
+        g.fillStyle = '#1a1226';
+        g.fillRect(x, y, 1, 1);
+      }
+    }
+  // banda superior y emblema
+  g.fillStyle = '#f2e9d8';
+  g.fillRect(4, 4, 16, 6);
+  g.fillStyle = '#1a1226';
+  g.fillRect(4, 10, 16, 1);
+  const glyph = LETTERS[letter] ?? LETTERS.B;
+  glyph.forEach((row, ry) => row.split('').forEach((c, rx) => c === '#' && g.fillRect(10 + rx, 5 + ry, 1, 1)));
+  g.fillStyle = 'rgba(255,255,255,0.35)';
+  g.fillRect(3, 2, 1, 14);
+}
+
+const LETTERS: Record<string, string[]> = {
+  B: ['###.', '#..#', '###.', '#..#', '###.'],
+  P: ['###.', '#..#', '###.', '#...', '#...'],
+};

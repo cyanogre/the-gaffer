@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build:artifact": "vite build && node scripts/build-artifact.mjs"
+    "build:artifact": "vite build && node scripts/build-artifact.mjs",
+    "bake:sprites": "vite build --ssr scripts/bake-sprites.ts --outDir .bake --emptyOutDir && node .bake/bake-sprites.js"
   },
   "dependencies": {
     "three": "0.186.1"

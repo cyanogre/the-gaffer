@@ -171,7 +171,8 @@ export function buildVinyl(look: Look, kit: Kit, mats: SharedMaterials, shadows 
 
   // cabeza (grande, simpática, sin aristas)
   const head = new THREE.Group();
-  head.position.set(0.02, shoulderY + 0.1, 0);
+  head.position.set(0.02, shoulderY + 0.06, 0);
+  head.scale.setScalar(0.74);
   torso.add(head);
   const HC = new THREE.Vector3(0.02, 0.26, 0);
   const R = 0.27;
@@ -249,6 +250,18 @@ export function buildVinyl(look: Look, kit: Kit, mats: SharedMaterials, shadows 
         const el = 0.35 + (i % 3) * 0.25;
         parts.push(paint(sphere(0.105, HC.x - 0.04 + Math.cos(a) * Math.cos(el) * 0.22, HC.y + Math.sin(el) * 0.24 + 0.04, Math.sin(a) * Math.cos(el) * 0.22), i % 2 ? hair : hairD));
       }
+      break;
+    case 'pixie':
+      parts.push(paint(capGeo(R + 0.025, Math.PI * 0.44, 0.15), hair));
+      for (let i = 0; i < 3; i++) parts.push(paint(sphere(0.06, HC.x + 0.16 + i * 0.03, HC.y + 0.2 - i * 0.04, -0.06 + i * 0.07, 1, 0.7, 0.8), hairD));
+      break;
+    case 'bun':
+      parts.push(paint(capGeo(R + 0.015, Math.PI * 0.5, 0.4), hair));
+      parts.push(paint(sphere(0.13, HC.x - 0.16, HC.y + 0.27, 0), hairD));
+      break;
+    case 'braids':
+      parts.push(paint(capGeo(R + 0.015, Math.PI * 0.5, 0.45), hair));
+      for (const z of [-0.12, 0.12]) for (let i = 0; i < 4; i++) parts.push(paint(sphere(0.06, HC.x - 0.2 - i * 0.02, HC.y - 0.05 - i * 0.1, z, 1, 1.1, 1), i % 2 ? hair : hairD));
       break;
     case 'combover':
       parts.push(paint(new THREE.SphereGeometry(R + 0.006, 16, 6, 0, Math.PI * 0.9, 0, Math.PI * 0.3).rotateZ(0.2).translate(HC.x, HC.y + 0.01, 0), hair));
