@@ -134,7 +134,10 @@ export function composeSprites(store: SheetStore, look: Look, kit: Kit, num: num
           x0 += 4;
         }
       }
+      // la altura se hace con filas (nunca escalando): críos, más bajos; adultos, ±2 filas
       if (look.youth) cell = squash(cell, look.youth);
+      else if (look.height < 0.985) cell = squash(cell, Math.min(2, Math.round((1 - look.height) * 28)) / DROP_ROWS.length);
+      else if (look.height > 1.015) cell = stretch(cell, Math.min(2, Math.round((look.height - 1) * 28)));
       const rot = ROT[frame];
       if (rot) cell = rotate(cell, rot[1]);
       outline(cell);
@@ -161,6 +164,21 @@ function squash(cell: Uint32Array, youth: number): Uint32Array<ArrayBuffer> {
     out.set(cell.subarray(y * SW, y * SW + SW), dst * SW);
     dst--;
   }
+  return out;
+}
+
+/** Más alto: se repiten filas de espinilla y de torso y lo de arriba sube. */
+const DUP_ROWS = [36, 20];
+function stretch(cell: Uint32Array, n: number): Uint32Array<ArrayBuffer> {
+  const dup = new Set(DUP_ROWS.slice(0, n));
+  const rows: Uint32Array[] = [];
+  for (let y = SH - 1; y >= 0; y--) {
+    const r = cell.subarray(y * SW, y * SW + SW);
+    rows.push(r);
+    if (dup.has(y)) rows.push(r);
+  }
+  const out = new Uint32Array(SW * SH);
+  for (let i = 0; i < SH; i++) out.set(rows[i], (SH - 1 - i) * SW);
   return out;
 }
 

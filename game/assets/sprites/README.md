@@ -45,6 +45,12 @@ para cada fotograma, con un ciclo de carrera clásico (contacto → paso → con
 proyecta a cada vista. Para cambiar cómo corre o celebra alguien, toca esos ángulos y vuelve a hacer
 el bake; para retocar un píxel concreto, edita la PNG.
 
+**Escala**: en el juego nunca se escalan. Cada escena 3D se dibuja a baja resolución y se amplía
+por un número entero de píxeles de la pantalla; los personajes van a un píxel de arte por píxel de
+esa rejilla (no encogen con la distancia) y pegados a ella. Por eso la altura de cada uno se hace
+con filas (quitando o repitiendo filas de torso y espinilla), no estirando la imagen. Los retratos de
+la interfaz igual: siempre a múltiplos exactos de 48 px.
+
 **Críos**: no hay hojas aparte. Al componer, el juego quita filas del abdomen y de las espinillas
 según la edad (14 años = 7 filas menos) y los hace algo más bajitos: misma cabeza, cuerpo más
 corto. Cada temporada crecen y vuelven poco a poco a las proporciones adultas.

@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 import type { Kit, Look } from '../../content/look';
 import type { Career } from '../../game/career';
-import { Billboard, blobShadow, composeCharacter, sheetStore } from '../hybrid/billboard';
+import { Billboard, CELL_H, blobShadow, composeCharacter, sheetStore } from '../hybrid/billboard';
+import { SH } from '../pixel/sprites';
+import { PIXEL_GRID, defaultScale, dpr, fitCanvas, gridFor, texelUnits, type Grid } from '../pixelgrid';
+
+/** Metros por píxel de arte en los interiores: el míster (48 px) mide 1,45 m junto a los muebles. */
+export const ROOM_UPP = (CELL_H * 0.66) / SH;
 import type { FrameId, View } from '../pixel/sprites';
 
 /**
@@ -164,13 +169,25 @@ export abstract class Location {
     this.onArrive = null;
   }
 
-  resize(w: number, h: number) {
-    this.w = w;
-    this.h = h;
-    const aspect = w / h;
+  grid: Grid | null = null;
+  /** Píxeles del dispositivo por píxel de arte que mejor le van a este sitio. */
+  pixelScale(cssW: number, cssH: number) {
     if (this.camera instanceof THREE.OrthographicCamera) {
-      // que quepa el diorama entero, tanto en móvil vertical como en monitor ancho
-      const viewH = Math.max(this.fit.h, this.fit.w / aspect);
+      // interiores: la escala entera más grande con la que cabe la habitación entera
+      const d = dpr();
+      return Math.max(1, Math.floor(Math.min((cssW * d) / (this.fit.w / ROOM_UPP), (cssH * d) / (this.fit.h / ROOM_UPP))));
+    }
+    return defaultScale(cssW, cssH);
+  }
+
+  resize(g: Grid) {
+    this.grid = g;
+    this.w = g.cssW;
+    this.h = g.cssH;
+    const aspect = g.intW / g.intH;
+    if (this.camera instanceof THREE.OrthographicCamera) {
+      // un píxel de arte = ROOM_UPP metros: personajes y muebles con la misma rejilla
+      const viewH = g.intH * ROOM_UPP;
       this.camera.left = (-viewH * aspect) / 2;
       this.camera.right = (viewH * aspect) / 2;
       this.camera.top = viewH / 2;
@@ -198,6 +215,8 @@ export abstract class Location {
   update(dt: number) {
     this.time += dt;
     this.tick(dt);
+    const u = this.grid ? texelUnits(this.camera, this.grid.intH) : 0.03;
+    for (const w of this.walkers) w.bb.setTexel(u);
     const tint = new THREE.Color();
     for (const w of this.walkers) {
       const d = w.target.clone().sub(w.pos);
@@ -254,7 +273,8 @@ export class World {
     let loc = this.cache.get(id);
     if (!loc) this.cache.set(id, (loc = make()));
     this.current = loc;
-    loc.resize(this.w, this.h);
+    // cada sitio elige su escala de píxel: hay que reajustar el lienzo
+    this.resize(this.w, this.h);
     return loc;
   }
 
@@ -267,18 +287,19 @@ export class World {
 
   private w = 1;
   private h = 1;
+  private grid: Grid | null = null;
   resize(w: number, h: number) {
     this.w = w;
     this.h = h;
-    // píxel gordo: el búfer interno se queda en ~480 px de ancho y se amplía sin suavizar
-    const k = Math.max(1, Math.round(Math.max(w, h * 0.8) / 520));
-    this.renderer.setPixelRatio(1 / k);
-    this.renderer.setSize(w, h, true);
-    this.current?.resize(w, h);
+    const P = this.current?.pixelScale(w, h) ?? defaultScale(w, h);
+    this.grid = gridFor(w, h, P);
+    fitCanvas(this.renderer, this.grid);
+    this.current?.resize(this.grid);
   }
 
   render(dt: number) {
-    if (!this.current) return;
+    if (!this.current || !this.grid) return;
+    PIXEL_GRID.value.set(this.grid.intW, this.grid.intH);
     this.current.update(dt);
     this.renderer.render(this.current.scene, this.current.camera);
   }

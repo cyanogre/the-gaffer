@@ -12,7 +12,7 @@ import { CasaView } from './render/world/casa';
 import { FerreteriaView } from './render/world/ferreteria';
 import { World, type Location } from './render/world/location';
 import { autoScene, coachCharacter, firedScene, hotspotScene, postMatchScene, seasonEndStory, type VNScene } from './story/scenes';
-import { $, Sheet, card, h, portrait, toast } from './ui/dom';
+import { $, Sheet, card, crisp, h, portrait, toast } from './ui/dom';
 import { MatchScreen } from './ui/match';
 import { clubTabs, coachPanel } from './ui/panels';
 import { iconSvg } from './ui/pixelart';
@@ -73,7 +73,9 @@ function drawTitle() {
     const g = b.dataset.g as Gender;
     const me = coachCharacter(g, '');
     const cv = b.querySelector('canvas')!;
+    cv.getContext('2d')!.clearRect(0, 0, 48, 48);
     cv.getContext('2d')!.drawImage(portrait(me.look, me.clothes, [], 0, 48), 0, 0);
+    crisp(cv, 72);
     b.setAttribute('aria-pressed', String(g === lookPick));
     b.onclick = () => {
       lookPick = g;
@@ -193,6 +195,7 @@ function renderHud() {
   const g = cv.getContext('2d')!;
   g.clearRect(0, 0, 48, 48);
   g.drawImage(portrait(me.look, me.clothes, [], 0, 48), 0, 0);
+  crisp(cv, 40);
   $('placeName').textContent = c.location === 'campo' ? c.club.id === 'barrio' ? 'El Barrizal' : `Estadio del ${c.club.short}` : LOCATIONS[c.location].name;
   $('placeSub').textContent = `${dayLabel(c)} · ${WX[todayWeather(c)]}`;
 }

@@ -4,6 +4,7 @@ import type { MatchSim } from '../../sim/match';
 import type { SimPlayer } from '../../sim/types';
 import { SheetStore, composeSprites, type SpriteSet } from '../pixel/sheets';
 import { SH, SW, type FrameId, type View } from '../pixel/sprites';
+import { PIXEL_GRID } from '../pixelgrid';
 
 /**
  * Personajes 2D dentro del mundo 3D: cada muñeco es un sprite que mira siempre a cámara,
@@ -18,21 +19,33 @@ export const CELL_H = 2.2;
 export const CELL_W = (CELL_H * SW) / SH;
 
 /**
- * Profundidad plana: todo el sprite usa la profundidad de su punto de apoyo (los pies). Así un
- * personaje 2D nunca atraviesa un mueble o una valla 3D: si sus pies están delante, se ve entero;
- * si están detrás, el objeto le tapa lo que corresponda.
+ * Sprites pixel dentro del 3D:
+ * - Profundidad plana: todo el sprite usa la profundidad de su punto de apoyo (los pies), así
+ *   nunca atraviesa un mueble o una valla.
+ * - Tamaño fijo en píxeles (no encoge con la distancia) y anclado a la rejilla de píxel: cada
+ *   píxel de arte ocupa exactamente un píxel de la escena, sin columnas gordas ni finas.
  */
 export function flatDepth<T extends THREE.SpriteMaterial>(mat: T): T {
+  mat.sizeAttenuation = false;
   mat.onBeforeCompile = (shader) => {
-    shader.vertexShader = shader.vertexShader.replace(
+    shader.uniforms.uPixelGrid = PIXEL_GRID;
+    shader.vertexShader = 'uniform vec2 uPixelGrid;\n' + shader.vertexShader.replace(
       '#include <logdepthbuf_vertex>',
       `vec4 anchorClip = projectionMatrix * modelViewMatrix[ 3 ];
+      vec2 anchorPix = ( anchorClip.xy / anchorClip.w * 0.5 + 0.5 ) * uPixelGrid;
+      vec2 snapPix = floor( anchorPix + 0.5 ) - anchorPix;
+      gl_Position.xy += snapPix / uPixelGrid * 2.0 * gl_Position.w;
       gl_Position.z = ( anchorClip.z / anchorClip.w - 0.0004 ) * gl_Position.w;
       #include <logdepthbuf_vertex>`,
     );
   };
-  mat.customProgramCacheKey = () => 'flat-depth-sprite';
+  mat.customProgramCacheKey = () => 'pixel-sprite';
   return mat;
+}
+
+/** Ajusta un sprite a su tamaño en píxeles de arte (u = unidades por píxel, ver texelUnits). */
+export function pixelSize(s: THREE.Sprite, w: number, h: number, u: number) {
+  s.scale.set(w * u, h * u, 1);
 }
 
 export function atlasTexture(set: SpriteSet) {
@@ -67,7 +80,8 @@ export class Billboard {
     this.tex.repeat.set(1 / COLS.length, 1 / ROWS.length);
     const mat = flatDepth(new THREE.SpriteMaterial({ map: this.tex, alphaTest: 0.5, transparent: false }));
     this.sprite = new THREE.Sprite(mat);
-    this.sprite.center.set(0.5, 0.5 / SH);
+    // ancla en el borde de un píxel (centro horizontal, fila de las suelas) para que encaje en la rejilla
+    this.sprite.center.set(0.5, 1 / SH);
     this.sprite.scale.set(CELL_W * scale, CELL_H * scale, 1);
     this.shadow = new THREE.Mesh(shadowGeo, shadowMat);
     this.shadow.rotation.x = -Math.PI / 2;
@@ -86,6 +100,11 @@ export class Billboard {
   place(x: number, y: number, z: number, lift = 0) {
     this.sprite.position.set(x, z + lift, y);
     this.shadow.position.set(x, z + 0.02, y);
+  }
+
+  /** Tamaño exacto: un píxel de arte por píxel de la escena. */
+  setTexel(u: number) {
+    this.sprite.scale.set(SW * u, SH * u, 1);
   }
 
   tint(c: THREE.Color) {

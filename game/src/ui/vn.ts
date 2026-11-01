@@ -2,6 +2,7 @@ import { SQUAD_INDEX } from '../content/teams';
 import type { Expression } from '../content/look';
 import { STATS, type Career } from '../game/career';
 import { pixelPortrait } from '../render/pixel/portrait';
+import { crisp } from './dom';
 import { NPC, choiceLocked, coachCharacter, type CharId, type VNChoice, type VNLine } from '../story/scenes';
 
 /**
@@ -63,12 +64,9 @@ export class VNPlayer {
   private who(id: CharId, c: Career, expr?: Expression, idx?: number): { name: string; role: string; img: HTMLCanvasElement | null } {
     if (id === 'narrador' || (id === 'jugador' && idx === undefined)) return { name: '', role: '', img: null };
     const draw = (spec: Parameters<typeof pixelPortrait>[0]) => {
-      const base = pixelPortrait({ ...spec, expr });
-      const out = document.createElement('canvas');
-      out.width = out.height = 192;
-      const g = out.getContext('2d')!;
-      g.imageSmoothingEnabled = false;
-      g.drawImage(base, 0, 0, 192, 192);
+      const out = pixelPortrait({ ...spec, expr });
+      // múltiplo entero del retrato de 48 px, cerca del tamaño que cabe en pantalla
+      crisp(out, window.innerWidth <= 700 ? 96 : Math.max(110, Math.min(220, window.innerWidth * 0.22)));
       return out;
     };
     if (id === 'jugador' && idx !== undefined) {

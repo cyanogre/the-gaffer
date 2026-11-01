@@ -11,7 +11,9 @@ import { pixelPortrait } from '../pixel/portrait';
 import type { View } from '../pixel/sprites';
 import { BroadcastCamera, THREE_CAMERA_MODES } from './camera';
 import type { CameraMode, MatchRenderer, PerfInfo, ScreenPoint } from '../types';
-import { Billboard, blobShadow, composeCharacter, flatDepth, frameOf, nearestTexture, pixelCanvas, sheetStore, viewOf } from './billboard';
+import { Billboard, CELL_H, blobShadow, composeCharacter, flatDepth, frameOf, nearestTexture, pixelCanvas, pixelSize, sheetStore, viewOf } from './billboard';
+import { SH } from '../pixel/sprites';
+import { PIXEL_GRID, defaultScale, fitCanvas, gridFor, texelUnits, type Grid } from '../pixelgrid';
 import { buildStadium, type Spot, type Stadium } from './stadium';
 import { WeatherFX } from './weather';
 
@@ -80,7 +82,8 @@ export class HybridRenderer implements MatchRenderer {
     bg.fillRect(2, 2, 1, 1);
     this.ball = new THREE.Sprite(flatDepth(new THREE.SpriteMaterial({ map: nearestTexture(bc), alphaTest: 0.5 })));
     this.ball.scale.set(0.5, 0.5, 1);
-    this.ball.center.set(0.5, 0.1);
+    // ancla en el borde de un píxel (5 px de ancho: el 2.º borde) para que encaje en la rejilla
+    this.ball.center.set(0.4, 0);
     this.ballShadow = new THREE.Mesh(this.shadow.geo, this.shadow.mat);
     this.ballShadow.rotation.x = -Math.PI / 2;
     this.ballShadow.scale.setScalar(0.35);
@@ -194,7 +197,7 @@ export class HybridRenderer implements MatchRenderer {
     const abuela = add(take(this.level === 0 ? 'steps' : 'stand'), make('abuela', NPC.abuela.look, NPC.abuela.clothes), 'home', 0.95);
     if (abuela) {
       const txt = this.crowd.gender === 'f' ? '¡ESA ES MI NIETA!' : '¡ESE ES MI NIETO!';
-      const w = pixelTextWidth(txt) + 6;
+      const w = (pixelTextWidth(txt) + 7) & ~1; // ancho par: el centro cae en el borde de un píxel
       const c = document.createElement('canvas');
       c.width = w;
       c.height = 11;
@@ -206,9 +209,10 @@ export class HybridRenderer implements MatchRenderer {
       g.fillRect(0, 10, w, 1);
       pixelText(g, txt, w / 2, 2, '#2a1d22', w);
       const s = new THREE.Sprite(flatDepth(new THREE.SpriteMaterial({ map: nearestTexture(c), alphaTest: 0.5 })));
-      s.scale.set(w * 0.085, 11 * 0.085, 1);
-      s.center.set(0.5, 0);
-      s.position.set(abuela.spot.pos.x, abuela.spot.pos.y + 2.5, abuela.spot.pos.z);
+      s.userData.w = w;
+      // anclada a los pies de la abuela y dibujada por encima de su cabeza (en píxeles)
+      s.center.set(0.5, -50 / 11);
+      s.position.set(abuela.spot.pos.x, abuela.spot.pos.y, abuela.spot.pos.z);
       this.scene.add(s);
       abuela.sign = s;
     }
@@ -251,23 +255,23 @@ export class HybridRenderer implements MatchRenderer {
       if (!wet || f.spot.kind === 'balcony' || f.spot.kind === 'bar' || rng.chance(0.25)) continue;
       const tex = nearestTexture(pixelCanvas(UMBRELLA, { '#': rng.pick(['#c8102e', '#2f6fd6', '#1d1d22', '#f2c94c', '#3fae5a', '#7d55d9']), '|': '#3a3a40' }));
       const u = new THREE.Sprite(flatDepth(new THREE.SpriteMaterial({ map: tex, alphaTest: 0.5 })));
-      u.scale.set(1.6, 1.0, 1);
-      u.center.set(0.5, 0);
-      u.position.set(f.spot.pos.x, f.spot.pos.y + 1.75, f.spot.pos.z);
+      // anclado a los pies del aficionado y dibujado sobre su cabeza (en píxeles)
+      u.center.set(6 / 13, -36 / 8);
+      u.position.set(f.spot.pos.x, f.spot.pos.y, f.spot.pos.z);
       this.scene.add(u);
       f.umbrella = u;
     }
   }
 
+  private grid: Grid | null = null;
   resize(w: number, h: number) {
-    this.w = w;
-    this.h = h;
-    // píxel gordo: el búfer interno se queda en ~470–560 px de ancho y se amplía sin suavizar
-    const k = Math.max(1, Math.ceil(w / 560));
-    this.renderer.setPixelRatio(1 / k);
-    this.renderer.setSize(w, h, true);
-    this.cam.camera.aspect = w / h;
-    this.cam.aspect = w / h;
+    // rejilla de píxel entera: ~360 píxeles de arte en el lado corto, ampliados sin decimales
+    this.grid = gridFor(w, h, defaultScale(w, h));
+    fitCanvas(this.renderer, this.grid);
+    this.w = this.grid.cssW;
+    this.h = this.grid.cssH;
+    this.cam.camera.aspect = this.grid.intW / this.grid.intH;
+    this.cam.aspect = this.cam.camera.aspect;
     this.cam.camera.updateProjectionMatrix();
   }
 
@@ -298,7 +302,10 @@ export class HybridRenderer implements MatchRenderer {
   }
 
   project(x: number, y: number, z: number): ScreenPoint {
-    return this.cam.project(new THREE.Vector3(toX(x), z, toZ(y)), this.w, this.h);
+    // los sprites miden lo mismo en pantalla a cualquier distancia: la altura se pasa a píxeles
+    const p = this.cam.project(new THREE.Vector3(toX(x), 0, toZ(y)), this.w, this.h);
+    if (z > 0 && this.grid) p.y -= (z / CELL_H) * SH * (this.grid.cssH / this.grid.intH);
+    return p;
   }
 
   render(sim: MatchSim, alpha: number, dt: number) {
@@ -310,6 +317,16 @@ export class HybridRenderer implements MatchRenderer {
     }
     const A = this.anim;
     A.update(sim, alpha, dt);
+    if (this.grid) PIXEL_GRID.value.set(this.grid.intW, this.grid.intH);
+    const u = this.grid ? texelUnits(this.cam.camera, this.grid.intH) : 0.04;
+    for (const bb of this.players) bb.setTexel(u);
+    for (const f of this.fans) {
+      f.bb.setTexel(u);
+      if (f.umbrella) pixelSize(f.umbrella, 13, 8, u);
+      if (f.sign) pixelSize(f.sign, f.sign.userData.w, 11, u);
+    }
+    pixelSize(this.ball, 5, 5, u);
+    if (this.dog) pixelSize(this.dog.s, (this.dog.s.scale.x < 0 ? -1 : 1) * 13, 6, u);
     this.cheer = Math.max(0, this.cheer - dt);
     this.gloom = Math.max(0, this.gloom - dt);
     this.weather.update(dt, A.time);
@@ -360,7 +377,7 @@ export class HybridRenderer implements MatchRenderer {
       d.x += Math.sign(dx) * Math.min(Math.abs(dx), 9 * dt);
       const running = Math.abs(dx) > 0.5;
       d.s.material.map = running && Math.floor(A.time * 8) % 2 ? d.tB : d.tA;
-      d.s.scale.x = dx < 0 ? -1.3 : 1.3;
+      d.s.scale.x = Math.abs(d.s.scale.x) * (dx < 0 ? -1 : 1);
       const hop = this.cheer > 0 ? Math.abs(Math.sin(A.time * 10)) * 0.5 : 0;
       d.s.position.set(d.x, hop, -PITCH_W / 2 - 5.2);
       d.shadow.position.set(d.x, 0.03, -PITCH_W / 2 - 5.2);

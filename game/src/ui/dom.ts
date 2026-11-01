@@ -1,5 +1,6 @@
 import type { Expression, Kit, Look } from '../content/look';
 import { pixelPortrait } from '../render/pixel/portrait';
+import { crispCss } from '../render/pixelgrid';
 import type { TraitId } from '../sim/types';
 
 /** Utilidades de interfaz: crear nodos, avisos, retratos, la hoja lateral y la tarjeta de resultado. */
@@ -31,7 +32,10 @@ export function toast(text: string, ms = 2600) {
 }
 
 const portraitCache = new Map<string, HTMLCanvasElement>();
-/** Retrato pixel (48×48) dibujado a `size` sin suavizar. */
+/**
+ * Retrato pixel (48×48). Se muestra a un múltiplo ENTERO de píxeles del dispositivo lo más cerca
+ * posible de `size` (en CSS): ningún píxel sale más gordo que otro.
+ */
 export function portrait(look: Look, kit: Kit, traits: readonly TraitId[], num: number, size = 48, expr?: Expression) {
   const key = JSON.stringify([look, kit, traits, num, expr]);
   let base = portraitCache.get(key);
@@ -40,11 +44,19 @@ export function portrait(look: Look, kit: Kit, traits: readonly TraitId[], num: 
     portraitCache.set(key, base);
   }
   const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const g = c.getContext('2d')!;
-  g.imageSmoothingEnabled = false;
-  g.drawImage(base, 0, 0, size, size);
+  c.width = base.width;
+  c.height = base.height;
+  c.getContext('2d')!.drawImage(base, 0, 0);
+  crisp(c, size);
   return c;
+}
+
+/** Tamaño CSS exacto para un lienzo pixel (múltiplo entero en el dispositivo). */
+export function crisp(c: HTMLCanvasElement, size: number) {
+  const css = crispCss(c.width, size);
+  c.style.width = `${css}px`;
+  c.style.height = `${(css * c.height) / c.width}px`;
+  c.style.imageRendering = 'pixelated';
 }
 
 export const tier = (v: number) => (v >= 15 ? 'hi' : v >= 9 ? 'mid' : 'lo');

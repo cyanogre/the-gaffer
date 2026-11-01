@@ -211,8 +211,6 @@ canvas.px,
   background: #2b1f48;
 }
 .new-game fieldset canvas {
-  width: 72px;
-  height: 72px;
   image-rendering: pixelated;
 }
 .cta {
@@ -259,13 +257,11 @@ canvas.px,
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
 }
 .hud-coach {
-  padding: 0 !important;
-  width: 46px;
+  padding: 0 3px !important;
   justify-content: center;
 }
 .hud-coach canvas {
-  width: 40px;
-  height: 40px;
+  display: block;
   image-rendering: pixelated;
 }
 .hud-coach[data-up='true'] {
@@ -705,7 +701,7 @@ canvas.px,
 }
 .prow {
   display: grid;
-  grid-template-columns: 42px 40px minmax(0, 1fr) auto;
+  grid-template-columns: 42px auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   width: 100%;
@@ -727,8 +723,6 @@ canvas.px,
   color: var(--bad);
 }
 .prow canvas {
-  width: 40px;
-  height: 40px;
   image-rendering: pixelated;
   background: #2b2045;
   border-radius: 3px;
@@ -778,12 +772,11 @@ canvas.px,
 /* ficha de jugador */
 .pcard {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 10px;
+  align-items: start;
 }
 .pcard canvas {
-  width: 96px;
-  height: 96px;
   image-rendering: pixelated;
   background: #2b2045;
   border: 2px solid #1a1226;
@@ -862,8 +855,6 @@ canvas.px,
   width: 58px;
 }
 .pitchmap canvas {
-  width: 34px;
-  height: 34px;
   image-rendering: pixelated;
   border-radius: 50%;
   background: #1c1430;
@@ -1326,9 +1317,6 @@ canvas.px,
 }
 .vn-portrait canvas {
   display: block;
-  width: clamp(110px, 22vw, 220px);
-  height: auto;
-  aspect-ratio: 1;
   image-rendering: pixelated;
   border: 3px solid #1a1226;
   box-shadow: 4px 4px 0 #1a1226;
@@ -1420,9 +1408,6 @@ canvas.px,
   .vn {
     grid-template-columns: minmax(0, 1fr);
     justify-items: start;
-  }
-  .vn-portrait canvas {
-    width: 92px;
   }
   .vn-box p {
     font-size: 0.95rem;
