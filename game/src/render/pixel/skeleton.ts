@@ -29,8 +29,12 @@ const PUSH = L([-28, 0], [-78, 0]);
 const PASS_FREE = L([30, 0], [-92, 0]);
 const PASS_SUPPORT = L([3, 0], [-24, 0]);
 
+// paso (de frente y de espaldas): las dos rodillas algo dobladas, los pies bajo el cuerpo
+const PASS = L([14, 2], [-22, 0]);
+
 export const LEG_POSES: Record<string, Pair> = {
   stand: [STAND, STAND],
+  pass: [PASS, PASS],
   liftL: [KNEE_UP, PLANT],
   liftR: [PLANT, KNEE_UP],
   // perfil: contacto con la pierna cercana delante, paso, contacto con la lejana, paso
@@ -58,8 +62,12 @@ const HANG = L([-4, 13], [14, -7]);
 const FWD = L([38, 5], [112, 5]);
 const BACK = L([-44, 5], [22, 5]);
 
+// brazos a media oscilación: codos doblados, manos a la altura de la cintura
+const MID = L([-6, 8], [78, 4]);
+
 export const ARM_POSES: Record<string, Pair> = {
   down: [HANG, HANG],
+  mid: [MID, MID],
   swingL: [FWD, BACK],
   swingR: [BACK, FWD],
   up: [L([4, 162], [4, 174]), L([4, 162], [4, 174])],

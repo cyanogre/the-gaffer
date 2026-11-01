@@ -23,7 +23,9 @@ export class AnimTracker {
       this.y[i] = p.py + (p.y - p.py) * alpha;
       const s = Math.hypot(p.vx, p.vy);
       this.speed[i] = (this.speed[i] ?? 0) + (s - (this.speed[i] ?? 0)) * Math.min(1, dt * 10);
-      this.phase[i] = (this.phase[i] ?? i * 0.7) + this.speed[i] * dt * 1.55;
+      // el ciclo de carrera nunca va a cámara lenta: si se mueve, al menos un trote
+      const sp = this.speed[i] > 0.7 ? Math.max(this.speed[i], 3) : this.speed[i];
+      this.phase[i] = (this.phase[i] ?? i * 0.7) + sp * dt * 1.55;
     }
     const b = sim.ball;
     this.bx = b.px + (b.x - b.px) * alpha;

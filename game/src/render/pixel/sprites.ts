@@ -82,8 +82,8 @@ interface VariantSet {
   accessory: Accessory;
 }
 
-type Legs = 'stand' | 'liftL' | 'liftR' | 'runA' | 'runB' | 'runC' | 'runD' | 'kick' | 'jump' | 'lunge' | 'brace' | 'kneel' | 'slide' | 'fall';
-type Arms = 'down' | 'swingL' | 'swingR' | 'up' | 'up2' | 'out' | 'ear' | 'jump' | 'shove' | 'throw' | 'catch' | 'slide' | 'kneel' | 'balance';
+type Legs = 'stand' | 'pass' | 'liftL' | 'liftR' | 'runA' | 'runB' | 'runC' | 'runD' | 'kick' | 'jump' | 'lunge' | 'brace' | 'kneel' | 'slide' | 'fall';
+type Arms = 'down' | 'mid' | 'swingL' | 'swingR' | 'up' | 'up2' | 'out' | 'ear' | 'jump' | 'shove' | 'throw' | 'catch' | 'slide' | 'kneel' | 'balance';
 interface Spec {
   view: View;
   legs: Legs;
@@ -97,10 +97,11 @@ const SPECS: Partial<Record<View, Partial<Record<SheetFrame, Omit<Spec, 'view'>>
   front: {
     idle0: { legs: 'stand', arms: 'down', bob: 0, shout: false },
     idle1: { legs: 'stand', arms: 'down', bob: 1, shout: false },
-    run0: { legs: 'liftL', arms: 'swingL', bob: 0, shout: false },
-    run1: { legs: 'stand', arms: 'down', bob: 1, shout: false },
-    run2: { legs: 'liftR', arms: 'swingR', bob: 0, shout: false },
-    run3: { legs: 'stand', arms: 'down', bob: 1, shout: false },
+    // al correr, cada brazo va al revés que su pierna; en el paso, rodillas y codos doblados
+    run0: { legs: 'liftL', arms: 'swingR', bob: 0, shout: false },
+    run1: { legs: 'pass', arms: 'mid', bob: 1, shout: false },
+    run2: { legs: 'liftR', arms: 'swingL', bob: 0, shout: false },
+    run3: { legs: 'pass', arms: 'mid', bob: 1, shout: false },
     up0: { legs: 'stand', arms: 'up', bob: 0, shout: true },
     up1: { legs: 'stand', arms: 'up2', bob: 1, shout: true },
     out: { legs: 'stand', arms: 'out', bob: 0, shout: true },
@@ -113,10 +114,11 @@ const SPECS: Partial<Record<View, Partial<Record<SheetFrame, Omit<Spec, 'view'>>
   back: {
     idle0: { legs: 'stand', arms: 'down', bob: 0, shout: false },
     idle1: { legs: 'stand', arms: 'down', bob: 1, shout: false },
-    run0: { legs: 'liftL', arms: 'swingL', bob: 0, shout: false },
-    run1: { legs: 'stand', arms: 'down', bob: 1, shout: false },
-    run2: { legs: 'liftR', arms: 'swingR', bob: 0, shout: false },
-    run3: { legs: 'stand', arms: 'down', bob: 1, shout: false },
+    // al correr, cada brazo va al revés que su pierna; en el paso, rodillas y codos doblados
+    run0: { legs: 'liftL', arms: 'swingR', bob: 0, shout: false },
+    run1: { legs: 'pass', arms: 'mid', bob: 1, shout: false },
+    run2: { legs: 'liftR', arms: 'swingL', bob: 0, shout: false },
+    run3: { legs: 'pass', arms: 'mid', bob: 1, shout: false },
     head: { legs: 'jump', arms: 'jump', bob: 0, shout: false },
     kneel: { legs: 'kneel', arms: 'kneel', bob: 7, shout: false },
     throw: { legs: 'stand', arms: 'throw', bob: 0, shout: false },
@@ -124,10 +126,10 @@ const SPECS: Partial<Record<View, Partial<Record<SheetFrame, Omit<Spec, 'view'>>
   side: {
     idle0: { legs: 'stand', arms: 'down', bob: 0, shout: false },
     idle1: { legs: 'stand', arms: 'down', bob: 1, shout: false },
-    run0: { legs: 'runA', arms: 'swingR', bob: 0, shout: false },
-    run1: { legs: 'runB', arms: 'down', bob: 1, shout: false },
-    run2: { legs: 'runC', arms: 'swingL', bob: 0, shout: false },
-    run3: { legs: 'runD', arms: 'down', bob: 1, shout: false },
+    run0: { legs: 'runA', arms: 'swingL', bob: 0, shout: false },
+    run1: { legs: 'runB', arms: 'mid', bob: 1, shout: false },
+    run2: { legs: 'runC', arms: 'swingR', bob: 0, shout: false },
+    run3: { legs: 'runD', arms: 'mid', bob: 1, shout: false },
     kick: { legs: 'kick', arms: 'balance', bob: 0, shout: false },
     // se dibujan de pie y el juego las tumba 90º al componer
     slideU: { legs: 'slide', arms: 'slide', bob: 0, shout: false },

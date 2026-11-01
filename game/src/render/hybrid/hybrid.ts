@@ -58,6 +58,7 @@ export class HybridRenderer implements MatchRenderer {
   private players: Billboard[] = [];
   private views: View[] = [];
   private flips: boolean[] = [];
+  private viewAt: number[] = [];
   private fans: Fan[] = [];
   private dog: { s: THREE.Sprite; tA: THREE.Texture; tB: THREE.Texture; x: number; shadow: THREE.Mesh } | null = null;
   private ball: THREE.Sprite;
@@ -333,9 +334,16 @@ export class HybridRenderer implements MatchRenderer {
     for (const p of sim.players) {
       const i = p.idx;
       const bb = this.players[i];
-      const { view, flip } = viewOf(p, A.speed[i], this.views[i], this.flips[i]);
-      this.views[i] = view;
-      this.flips[i] = flip;
+      // sin parpadeos: la vista (frente, espalda, perfil) y el volteo solo cambian si duran un poco
+      const want = viewOf(p, A.speed[i], this.views[i], this.flips[i]);
+      const forced = p.action !== 'none';
+      if (forced || this.views[i] === undefined || A.time - (this.viewAt[i] ?? -9) > 0.22) {
+        if (want.view !== this.views[i] || want.flip !== this.flips[i]) this.viewAt[i] = A.time;
+        this.views[i] = want.view;
+        this.flips[i] = want.flip;
+      }
+      const view = this.views[i];
+      const flip = this.flips[i];
       bb.setFrame(view === 'side' ? 'side' : view, frameOf(p, A.speed[i], A.phase[i], A.time, sim), view === 'side' && flip);
       let lift = 0;
       if (p.action === 'celebrate' && (p.profile.look.celebration === 'arms' || p.profile.look.celebration === 'dance')) lift = Math.abs(Math.sin(A.time * 7)) * 0.35;
