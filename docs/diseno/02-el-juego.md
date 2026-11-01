@@ -2,7 +2,7 @@
 
 Decisión final del autor: **fondos y escenarios en 3D (Three.js) con personajes y jugadores en pixel art**, para **móvil y PC**, con **pocos menús** y cuatro tipos de sección: historia pura, gestión, interacción y progresión del míster (estadísticas y dinero).
 
-Este documento fija el primer hito jugable: **Temporada 1 en la Liga de Barrio**. Todo lo que aparece aquí está implementado con lógica, consecuencias y conexión con otros sistemas; lo que no, figura en «Fuera de este hito».
+Este documento fija el primer hito jugable: **la temporada tutorial en Tercera Regional** y el salto a la siguiente. Todo lo que aparece aquí está implementado con lógica, consecuencias y conexión con otros sistemas; lo que no, figura en «Fuera de este hito».
 
 ## 1. Bucle
 
@@ -16,7 +16,7 @@ Domingo: charla previa → partido en el estadio 3D → crónica
 Cierre: taquilla, patrocinio, alquiler, liga, confianza → nueva semana
 ```
 
-- **Semana** = 6 días × 3 franjas + domingo de partido. La temporada son 10 jornadas (liga de 6 equipos a doble vuelta).
+- **Semana** = 6 días × 3 franjas + domingo de partido. La temporada tutorial son 10 jornadas (grupo de 6 a doble vuelta); cada categoría tiene su tamaño de grupo (ver §6).
 - **Energía del míster**: cada acción cuesta; dormir la repone. Si la noche la pasas fuera, solo repones parte. Sin energía, solo puedes descansar.
 - **Dos bolsillos**: *tu cartera* (vives de ella: alquiler semanal, bar, cursos) y *la caja del club* (taquilla, patrocinio, obras, material). Mezclarlos no es posible: el club no te paga en el barrio, por eso existe el curro en la ferretería.
 
@@ -40,7 +40,9 @@ Cuatro estadísticas con nivel y experiencia. Cada una tiene efectos concretos:
 
 ## 4. La plantilla
 
-- 15 jugadores: los 11 del brief (masculino o femenino) y 4 suplentes generados.
+- 15 jugadores: los 11 del brief (masculino o femenino) y 4 suplentes generados. Son **críos de 14 a 16 años**:
+  más bajitos, con proporciones de crío, aprenden más rápido al entrenar y **crecen cada temporada** (altura,
+  velocidad, resistencia). Juegan contra adultos «con permiso federativo» (lo firmó el cuñado del presidente).
 - **Atributos con decimales**: el entrenamiento los sube poco a poco (y menos cuanto más altos). El motor los usa tal cual.
 - **Carga**: entrenar cansa. Lo que no se recupera antes del domingo sale al campo como cansancio inicial. Un entreno físico el sábado se paga el domingo.
 - **Familiaridad** con cada formación (0–1): a más familiaridad, menos desorden posicional en el motor (las líneas se mantienen mejor). No es una bonificación: cambia dónde se colocan.
@@ -53,10 +55,23 @@ Cuatro estadísticas con nivel y experiencia. Cada una tiene efectos concretos:
 - **Bar Manolo**: charlar con la parroquia (labia, aficionados), invitar a un jugador (interacción), bocadillo (energía).
 - **Ferretería Ramón**: echar un turno (cartera, confianza del presidente), hablar con Don Ramón.
 
-## 6. Liga y economía del club
+## 6. Pirámide, liga y carrera
 
-- 6 equipos, doble vuelta. Los partidos de los demás se resuelven con un modelo estadístico por nivel (semilla fija: reproducible). Tus partidos, con el motor completo.
-- Objetivo de la directiva: quedar entre los 3 primeros. Si la confianza baja de 10, te despiden (fin de partida). Los 2 primeros ascienden.
+| Categoría | En la realidad | Grupo en el juego | Suben / bajan | Sueldo del míster |
+|---|---|---|---|---|
+| Tercera Regional | regional, por comarcas | 6 (tutorial) | 2 / 0 | 0 |
+| Segunda Regional | regional | 8 | 2 / 1 | 0 |
+| Primera Regional | regional | 10 | 2 / 2 | 40 €/sem |
+| Regional Preferente | máxima regional | 12 | 2 / 2 | 80 €/sem |
+| Tercera Federación | ≈18 grupos territoriales | 18 | 1 / 3 | 150 €/sem |
+| Segunda Federación | 90 equipos, 5 grupos de 18 | 18 | 1 / 4 | 250 €/sem |
+| Primera Federación | 40 equipos, 2 grupos de 20 | 20 | 2 / 4 | 600 €/sem |
+| Segunda División | 22, profesional | 22 | 2 / 4 | 2500 €/sem |
+| Primera División | 20, profesional | 20 | — / 3 | 9000 €/sem |
+
+- Nombres genéricos de categoría, sin marcas de patrocinio. Clubes inventados en todas; los reales llegarán por paquetes de datos con nombre abreviado.
+- **Tutorial**: ser campeón de Tercera Regional con el Barriobajo. Si lo eres, un club de Segunda Federación te ofrece entrenarle (con sueldo, estadio y plantilla nuevos). Puedes aceptar o **quedarte con tus críos** y subir con ellos categoría a categoría. Si no eres campeón, repites (o subes si quedas segundo).
+- Los partidos de los demás se resuelven con un modelo estadístico por nivel (semilla fija: reproducible). Tus partidos, con el motor completo. Si la confianza baja de 10, te despiden (fin de partida).
 - Caja: taquilla (aficionados × precio, con aforo y tiempo), patrocinio, árbitro y material. Obras del estadio (nivel 1 y 2) y material de entrenamiento.
 
 ## 7. Interfaz (móvil y PC, pocos menús)
@@ -70,4 +85,4 @@ Cuatro estadísticas con nivel y experiencia. Cada una tiene efectos concretos:
 
 ## 8. Fuera de este hito
 
-Mercado de fichajes, lesiones, divisiones superiores con jugadores reales (la estructura ya está en `content/names.ts`), marketing, más temporadas con historia propia. Se diseñarán y se preguntarán al autor antes de implementarlos.
+Mercado de fichajes, lesiones, clubes y jugadores reales en divisiones altas (la estructura ya está en `content/names.ts` y `content/divisions.ts`), partidos fuera de casa (hoy todo se juega en tu campo), historia propia de cada categoría y del club de Segunda Federación, marketing. Se diseñarán y se preguntarán al autor antes de implementarlos.

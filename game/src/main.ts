@@ -387,8 +387,9 @@ function placeLabels(l: Location) {
     placed.push({ x: p.x, y, w, h: hh });
     // que no se salga de la pantalla
     const W = stage.clientWidth;
+    const H = stage.clientHeight;
     const x = Math.max(w / 2 + 4, Math.min(W - w / 2 - 4, p.x));
-    y = Math.max(hh + 60, y);
+    y = Math.max(hh + 60, Math.min(H - 110, y));
     el.style.transform = `translate(${x.toFixed(0)}px, ${y.toFixed(0)}px)`;
   }
 }

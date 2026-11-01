@@ -12,7 +12,7 @@ con transparencia (Aseprite también, si lo tienes).
 
 Todas las hojas tienen la misma rejilla (ver `manifest.json`):
 
-- **Celda**: 24 × 30 px. Los pies apoyan en la fila 29 (la última).
+- **Celda**: 48 × 48 px. Cabeza en las filas 4–11, camiseta 13–24, pantalón 25–29, piernas hasta la 44 y botas 45–47 (los pies apoyan abajo).
 - **Columnas** (14 fotogramas): `idle0 idle1 run0 run1 run2 run3 kick up0 up1 out ear slideU fallU diveU`.
 - **Filas** (3 vistas): `front` (de cara a la cámara), `back` (de espaldas), `side` (perfil mirando a la derecha; la izquierda se obtiene volteando).
 - Las celdas vacías no se usan (por ejemplo, no hay `kick` de frente).
@@ -34,6 +34,14 @@ De atrás adelante (cada carpeta es una capa; cada PNG, una variante):
 | `hair_front` | peinado | pelo por encima de la cabeza |
 | `acc` | accesorio | gafas, cinta |
 | `arm_front` | complexión | brazo de delante |
+
+**Complexiones**: masculinas `slim`, `normal`, `stocky`, `belly`; femeninas `fslim`, `fnormal`,
+`fstocky` (hombros más estrechos, cintura marcada, cadera más ancha y pecho; de perfil, pecho y
+glúteo). Las jugadoras usan siempre las femeninas.
+
+**Críos**: no hay hojas aparte. Al componer, el juego quita filas del abdomen y de las espinillas
+según la edad (14 años = 7 filas menos) y los hace algo más bajitos: misma cabeza, cuerpo más
+corto. Cada temporada crecen y vuelven poco a poco a las proporciones adultas.
 
 El **dorsal** no está en las hojas: el juego lo estampa en la vista de espaldas con el color
 del ribete de la camiseta. El **contorno oscuro** tampoco: se calcula después de apilar las

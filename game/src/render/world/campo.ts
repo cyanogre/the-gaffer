@@ -41,7 +41,7 @@ export class CampoView extends Location {
     }
     this.hotspots = [
       { id: 'pitch', label: 'Césped', anchor: v3(GROUP.x, 3.4, GROUP.z), stand: v3(GROUP.x + 1.5, 0, GROUP.z + 3.5) },
-      { id: 'track', label: 'Banda', anchor: v3(-36, 3.0, -33), stand: v3(-34, 0, -31.5) },
+      { id: 'track', label: 'Banda', anchor: v3(-32, 2.6, -30.5), stand: v3(-31, 0, -29) },
       { id: 'fence', label: 'Valla', anchor: v3(-11, 4.2, -37.4), stand: v3(-11, 0, -33) },
     ];
   }

@@ -1,6 +1,8 @@
 # 01 · Dirección visual y motor del campo
 
-Estado: **decidido el estilo (Pixel HD en perspectiva)**, prototipo jugable en `prototypes/campo/`.
+Estado: **superado por la decisión final del autor** — escenarios 3D (Three.js) con personajes en pixel art 2D;
+el juego vive en `game/` (ver `00-decisiones-del-autor.md` y `02-el-juego.md`). Este documento se conserva como
+registro de la investigación y de la comparativa que llevó hasta ahí.
 
 ## 1. Decisión
 

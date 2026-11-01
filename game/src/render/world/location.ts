@@ -183,7 +183,8 @@ export abstract class Location {
 
   project(v: THREE.Vector3) {
     const p = v.clone().project(this.camera);
-    return { x: (p.x * 0.5 + 0.5) * this.w, y: (-p.y * 0.5 + 0.5) * this.h, visible: p.z < 1 && Math.abs(p.x) < 1.05 && Math.abs(p.y) < 1.05 };
+    // fuera de cuadro no se esconde: la interfaz la pega al borde (siempre se puede usar)
+    return { x: (p.x * 0.5 + 0.5) * this.w, y: (-p.y * 0.5 + 0.5) * this.h, visible: p.z < 1 };
   }
 
   /** Estado del día: luz por franja, tiempo, objetos que dependen de la partida. */
