@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#120d1f" />
+    <title>The Gaffer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;600;700&family=Bowlby+One&family=Silkscreen&display=swap"
+    />
+  </head>
+  <body>
+    <!--GAME-START-->
+    <div id="app" data-screen="title">
+      <div id="stage" class="stage">
+        <div id="hotspots" class="hotspots"></div>
+        <div id="overlay" class="overlay"></div>
+        <div id="banner" class="goal-banner" hidden><span class="gb-word">¡GOL!</span><span class="gb-who" id="bannerWho"></span></div>
+      </div>
+
+      <!-- ═══ portada ═══ -->
+      <section id="title" class="title">
+        <div class="title-card">
+          <p class="eyebrow">Simulador de míster · del barrio a Primera</p>
+          <h1 class="logo">THE<br />GAFFER</h1>
+          <p class="lede">Te han echado de la oficina. Tu sueño era el fútbol. Empiezas a tiempo parcial en Tercera Regional, con un campo de tierra y nueve aficionados.</p>
+          <form id="newGame" class="new-game">
+            <label class="field"><span>Tu nombre</span><input id="coachName" maxlength="22" autocomplete="off" placeholder="Paco Prieto" /></label>
+            <fieldset class="seg" id="coachLook">
+              <legend>Tu aspecto</legend>
+              <button type="button" data-g="m" aria-pressed="true"><canvas width="48" height="48"></canvas><span>Él</span></button>
+              <button type="button" data-g="f" aria-pressed="false"><canvas width="48" height="48"></canvas><span>Ella</span></button>
+            </fieldset>
+            <button class="cta" type="submit">Empezar</button>
+            <button class="cta ghost" type="button" id="btnContinue" hidden>Continuar partida</button>
+          </form>
+          <p class="fine">Se guarda solo en este navegador. Funciona con ratón, teclado o el dedo.</p>
+        </div>
+      </section>
+
+      <!-- ═══ mundo ═══ -->
+      <header id="hud" class="hud">
+        <button id="hudCoach" class="hud-coach" type="button" aria-label="Ficha del míster"><canvas width="48" height="48"></canvas></button>
+        <div class="hud-clock"><b id="hudDay">LUN</b><small id="hudSlot">Mañana</small></div>
+        <div class="hud-meter" title="Energía"><span class="hud-ico" data-icon="energy"></span><i class="bar"><i id="hudEnergy"></i></i><small id="hudEnergyTxt">80</small></div>
+        <span class="hud-spacer"></span>
+        <div class="hud-chip" title="Tu cartera"><span class="hud-ico" data-icon="wallet"></span><b id="hudWallet">90 €</b></div>
+        <div class="hud-chip wide" title="Caja del club"><span class="hud-ico" data-icon="stadium"></span><b id="hudMoney">120 €</b></div>
+        <div class="hud-chip wide" title="Confianza de la directiva"><span class="hud-ico" data-icon="hand"></span><i class="bar"><i id="hudTrust"></i></i></div>
+      </header>
+      <div id="placeTag" class="place-tag"><b id="placeName">Casa</b><small id="placeSub"></small></div>
+      <button id="btnMatch" class="match-cta" type="button" hidden><b>¡A jugar!</b><small id="btnMatchSub"></small></button>
+
+      <nav id="dock" class="dock" aria-label="Lugares">
+        <button type="button" data-loc="casa"><span class="dock-ico" data-icon="home"></span><b>Casa</b></button>
+        <button type="button" data-loc="campo"><span class="dock-ico" data-icon="ball"></span><b>Campo</b></button>
+        <button type="button" data-loc="bar"><span class="dock-ico" data-icon="beer"></span><b>Bar</b></button>
+        <button type="button" data-loc="ferreteria"><span class="dock-ico" data-icon="wrench"></span><b>Ferretería</b></button>
+        <button type="button" data-loc="club"><span class="dock-ico" data-icon="clipboard"></span><b>Club</b></button>
+      </nav>
+
+      <!-- ═══ partido ═══ -->
+      <header id="mHud" class="m-hud">
+        <div class="m-team"><canvas id="crestHome" width="24" height="28" class="crest"></canvas><b id="nameHome"></b></div>
+        <div class="m-score"><span id="scoreHome">0</span><i>–</i><span id="scoreAway">0</span><small id="clock">0:00</small></div>
+        <div class="m-team away"><b id="nameAway"></b><canvas id="crestAway" width="24" height="28" class="crest"></canvas></div>
+      </header>
+      <div id="signalChip" class="signal-chip" hidden></div>
+      <ol id="feed" class="feed"></ol>
+      <nav id="mBar" class="m-bar">
+        <button type="button" id="btnOrders"><span class="dock-ico" data-icon="megaphone"></span><b>Órdenes</b></button>
+        <button type="button" id="btnSubs"><span class="dock-ico" data-icon="swap"></span><b>Cambios</b><small id="subsLeft">5</small></button>
+        <button type="button" id="btnSpeed"><span class="dock-ico" data-icon="ff"></span><b id="speedTxt">×1</b></button>
+        <button type="button" id="btnCam"><span class="dock-ico" data-icon="camera"></span><b id="camTxt">TV</b></button>
+        <button type="button" id="btnPause"><span class="dock-ico" data-icon="pause"></span><b>Pausa</b></button>
+      </nav>
+      <div id="fulltime" class="fulltime" hidden>
+        <p class="ft-label">Final del partido</p>
+        <p class="ft-score" id="ftScore"></p>
+        <button type="button" id="btnFt">Ir al vestuario</button>
+      </div>
+
+      <!-- ═══ comunes ═══ -->
+      <aside id="sheet" class="sheet" hidden aria-modal="false" role="dialog">
+        <header class="sheet-head">
+          <h2 id="sheetTitle"></h2>
+          <button type="button" id="sheetClose" class="sheet-close" aria-label="Cerrar">✕</button>
+        </header>
+        <nav id="sheetTabs" class="tabs"></nav>
+        <div id="sheetBody" class="sheet-body"></div>
+      </aside>
+      <div id="result" class="result" hidden>
+        <h3 id="resultTitle"></h3>
+        <ul id="resultLines"></ul>
+        <button type="button" id="resultOk">Vale</button>
+      </div>
+      <div id="toast" class="toast" hidden></div>
+    </div>
+    <!--GAME-END-->
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
