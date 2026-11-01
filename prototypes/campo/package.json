@@ -1,0 +1,24 @@
+{
+  "name": "the-gaffer-campo-lab",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Laboratorio del campo: un mismo motor de partido con tres renderizadores (pixel art, 3D estilizado, 2.5D cromos).",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build:artifact": "vite build && node scripts/build-artifact.mjs"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/three": "0.186.0",
+    "typescript": "6.0.3",
+    "vite": "8.3.4",
+    "vitest": "5.0.4"
+  }
+}
