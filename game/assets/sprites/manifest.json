@@ -18,7 +18,13 @@
     "ear",
     "slideU",
     "fallU",
-    "diveU"
+    "diveU",
+    "poke",
+    "head",
+    "push",
+    "kneel",
+    "throw",
+    "catch"
   ],
   "rows": [
     "front",

@@ -140,6 +140,8 @@ export interface Career {
   scouted: number;
   hungry: boolean;
   talkDone: boolean;
+  /** Paso de la guía de la primera semana (−1 = terminada o saltada). */
+  guide: number;
   history: MatchRecord[];
   league: LeagueState;
   /** Partido rival forzado por la semana (lo decide el calendario de liga). */
@@ -195,6 +197,7 @@ export function newCareer(gender: Gender, coachGender: Gender = 'm', coachName =
     scouted: 0,
     hungry: false,
     talkDone: false,
+    guide: 0,
     history: [],
     league: newLeague(seed, [BARRIO, ...RIVALS]),
   };

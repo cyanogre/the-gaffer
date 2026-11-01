@@ -9,7 +9,7 @@ import { nextSeason, type SeasonEnd, type Summary } from '../game/week';
  * Historia: escenas de novela visual. Aparecen en un sitio, un día y una semana concretos (o cuando
  * se cumple una condición). Cada decisión cambia algo que el juego usa de verdad.
  */
-export type CharId = 'presidente' | 'manolo' | 'padel' | 'goleador' | 'abuela' | 'mister' | 'rivalMister' | 'jefa' | 'narrador';
+export type CharId = 'presidente' | 'manolo' | 'padel' | 'goleador' | 'abuela' | 'mister' | 'rivalMister' | 'jefa' | 'jugador' | 'narrador';
 
 export interface Character {
   name: string;
@@ -78,6 +78,8 @@ export function coachCharacter(g: Gender, name: string): Character {
 
 export interface VNLine {
   who: CharId;
+  /** Para `jugador`: índice en la plantilla. */
+  idx?: number;
   expr?: Expression;
   text: string;
 }
@@ -184,6 +186,60 @@ export const SCENES: VNScene[] = [
           c.coach.wallet += 30;
           c.boardTrust -= 2;
           return [{ who: 'presidente', expr: 'angry', text: 'Un adelanto... Tome, treinta euros. Me los descuenta en tornillos.' }];
+        },
+      },
+    ],
+  },
+  {
+    id: 'presentacion',
+    where: 'campo',
+    week: 1,
+    cond: (c) => barrio(c) && !c.flags.metSquad,
+    title: 'Tus chavales',
+    lines: (c) => {
+      const I = SQUAD_INDEX;
+      const nm = (k: keyof typeof SQUAD_INDEX) => nick(c, k);
+      const f = c.gender === 'f';
+      return [
+        { who: 'narrador', text: `En El Barrizal te esperan quince ${gx(c.gender, 'críos', 'crías')} con petos de colores distintos. ${gx(c.gender, 'El mayor', 'La mayor')} tiene dieciséis años; ${gx(c.gender, 'el más bajito', 'la más bajita')}, catorce y una gorra dos tallas más grande.` },
+        { who: 'jugador', idx: I.portero, expr: 'happy', text: `Soy ${nm('portero')}, ${gx(c.gender, 'el portero', 'la portera')}. Llevo en el club desde los cuatro años. Si me la tiran alta, avisad antes.` },
+        { who: 'jugador', idx: I.goleador, expr: 'smug', text: `${nm('goleador')}. ${f ? 'Goleadora nata' : 'Goleador nato'}: lo pone en mi Instagram. Llevo ${c.squad[I.goleador].drought} partidos sin marcar, pero eso es estadística.` },
+        { who: 'jugador', idx: I.firuletas, expr: 'smug', text: '¿Puedes salir menos en mis vídeos, míster? Me tapas el regate.' },
+        { who: 'jugador', idx: I.padel, expr: 'sleepy', text: '¿Esto acaba antes de las nueve? Es que tengo pádel.' },
+        { who: 'jugador', idx: I.profesor, expr: 'dreamy', text: 'He visto un pase que no ha visto nadie. Todavía no sé si existe.' },
+        { who: 'jugador', idx: I.nervioso, expr: 'nervous', text: `H-hola, míster. ${f ? 'Encantada' : 'Encantado'}. Perdón. Hola.` },
+        { who: 'jugador', idx: I.lenero, expr: 'angry', text: 'Yo defiendo. A veces el balón y a veces las piernas. Depende del día.' },
+        { who: 'jugador', idx: I.penaltiSeguro, expr: 'dramatic', text: '(Se cae al ir a saludarte. Se levanta. Hace una reverencia.) Teatro, los jueves.' },
+        { who: 'narrador', text: 'Ya los conoces: sus manías y rasgos salen en su ficha (Club → Plantilla). ¿Qué les dices?' },
+      ];
+    },
+    choices: [
+      {
+        text: '«Aquí se viene a disfrutar. Y a aprender.»',
+        effect: 'Esta semana, todos +1 de sangre fría.',
+        pick: (c) => {
+          c.flags.metSquad = true;
+          for (const p of c.squad) addMods(c, p.id, { composure: 1 }, 'Primer día: el míster les quitó presión.');
+          return [{ who: 'jugador', idx: SQUAD_INDEX.goleador, expr: 'happy', text: '¡Disfrutar marcando! Bueno, primero disfrutar.' }];
+        },
+      },
+      {
+        text: '«Vamos a ganar la liga. Empieza hoy.»',
+        effect: 'Esta semana, todos +1 de trabajo. Don Ramón se entera: +2 de confianza.',
+        pick: (c) => {
+          c.flags.metSquad = true;
+          for (const p of c.squad) addMods(c, p.id, { workRate: 1 }, 'Primer día: el míster habló de ganar la liga.');
+          c.boardTrust = Math.min(100, c.boardTrust + 2);
+          return [{ who: 'jugador', idx: SQUAD_INDEX.portero, expr: 'happy', text: '¡La liga! Mi madre va a flipar.' }];
+        },
+      },
+      {
+        text: '«¿Quién ha traído los balones?»',
+        effect: 'Nadie. Pero aparece la abuela Mari con una red llena: +1 aficionada.',
+        pick: (c) => {
+          c.flags.metSquad = true;
+          c.fans += 1;
+          return [{ who: 'abuela', expr: 'happy', text: 'Los tenía en el trastero desde 1998. Están un poco blandos, pero ruedan.' }];
         },
       },
     ],

@@ -13,7 +13,7 @@ con transparencia (Aseprite también, si lo tienes).
 Todas las hojas tienen la misma rejilla (ver `manifest.json`):
 
 - **Celda**: 48 × 48 px. Cabeza en las filas 4–11, camiseta 13–24, pantalón 25–29, piernas hasta la 44 y botas 45–47 (los pies apoyan abajo).
-- **Columnas** (14 fotogramas): `idle0 idle1 run0 run1 run2 run3 kick up0 up1 out ear slideU fallU diveU`.
+- **Columnas** (20 fotogramas): `idle0 idle1 run0 run1 run2 run3 kick up0 up1 out ear slideU fallU diveU poke head push kneel throw catch` (correr, chutar, celebrar, segada, caída, estirada, entrada de pie, cabezazo, empujón, levantarse, saque de banda y portero con el balón).
 - **Filas** (3 vistas): `front` (de cara a la cámara), `back` (de espaldas), `side` (perfil mirando a la derecha; la izquierda se obtiene volteando).
 - Las celdas vacías no se usan (por ejemplo, no hay `kick` de frente).
 - `slideU`, `fallU` y `diveU` se dibujan **de pie**: el juego las gira 90º al componer (entrada, caída y estirada).
@@ -79,12 +79,23 @@ gafas `#20232a`, cristal `#8fd3ff`...). Úsalo para detalles que no deban cambia
 npm run bake:sprites
 ```
 
-Solo crea las hojas que falten. Para sobrescribirlas todas desde el generador (perderás los
-retoques a mano):
+Solo crea las hojas que falten. Para regenerar las que siguen tal cual las dejó el generador
+(las que **hayas retocado a mano se respetan** y el script te avisa de cuáles son):
 
 ```bash
 npm run bake:sprites -- --force
 ```
+
+Para pisarlas todas, también las retocadas:
+
+```bash
+npm run bake:sprites -- --force --pisar-retoques
+```
+
+El script sabe qué está retocado porque guarda la huella de lo que generó en `generadas.json`.
+
+**¿Se ve el cambio al momento?** Con `npm run dev` abierto, guardar una PNG recarga el juego solo.
+La versión publicada en la web no: hay que volver a construirla y publicarla.
 
 Para añadir un peinado, un patrón de camiseta o una complexión nuevos: añade la variante al
 tipo correspondiente en `src/content/look.ts`, su dibujo en `src/render/pixel/sprites.ts`,

@@ -83,6 +83,17 @@ Cuatro estadísticas con nivel y experiencia. Cada una tiene efectos concretos:
 - **Partido**: marcador arriba; abajo, cuatro botones (órdenes, cambios, velocidad, pausa). En PC, panel lateral fijo con órdenes y plantilla.
 - Guardado automático en el navegador al final de cada acción.
 
-## 8. Fuera de este hito
+## 8. Primera semana guiada
+
+La primera semana va «sobre raíles»: un halo marca el único botón que se puede pulsar, el resto de la pantalla queda bloqueado y una nota explica el porqué (reloj y franjas, energía, cartera, ir al campo, correr, el papeleo del Club, el bar, dormir, el turno en la ferretería y el primer entreno). Se puede saltar en cualquier momento.
+
+- **Conocer a la plantilla**: al llegar al Barrizal por primera vez, los chavales se presentan uno a uno (cada uno con su manía) y eliges tus primeras palabras. Hasta entonces sus rasgos no salen en la ficha.
+- Pistas sueltas el primer domingo («¡A jugar!») y en el primer partido («Órdenes» y «Cambios»).
+
+## 9. Fútbol de contacto
+
+El motor no solo corre y chuta: hay entradas de pie y segadas, choques de hombros en carrera (gana el más corpulento y agresivo; puede acabar en falta o con el otro en el suelo), duelos aéreos con cabezazos (despeje, prolongación o remate; gana el más alto y mejor colocado, así que los críos sufren contra adultos), caídas, piscinazos, estiradas del portero, saques de banda y el portero con el balón en las manos. Cada cosa tiene su pose en los sprites, generada con el esqueleto de referencia.
+
+## 10. Fuera de este hito
 
 Mercado de fichajes, lesiones, clubes y jugadores reales en divisiones altas (la estructura ya está en `content/names.ts` y `content/divisions.ts`), partidos fuera de casa (hoy todo se juega en tu campo), historia propia de cada categoría y del club de Segunda Federación, marketing. Se diseñarán y se preguntarán al autor antes de implementarlos.

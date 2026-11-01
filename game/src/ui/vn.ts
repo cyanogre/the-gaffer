@@ -60,8 +60,8 @@ export class VNPlayer {
     a?.();
   }
 
-  private who(id: CharId, c: Career, expr?: Expression): { name: string; role: string; img: HTMLCanvasElement | null } {
-    if (id === 'narrador') return { name: '', role: '', img: null };
+  private who(id: CharId, c: Career, expr?: Expression, idx?: number): { name: string; role: string; img: HTMLCanvasElement | null } {
+    if (id === 'narrador' || (id === 'jugador' && idx === undefined)) return { name: '', role: '', img: null };
     const draw = (spec: Parameters<typeof pixelPortrait>[0]) => {
       const base = pixelPortrait({ ...spec, expr });
       const out = document.createElement('canvas');
@@ -71,18 +71,23 @@ export class VNPlayer {
       g.drawImage(base, 0, 0, 192, 192);
       return out;
     };
+    if (id === 'jugador' && idx !== undefined) {
+      const p = c.squad[idx];
+      const pos = { POR: c.gender === 'f' ? 'Portera' : 'Portero', DEF: 'Defensa', MED: 'Centrocampista', DEL: c.gender === 'f' ? 'Delantera' : 'Delantero' }[p.role];
+      return { name: p.nick ? `${p.name.split(' ')[0]} «${p.nick}»` : p.name, role: `${pos} · #${p.num} · ${p.age ?? ''} años`, img: draw({ look: p.look, kit: c.club.kit, traits: p.traits, num: p.num, seed: p.num * 13 }) };
+    }
     if (id === 'padel' || id === 'goleador') {
       const p = c.squad[SQUAD_INDEX[id]];
       const role = id === 'padel' ? 'Centrocampista' : c.gender === 'f' ? 'Delantera' : 'Delantero';
       return { name: p.nick ? `${p.name.split(' ')[0]} «${p.nick}»` : p.name, role: `${role} · #${p.num}`, img: draw({ look: p.look, kit: c.club.kit, traits: p.traits, num: p.num, seed: p.num * 13 }) };
     }
-    const n = id === 'mister' ? coachCharacter(c.coach.gender, c.coach.name) : NPC[id];
+    const n = id === 'mister' ? coachCharacter(c.coach.gender, c.coach.name) : NPC[id as keyof typeof NPC];
     return { name: n.name, role: n.role, img: draw({ look: n.look, kit: n.clothes, traits: [], num: 0, seed: id.length * 31 }) };
   }
 
   private show(line: VNLine, c: Career) {
     return new Promise<void>((resolve) => {
-      const w = this.who(line.who, c, line.expr);
+      const w = this.who(line.who, c, line.expr, line.idx);
       this.root.dataset.narrator = String(line.who === 'narrador');
       this.name.textContent = w.name;
       this.role.textContent = w.role;

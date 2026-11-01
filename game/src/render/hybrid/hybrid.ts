@@ -11,7 +11,7 @@ import { pixelPortrait } from '../pixel/portrait';
 import type { View } from '../pixel/sprites';
 import { BroadcastCamera, THREE_CAMERA_MODES } from './camera';
 import type { CameraMode, MatchRenderer, PerfInfo, ScreenPoint } from '../types';
-import { Billboard, blobShadow, composeCharacter, frameOf, nearestTexture, pixelCanvas, sheetStore, viewOf } from './billboard';
+import { Billboard, blobShadow, composeCharacter, flatDepth, frameOf, nearestTexture, pixelCanvas, sheetStore, viewOf } from './billboard';
 import { buildStadium, type Spot, type Stadium } from './stadium';
 import { WeatherFX } from './weather';
 
@@ -78,7 +78,7 @@ export class HybridRenderer implements MatchRenderer {
     const bg = bc.getContext('2d')!;
     bg.fillStyle = '#1a1226';
     bg.fillRect(2, 2, 1, 1);
-    this.ball = new THREE.Sprite(new THREE.SpriteMaterial({ map: nearestTexture(bc), alphaTest: 0.5 }));
+    this.ball = new THREE.Sprite(flatDepth(new THREE.SpriteMaterial({ map: nearestTexture(bc), alphaTest: 0.5 })));
     this.ball.scale.set(0.5, 0.5, 1);
     this.ball.center.set(0.5, 0.1);
     this.ballShadow = new THREE.Mesh(this.shadow.geo, this.shadow.mat);
@@ -205,7 +205,7 @@ export class HybridRenderer implements MatchRenderer {
       g.fillRect(0, 0, w, 1);
       g.fillRect(0, 10, w, 1);
       pixelText(g, txt, w / 2, 2, '#2a1d22', w);
-      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: nearestTexture(c), alphaTest: 0.5 }));
+      const s = new THREE.Sprite(flatDepth(new THREE.SpriteMaterial({ map: nearestTexture(c), alphaTest: 0.5 })));
       s.scale.set(w * 0.085, 11 * 0.085, 1);
       s.center.set(0.5, 0);
       s.position.set(abuela.spot.pos.x, abuela.spot.pos.y + 2.5, abuela.spot.pos.z);
@@ -228,7 +228,7 @@ export class HybridRenderer implements MatchRenderer {
       const pal = { '#': '#8a5a34' };
       const tA = nearestTexture(pixelCanvas(DOG_A, pal));
       const tB = nearestTexture(pixelCanvas(DOG_B, pal));
-      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tA, alphaTest: 0.5 }));
+      const s = new THREE.Sprite(flatDepth(new THREE.SpriteMaterial({ map: tA, alphaTest: 0.5 })));
       s.scale.set(1.3, 0.6, 1);
       s.center.set(0.5, 0);
       const shadow = new THREE.Mesh(this.shadow.geo, this.shadow.mat);
@@ -250,7 +250,7 @@ export class HybridRenderer implements MatchRenderer {
       }
       if (!wet || f.spot.kind === 'balcony' || f.spot.kind === 'bar' || rng.chance(0.25)) continue;
       const tex = nearestTexture(pixelCanvas(UMBRELLA, { '#': rng.pick(['#c8102e', '#2f6fd6', '#1d1d22', '#f2c94c', '#3fae5a', '#7d55d9']), '|': '#3a3a40' }));
-      const u = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, alphaTest: 0.5 }));
+      const u = new THREE.Sprite(flatDepth(new THREE.SpriteMaterial({ map: tex, alphaTest: 0.5 })));
       u.scale.set(1.6, 1.0, 1);
       u.center.set(0.5, 0);
       u.position.set(f.spot.pos.x, f.spot.pos.y + 1.75, f.spot.pos.z);
@@ -319,16 +319,21 @@ export class HybridRenderer implements MatchRenderer {
       const { view, flip } = viewOf(p, A.speed[i], this.views[i], this.flips[i]);
       this.views[i] = view;
       this.flips[i] = flip;
-      bb.setFrame(view === 'side' ? 'side' : view, frameOf(p, A.speed[i], A.phase[i], A.time), view === 'side' && flip);
+      bb.setFrame(view === 'side' ? 'side' : view, frameOf(p, A.speed[i], A.phase[i], A.time, sim), view === 'side' && flip);
       let lift = 0;
       if (p.action === 'celebrate' && (p.profile.look.celebration === 'arms' || p.profile.look.celebration === 'dance')) lift = Math.abs(Math.sin(A.time * 7)) * 0.35;
+      // salto de cabeza: sube y baja durante la acción (la sombra se queda en el suelo)
+      if (p.action === 'header' && p.actionDur > 0) lift = Math.sin((1 - p.actionT / p.actionDur) * Math.PI) * 0.55 * p.profile.look.height;
       bb.place(toX(A.x[i]), toZ(A.y[i]), 0, lift);
       bb.tint(this.weather.lightAt(toX(A.x[i]), toZ(A.y[i]), this.tint));
       bb.sprite.visible = bb.shadow.visible = !(p.sentOff && p.y < -4);
     }
     const bx = toX(A.bx);
     const bz = toZ(A.by);
-    this.ball.position.set(bx, A.bz * 1.6 + 0.05, bz);
+    // el portero con el balón en las manos: a la altura del pecho
+    const own = sim.ball.owner >= 0 ? sim.players[sim.ball.owner] : null;
+    const inHands = own && sim.isGK(own) && own.action === 'none' && sim.inOwnBox(own.team, own.x, own.y);
+    this.ball.position.set(bx, inHands ? 1.15 * own.profile.look.height : A.bz * 1.6 + 0.05, bz);
     (this.ball.material as THREE.SpriteMaterial).color.copy(this.weather.lightAt(bx, bz, this.tint));
     this.ballShadow.position.set(bx, 0.03, bz);
     if (this.selected >= 0) {

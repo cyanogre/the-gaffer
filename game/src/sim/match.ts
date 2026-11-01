@@ -563,6 +563,12 @@ export class MatchSim {
     const skill = ((gk ? A.keeping : A.tackling) - c.profile.attrs.dribbling) / 5;
     const pWin = sigmoid(skill + (slide ? 0.35 : 0) + (c.fatigue - d.fatigue) * 0.8 + helpers * 0.25 - 0.1);
     const pFoul = clamp((0.035 + (A.aggression / 20) * 0.07 + (slide ? 0.09 : 0) + (1 - A.tackling / 20) * 0.05) * md.foulMult, 0, 0.6);
+    // carrera a la par: en vez de meter el pie, choque de hombros (gana el que más pesa y más empuja)
+    const running = Math.hypot(d.vx, d.vy) > 2.5 && Math.hypot(c.vx, c.vy) > 2.5;
+    if (!slide && !gk && running && this.rng.next() < 0.4) {
+      this.shoulder(d, c, pFoul);
+      return;
+    }
     d.action = slide ? 'tackle' : 'poke';
     d.actionDur = d.actionT = slide ? 0.9 : 0.35;
     d.actionSide = 1;
@@ -602,6 +608,118 @@ export class MatchSim {
     } else {
       d.stunT = slide ? 1.0 : 0.35;
     }
+  }
+
+  /** Corpulencia para choques y saltos: altura, complexión y carácter. */
+  private heft(p: SimPlayer) {
+    const L = p.profile.look;
+    const body = L.body === 'stocky' ? 0.45 : L.body === 'belly' ? 0.25 : L.body === 'slim' ? -0.3 : 0;
+    return L.height * 4 + body + (p.profile.attrs.aggression / 20) * 0.8 - p.fatigue;
+  }
+
+  /** Choque de hombros en carrera. Si gana el que empuja, el balón queda suelto y el otro trastabilla (o cae). */
+  private shoulder(d: SimPlayer, c: SimPlayer, pFoul: number) {
+    d.action = 'push';
+    d.actionDur = d.actionT = 0.45;
+    if (this.rng.next() < pFoul * 0.8) {
+      this.emit('push', { team: d.team, a: d.idx, b: c.idx, value: 1 });
+      this.foul(d, c, false);
+      return;
+    }
+    const pWin = sigmoid((this.heft(d) - this.heft(c)) * 1.3 + (d.profile.attrs.tackling - c.profile.attrs.dribbling) / 10 - 0.15);
+    if (this.rng.next() < pWin) {
+      const knocked = this.rng.next() < 0.3;
+      this.emit('push', { team: d.team, a: d.idx, b: c.idx, value: 0, detail: knocked ? 'down' : 'stumble' });
+      this.stats.tackles[d.team]++;
+      const b = this.ball;
+      b.owner = -1;
+      b.flight = null;
+      b.vx = c.vx * 0.9 + this.rng.range(-1.5, 1.5);
+      b.vy = c.vy * 0.9 + this.rng.range(-1.5, 1.5);
+      b.lastTouch = c.idx;
+      b.lastTeam = c.team;
+      c.touchCd = 0.6;
+      c.stunT = knocked ? 0.9 : 0.4;
+      if (knocked) {
+        c.action = 'fall';
+        c.actionDur = c.actionT = 0.9;
+      }
+    } else {
+      // rebota contra el que lleva el balón
+      this.emit('push', { team: d.team, a: d.idx, b: c.idx, value: 0, detail: 'bounce' });
+      d.stunT = 0.45;
+    }
+  }
+
+  /**
+   * Balón por el aire a la altura de la cabeza: saltan los que llegan. Gana el más alto, mejor
+   * colocado y más agresivo (los críos lo tienen difícil contra adultos). Cerca de la portería
+   * rival es un remate; si no, un despeje o una prolongación.
+   */
+  private aerial(): boolean {
+    const b = this.ball;
+    const f = b.flight;
+    if (b.z < 1.75 || b.z > 3 || b.vz > 3) return false;
+    // si el portero puede atraparlo en su área, es suyo
+    for (const t of [0, 1] as TeamSide[]) {
+      const k = this.keeper(t);
+      if (!k.sentOff && k.stunT <= 0 && this.inOwnBox(t, b.x, b.y) && dist(k.x, k.y, b.x, b.y) < 1.8 && b.z < 2.7) return false;
+    }
+    const jumpers = this.players.filter((q) => {
+      if (q.sentOff || q.stunT > 0 || q.touchCd > 0 || this.isGK(q)) return false;
+      if (f && f.kind === 'shot' && f.from === q.idx) return false;
+      const reach = 1.8 * q.profile.look.height + 0.25 + (q.profile.attrs.pace / 20) * 0.4;
+      return b.z < reach && dist(q.x, q.y, b.x, b.y) < 1.35;
+    });
+    if (!jumpers.length) return false;
+    const score = (q: SimPlayer) => this.heft(q) + (q.profile.attrs.positioning / 20) * 1.5 + this.rng.gauss() * 0.7;
+    let w = jumpers[0];
+    let best = -1e9;
+    for (const q of jumpers) {
+      q.action = 'header';
+      q.actionDur = q.actionT = 0.55;
+      q.touchCd = 0.6;
+      const v = score(q);
+      if (v > best) {
+        best = v;
+        w = q;
+      }
+    }
+    const rivals = jumpers.filter((q) => q.team !== w.team);
+    if (rivals.length) {
+      // salto con empujón: a veces es falta, a veces el otro acaba en el suelo
+      const pFoul = 0.03 + (w.profile.attrs.aggression / 20) * 0.07;
+      if (this.rng.next() < pFoul) {
+        this.emit('push', { team: w.team, a: w.idx, b: rivals[0].idx, value: 1, detail: 'air' });
+        this.foul(w, rivals[0], false);
+        return true;
+      }
+      for (const r of rivals)
+        if (this.rng.next() < 0.15) {
+          r.action = 'fall';
+          r.actionDur = r.actionT = 0.9;
+          r.stunT = 0.7;
+          this.emit('push', { team: w.team, a: w.idx, b: r.idx, value: 0, detail: 'air' });
+        }
+    }
+    const gx = this.attackGoalX(w.team);
+    if (dist(w.x, w.y, gx, PITCH_W / 2) < 17 && this.toU(w.team, w.x) > 0.78) {
+      this.executeShot(w, true);
+      return true;
+    }
+    // despeje (en su campo) o prolongación hacia delante
+    const defending = this.toU(w.team, w.x) < 0.5;
+    const a = Math.atan2(0, this.dir(w.team)) + this.rng.range(-0.9, 0.9) + (defending ? Math.sign(w.y - PITCH_W / 2) * 0.3 : 0);
+    const sp = defending ? this.rng.range(10, 14) : this.rng.range(6, 10);
+    b.owner = -1;
+    b.flight = null;
+    b.vx = Math.cos(a) * sp;
+    b.vy = Math.sin(a) * sp;
+    b.vz = defending ? this.rng.range(3.5, 6) : this.rng.range(1.5, 3.5);
+    b.lastTouch = w.idx;
+    b.lastTeam = w.team;
+    this.emit('header', { team: w.team, a: w.idx, b: rivals[0]?.idx ?? -1, detail: defending ? 'clear' : 'flick' });
+    return true;
   }
 
   private dive(c: SimPlayer, d: SimPlayer) {
@@ -708,6 +826,7 @@ export class MatchSim {
   private resolveTouches() {
     const b = this.ball;
     if (b.owner >= 0) return;
+    if (this.aerial()) return;
     const sp = Math.hypot(b.vx, b.vy);
     const f = b.flight;
     const cands = this.players
@@ -904,8 +1023,9 @@ export class MatchSim {
     return u > 0.5 && u > this.toU(q.team, this.ball.x) && u > this.offsideLineU(q.team) + 0.004;
   }
 
-  executeShot(p: SimPlayer) {
+  executeShot(p: SimPlayer, header = false) {
     const b = this.ball;
+    const z0 = header ? clamp(b.z, 1.4, 2.8) : 0.15;
     const A = p.profile.attrs;
     const m = modsOf(p);
     const gx = this.attackGoalX(p.team);
@@ -915,16 +1035,17 @@ export class MatchSim {
     const aimY = gk.y < PITCH_W / 2 ? GOAL_Y1 - margin : GOAL_Y0 + margin;
     const d = dist(p.x, p.y, gx, aimY);
     const pressure = Math.exp(-this.nearestOpponentDist(p.team, p.x, p.y) / 1.5);
-    const sig = (0.35 + d * (0.035 + (1 - A.shooting / 20) * 0.085 + (pressure * 0.06) / m.composure)) * (1 + p.fatigue * 0.5) * this.phys.error;
+    const sig = (0.35 + d * (0.035 + (1 - A.shooting / 20) * 0.085 + (pressure * 0.06) / m.composure)) * (1 + p.fatigue * 0.5) * this.phys.error * (header ? 1.35 : 1);
     const yL = aimY + this.rng.gauss() * sig;
-    const zL = this.rng.range(0.3, 1.9) + this.rng.gauss() * sig * 0.55;
-    const vh = 19 + (A.shooting / 20) * 9 + this.rng.next() * 2 - (d < 10 ? 3 : 0);
+    // de cabeza se remata hacia abajo y con menos fuerza
+    const zL = (header ? this.rng.range(0.1, 1.4) : this.rng.range(0.3, 1.9)) + this.rng.gauss() * sig * 0.55;
+    const vh = header ? 11 + (A.shooting / 20) * 5 + this.rng.next() * 2 : 19 + (A.shooting / 20) * 9 + this.rng.next() * 2 - (d < 10 ? 3 : 0);
     const T = d / vh;
     const a = Math.atan2(yL - p.y, gx - p.x);
     b.vx = Math.cos(a) * vh;
     b.vy = Math.sin(a) * vh;
-    b.vz = (zL + 0.5 * GRAVITY * T * T) / T;
-    b.z = 0.15;
+    b.vz = (zL - z0 + 0.5 * GRAVITY * T * T) / T;
+    b.z = z0;
     b.owner = -1;
     const onTarget = yL > GOAL_Y0 + 0.1 && yL < GOAL_Y1 - 0.1 && zL < GOAL_H - 0.05;
     // Un defensor en la trayectoria puede tapar el disparo.
@@ -946,7 +1067,7 @@ export class MatchSim {
         b.vz = this.rng.range(0, 3);
         b.lastTouch = o.idx;
         b.lastTeam = o.team;
-        p.action = 'kick';
+        p.action = header ? 'header' : 'kick';
         p.actionDur = p.actionT = 0.4;
         p.touchCd = 0.5;
         o.touchCd = 0.4;
@@ -959,9 +1080,9 @@ export class MatchSim {
     b.lastTeam = p.team;
     this.stats.shots[p.team]++;
     if (onTarget) this.stats.onTarget[p.team]++;
-    this.emit('shot', { team: p.team, a: p.idx, value: d, detail: onTarget ? 'on' : 'off' });
-    p.action = 'kick';
-    p.actionDur = p.actionT = 0.4;
+    this.emit('shot', { team: p.team, a: p.idx, value: d, detail: header ? (onTarget ? 'header-on' : 'header-off') : onTarget ? 'on' : 'off' });
+    p.action = header ? 'header' : 'kick';
+    p.actionDur = p.actionT = header ? 0.55 : 0.4;
     p.touchCd = 0.5;
     this.restrict = null;
   }

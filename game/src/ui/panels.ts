@@ -44,6 +44,9 @@ function crest(kit: Parameters<typeof drawCrest>[1], letter: string) {
   return c;
 }
 
+/** Las manías de cada uno se conocen al presentarte a la plantilla (en el Barriobajo). */
+const known = (c: Career) => c.club.id !== 'barrio' || !!c.flags.metSquad;
+
 export function playerCard(c: Career, p: SquadPlayer) {
   const A = p.attrs;
   const m = c.mods[p.id] ?? {};
@@ -61,7 +64,11 @@ export function playerCard(c: Career, p: SquadPlayer) {
         {},
         h('b', { text: `#${p.num} ${nameOf(p)}` }),
         h('p', { class: 'note', text: `${ROLE_ES[p.role]} · ${p.age ?? '?'} años · ${p.goals} goles en ${p.apps} partidos` }),
-        h('div', { class: 'row', style: 'flex-wrap:wrap;gap:4px;margin-top:4px' }, ...p.traits.map((t) => h('span', { class: 'pill', title: TRAITS[t].desc, text: traitLabel(t, p.look.gender) }))),
+        h(
+          'div',
+          { class: 'row', style: 'flex-wrap:wrap;gap:4px;margin-top:4px' },
+          ...(known(c) ? p.traits.map((t) => h('span', { class: 'pill', title: TRAITS[t].desc, text: traitLabel(t, p.look.gender) })) : [h('span', { class: 'pill', text: 'Aún no lo conoces' })]),
+        ),
         h('div', { class: 'row', style: 'margin-top:6px' }, h('small', { class: 'note', text: 'Carga' }), h('i', { class: 'bar load' }, h('i', { style: `width:${Math.round(p.load * 100)}%`, 'data-tier': p.load > 0.35 ? 'lo' : p.load > 0.15 ? 'mid' : 'hi' }))),
       ),
     ),
@@ -74,7 +81,7 @@ export function playerCard(c: Career, p: SquadPlayer) {
         return h('div', {}, h('dt', { text: short[k] ?? attrLabel(k) }), h('dd', { 'data-tier': tier(v), 'data-mod': mod ? `${mod > 0 ? '+' : ''}${mod}` : undefined, text: String(v) }));
       }),
     ),
-    h('p', { class: 'quirk', text: p.quirk }),
+    h('p', { class: 'quirk', text: known(c) ? p.quirk : 'Pasa por El Barrizal a conocer a la plantilla.' }),
     c.modNotes[p.id] ? h('p', { class: 'note', text: `Esta semana: ${c.modNotes[p.id]}` }) : null,
   );
 }

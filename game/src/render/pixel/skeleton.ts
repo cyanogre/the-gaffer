@@ -39,6 +39,18 @@ export const LEG_POSES: Record<string, Pair> = {
   runC: [REACH, PUSH],
   runD: [PASS_SUPPORT, PASS_FREE],
   kick: [L([0, 0], [-8, 0]), L([72, 0], [82, 0])],
+  // salto de cabeza: rodillas recogidas (el juego además eleva al jugador)
+  jump: [L([38, 4], [-55, 0]), L([22, 4], [-80, 0])],
+  // entrada de pie: la pierna cercana se estira a ras de suelo hacia el balón
+  lunge: [L([-12, 0], [-48, 0]), L([58, 0], [44, 0])],
+  // choque de hombros: apoyo abierto, la de atrás empuja
+  brace: [L([-30, 0], [-42, 0]), L([24, 0], [-2, 0])],
+  // de rodillas (levantándose): una rodilla en el suelo, el otro pie plantado delante
+  kneel: [L([0, 0], [-90, 0]), L([82, 0], [0, 0])],
+  // segada (tumbado boca arriba al componer): la de apoyo estirada, la otra con la rodilla arriba
+  slide: [L([55, 0], [-35, 0]), L([0, 0], [2, 0])],
+  // caída: piernas por el aire
+  fall: [L([35, 0], [-10, 0]), L([10, 0], [-40, 0])],
 };
 
 // ── brazos (brazo 5 px, antebrazo con mano 5 px)
@@ -55,6 +67,20 @@ export const ARM_POSES: Record<string, Pair> = {
   out: [L([18, 84], [24, 90]), L([18, 84], [24, 90])],
   // mano a la oreja: el brazo sube y el antebrazo vuelve hacia la cabeza
   ear: [L([0, 122], [0, 212]), HANG],
+  // brazos abiertos para impulsarse y protegerse en el salto
+  jump: [L([10, 112], [20, 140]), L([10, 112], [20, 140])],
+  // empujón: el brazo cercano por delante con el codo fuera
+  shove: [L([-30, 10], [10, 10]), L([62, 25], [78, 20])],
+  // saque de banda: balón por detrás de la cabeza con las dos manos
+  throw: [L([165, 4], [205, -6]), L([165, 4], [205, -6])],
+  // portero con el balón en las manos, a la altura del pecho
+  catch: [L([22, 6], [100, -14]), L([22, 6], [100, -14])],
+  // segada: una mano al suelo (detrás) y la otra arriba
+  slide: [L([-80, 0], [-105, 0]), L([60, 0], [95, 0])],
+  // levantándose: mano en la rodilla
+  kneel: [L([-6, 10], [12, 6]), L([40, 6], [64, 6])],
+  // equilibrio al chutar o meter el pie
+  balance: [L([30, 70], [40, 80]), L([-35, 40], [-10, 50])],
 };
 
 const D = Math.PI / 180;

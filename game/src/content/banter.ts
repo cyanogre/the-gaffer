@@ -82,8 +82,25 @@ export class Banter {
         const flavor = a.team === 0 ? pick([' La grada del Bar Manolo se viene arriba.', ' Hasta el utillero lo celebra.', ' Manolo invita a una ronda. Dice.']) : pick([' Silencio en el barrio.', ' Alguien en la grada culpa al árbitro por si acaso.']);
         return [{ feed: `¡GOOOL de ${n(a)}!${assist}${flavor}`, tone: 'goal', bubbles: [{ idx: a.idx, text: pick(CELEBRATION[a.profile.look.celebration]) }] }, ...shout];
       }
+      case 'header': {
+        if (!a) return [];
+        const loser = b && b.team !== a.team ? b : undefined;
+        const small = loser && (loser.profile.look.youth ?? 0) > 0.4 && !(a.profile.look.youth ?? 0);
+        if (small && this.throttle('header-kid', sim.t, 25)) return [{ feed: `${n(a)} gana el salto por una cabeza. Literalmente: ${n(loser)} le llega por el hombro.`, tone: 'fun' }];
+        if (this.throttle('header', sim.t, 18)) return [{ feed: e.detail === 'clear' ? `Despeje de cabeza de ${n(a)}.` : `${n(a)} la prolonga de cabeza.`, tone: 'info' }];
+        return [];
+      }
+      case 'push': {
+        if (!a || !b) return [];
+        if (e.value === 1) return [{ bubbles: [{ idx: b.idx, text: pick(['¡Me ha empujado!', '¡Árbitro, eso es falta!']) }] }];
+        if (e.detail === 'down') return [{ feed: this.throttle('push', sim.t, 15) ? `Choque de hombros: ${n(a)} se lleva por delante a ${n(b)}.` : undefined, tone: 'fun', bubbles: [{ idx: b.idx, text: pick(['¡Ay!', '¡Que no es rugby!']) }] }];
+        if (e.detail === 'bounce') return this.throttle('bounce', sim.t, 20) ? [{ bubbles: [{ idx: a.idx, text: pick(['¡Es una pared!', 'Uf, qué duro.']) }] }] : [];
+        if (e.detail === 'air' && this.throttle('air', sim.t, 20)) return [{ bubbles: [{ idx: b.idx, text: pick(['¡Me ha usado de escalera!', '¡Codazo!']) }] }];
+        return [];
+      }
       case 'shot':
         if (!a) return [];
+        if (e.detail?.startsWith('header') && this.throttle('header-shot', sim.t, 10)) return [{ feed: `¡Remate de cabeza de ${n(a)}!`, tone: 'info' }];
         if (has(a, 'goleadorNato') && (e.value ?? 0) > 22 && this.throttle('nato-far', sim.t, 20)) {
           return [{ feed: `${n(a)} lo intenta desde ${Math.round(e.value ?? 0)} metros. Fe no le falta.`, tone: 'fun' }];
         }

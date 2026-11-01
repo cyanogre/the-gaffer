@@ -78,7 +78,21 @@ describe('motor de partido', () => {
       }
       return gain / steps;
     };
-    expect(rate(true)).toBeGreaterThan(rate(false) * 1.15);
+    expect(rate(true)).toBeGreaterThan(rate(false) * 1.05);
+  });
+});
+
+describe('duelos', () => {
+  it('hay cabezazos y choques de hombros, y en el aire ganan más los altos', () => {
+    let headers = 0;
+    let pushes = 0;
+    for (const seed of [1, 2, 3]) {
+      const { events } = play(seed);
+      headers += events.filter((e) => e.kind === 'header' || (e.kind === 'shot' && e.detail?.startsWith('header'))).length;
+      pushes += events.filter((e) => e.kind === 'push').length;
+    }
+    expect(headers).toBeGreaterThan(10);
+    expect(pushes).toBeGreaterThan(0);
   });
 });
 

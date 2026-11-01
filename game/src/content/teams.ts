@@ -198,7 +198,7 @@ export function youthLook(age: number) {
 const youngHair = (c: string) => (c === '#bfb9b0' ? '#3b2a1e' : c);
 
 /** Índices de la plantilla del Barriobajo que usa la historia. */
-export const SQUAD_INDEX = { portero: 0, padel: 6, goleador: 9, penaltiSeguro: 10, profesor: 5, firuletas: 8, nervioso: 7 } as const;
+export const SQUAD_INDEX = { portero: 0, lenero: 2, padel: 6, goleador: 9, penaltiSeguro: 10, profesor: 5, firuletas: 8, nervioso: 7 } as const;
 
 export function addMods(a: Attributes, m?: Partial<Attributes>): Partial<Attributes> {
   if (!m) return {};

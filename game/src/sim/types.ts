@@ -70,7 +70,7 @@ export interface TeamProfile {
 
 /** -1 juega simple, 0 normal, 1 libertad creativa. */
 export type Freedom = -1 | 0 | 1;
-export type Action = 'none' | 'kick' | 'poke' | 'tackle' | 'celebrate' | 'dive' | 'fall';
+export type Action = 'none' | 'kick' | 'poke' | 'tackle' | 'celebrate' | 'dive' | 'fall' | 'header' | 'push';
 
 export interface SimPlayer {
   idx: number;
@@ -208,6 +208,8 @@ export type MatchEventKind =
   | 'bobble'
   | 'slip'
   | 'sub'
+  | 'header'
+  | 'push'
   | 'fulltime';
 
 export interface MatchEvent {

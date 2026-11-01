@@ -16,7 +16,9 @@ export function loadGame(): Career | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const c = JSON.parse(raw) as Career;
-    return c && c.v === 2 ? c : null;
+    if (!c || c.v !== 2) return null;
+    c.guide ??= -1;
+    return c;
   } catch {
     return null;
   }

@@ -13,7 +13,7 @@ export const SW = 48;
 export const SH = 48;
 export const VIEWS = ['front', 'back', 'side'] as const;
 export type View = (typeof VIEWS)[number];
-export const FRAMES = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'kick', 'up0', 'up1', 'out', 'ear', 'slideU', 'fallU', 'diveU'] as const;
+export const FRAMES = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'kick', 'up0', 'up1', 'out', 'ear', 'slideU', 'fallU', 'diveU', 'poke', 'head', 'push', 'kneel', 'throw', 'catch'] as const;
 export type SheetFrame = (typeof FRAMES)[number];
 export type FrameId = Exclude<SheetFrame, 'slideU' | 'fallU' | 'diveU'> | 'slide' | 'fall' | 'dive';
 
@@ -82,8 +82,8 @@ interface VariantSet {
   accessory: Accessory;
 }
 
-type Legs = 'stand' | 'liftL' | 'liftR' | 'runA' | 'runB' | 'runC' | 'runD' | 'kick';
-type Arms = 'down' | 'swingL' | 'swingR' | 'up' | 'up2' | 'out' | 'ear';
+type Legs = 'stand' | 'liftL' | 'liftR' | 'runA' | 'runB' | 'runC' | 'runD' | 'kick' | 'jump' | 'lunge' | 'brace' | 'kneel' | 'slide' | 'fall';
+type Arms = 'down' | 'swingL' | 'swingR' | 'up' | 'up2' | 'out' | 'ear' | 'jump' | 'shove' | 'throw' | 'catch' | 'slide' | 'kneel' | 'balance';
 interface Spec {
   view: View;
   legs: Legs;
@@ -105,6 +105,10 @@ const SPECS: Partial<Record<View, Partial<Record<SheetFrame, Omit<Spec, 'view'>>
     up1: { legs: 'stand', arms: 'up2', bob: 1, shout: true },
     out: { legs: 'stand', arms: 'out', bob: 0, shout: true },
     ear: { legs: 'stand', arms: 'ear', bob: 0, shout: true },
+    head: { legs: 'jump', arms: 'jump', bob: 0, shout: false },
+    kneel: { legs: 'kneel', arms: 'kneel', bob: 7, shout: false },
+    throw: { legs: 'stand', arms: 'throw', bob: 0, shout: false },
+    catch: { legs: 'stand', arms: 'catch', bob: 0, shout: false },
   },
   back: {
     idle0: { legs: 'stand', arms: 'down', bob: 0, shout: false },
@@ -113,6 +117,9 @@ const SPECS: Partial<Record<View, Partial<Record<SheetFrame, Omit<Spec, 'view'>>
     run1: { legs: 'stand', arms: 'down', bob: 1, shout: false },
     run2: { legs: 'liftR', arms: 'swingR', bob: 0, shout: false },
     run3: { legs: 'stand', arms: 'down', bob: 1, shout: false },
+    head: { legs: 'jump', arms: 'jump', bob: 0, shout: false },
+    kneel: { legs: 'kneel', arms: 'kneel', bob: 7, shout: false },
+    throw: { legs: 'stand', arms: 'throw', bob: 0, shout: false },
   },
   side: {
     idle0: { legs: 'stand', arms: 'down', bob: 0, shout: false },
@@ -121,10 +128,17 @@ const SPECS: Partial<Record<View, Partial<Record<SheetFrame, Omit<Spec, 'view'>>
     run1: { legs: 'runB', arms: 'down', bob: 1, shout: false },
     run2: { legs: 'runC', arms: 'swingL', bob: 0, shout: false },
     run3: { legs: 'runD', arms: 'down', bob: 1, shout: false },
-    kick: { legs: 'kick', arms: 'out', bob: 0, shout: false },
-    slideU: { legs: 'kick', arms: 'up', bob: 0, shout: false },
-    fallU: { legs: 'runA', arms: 'up2', bob: 0, shout: true },
+    kick: { legs: 'kick', arms: 'balance', bob: 0, shout: false },
+    // se dibujan de pie y el juego las tumba 90º al componer
+    slideU: { legs: 'slide', arms: 'slide', bob: 0, shout: false },
+    fallU: { legs: 'fall', arms: 'up2', bob: 0, shout: true },
     diveU: { legs: 'stand', arms: 'up', bob: 0, shout: false },
+    poke: { legs: 'lunge', arms: 'balance', bob: 1, shout: false },
+    head: { legs: 'jump', arms: 'jump', bob: 0, shout: false },
+    push: { legs: 'brace', arms: 'shove', bob: 1, shout: true },
+    kneel: { legs: 'kneel', arms: 'kneel', bob: 7, shout: false },
+    throw: { legs: 'stand', arms: 'throw', bob: 0, shout: false },
+    catch: { legs: 'stand', arms: 'catch', bob: 0, shout: false },
   },
 };
 

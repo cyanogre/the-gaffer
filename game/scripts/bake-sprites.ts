@@ -4,15 +4,25 @@
  * cualquier PNG se puede retocar a mano y el juego usará la versión retocada.
  *
  *   npm run bake:sprites            → solo crea las hojas que no existen
- *   npm run bake:sprites -- --force → sobrescribe todas (¡pisa los retoques!)
+ *   npm run bake:sprites -- --force → regenera las que siguen tal cual las dejó el generador;
+ *                                     las retocadas a mano se respetan (y se avisa)
+ *   npm run bake:sprites -- --force --pisar-retoques → regenera todas, también las retocadas
+ *
+ * Para saber si una PNG está retocada se guarda la huella (sha1) de lo que generó el script
+ * en assets/sprites/generadas.json.
  */
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { FIXED, FRAMES, KEY, LAYER_ORDER, SH, SW, VIEWS, bakeSheet, layerVariants } from '../src/render/pixel/sprites';
 
 const OUT = join(process.cwd(), 'assets', 'sprites');
 const force = process.argv.includes('--force');
+const overwriteEdits = process.argv.includes('--pisar-retoques');
+const HASHES = join(OUT, 'generadas.json');
+const hashes: Record<string, string> = existsSync(HASHES) ? JSON.parse(readFileSync(HASHES, 'utf8')) : {};
+const sha1 = (b: Buffer) => createHash('sha1').update(b).digest('hex');
 
 const CRC = new Uint32Array(256).map((_, n) => {
   let c = n;
@@ -61,19 +71,37 @@ function write(path: string, buf: Buffer | string) {
 
 let made = 0;
 let kept = 0;
+const protectedEdits: string[] = [];
 const manifest: Record<string, string[]> = {};
 for (const layer of LAYER_ORDER) {
   manifest[layer] = layerVariants(layer);
   for (const variant of layerVariants(layer)) {
+    const key = `${layer}/${variant}`;
     const path = join(OUT, layer, `${variant}.png`);
-    if (existsSync(path) && !force) {
-      kept++;
-      continue;
+    if (existsSync(path)) {
+      if (!force) {
+        kept++;
+        continue;
+      }
+      const current = sha1(readFileSync(path));
+      if (hashes[key] !== current && !overwriteEdits) {
+        // retocada a mano (o de antes de que existiera el registro): no se toca
+        protectedEdits.push(key);
+        kept++;
+        continue;
+      }
     }
     const sheet = bakeSheet(layer, variant);
-    write(path, png(sheet.w, sheet.h, toRgba(sheet.data, sheet.w, sheet.h)));
+    const buf = png(sheet.w, sheet.h, toRgba(sheet.data, sheet.w, sheet.h));
+    write(path, buf);
+    hashes[key] = sha1(buf);
     made++;
   }
+}
+write(HASHES, JSON.stringify(hashes, null, 1));
+if (protectedEdits.length) {
+  console.log(`Retocadas a mano (no se han tocado): ${protectedEdits.join(', ')}`);
+  console.log('Si el generador ha añadido fotogramas nuevos, esas hojas no los tendrán: pásales los retoques a mano o usa --pisar-retoques.');
 }
 
 // Muestrario de colores clave (para pintar con la paleta correcta).

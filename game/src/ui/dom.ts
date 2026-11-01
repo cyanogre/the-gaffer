@@ -66,6 +66,9 @@ export class Sheet {
   private renderOne: (() => Kid[]) | null = null;
   kind = '';
   onClose: (() => void) | null = null;
+  /** Avisos para la guía: pestaña elegida y hoja cerrada. */
+  onTab: ((id: string) => void) | null = null;
+  onAnyClose: (() => void) | null = null;
 
   constructor() {
     $('sheetClose').onclick = () => this.close();
@@ -96,6 +99,7 @@ export class Sheet {
   select(tab: string) {
     this.active = tab;
     this.refresh();
+    this.onTab?.(tab);
   }
 
   refresh() {
@@ -118,6 +122,7 @@ export class Sheet {
     const cb = this.onClose;
     this.onClose = null;
     cb?.();
+    this.onAnyClose?.();
   }
 }
 

@@ -16,6 +16,7 @@ import { $, Sheet, card, h, portrait, toast } from './ui/dom';
 import { MatchScreen } from './ui/match';
 import { clubTabs, coachPanel } from './ui/panels';
 import { iconSvg } from './ui/pixelart';
+import { Guide } from './ui/guide';
 import { VNPlayer } from './ui/vn';
 
 /**
@@ -33,6 +34,19 @@ let career: Career | null = null;
 let match: MatchScreen | null = null;
 let busy = false;
 const panelState = { slot: -1, focus: null as string | null };
+const guide = new Guide(app, () => career, (id) => hotspotEls.get(id));
+guide.onChange = () => {
+  save();
+  refresh();
+};
+sheet.onTab = (id) => guide.notify({ kind: 'tab', id });
+guide.onHintDone = () => {
+  if (match?.paused) {
+    match.paused = false;
+    $('btnPause').querySelector('b')!.textContent = 'Pausa';
+  }
+};
+sheet.onAnyClose = () => guide.notify({ kind: 'close' });
 
 document.querySelectorAll<HTMLElement>('[data-icon]').forEach((el) => (el.innerHTML = iconSvg(el.dataset.icon!)));
 
@@ -106,6 +120,7 @@ async function goTo(where: LocationId) {
   loc.setCoach(me.look, me.clothes);
   refresh();
   save();
+  guide.notify({ kind: 'location', id: where });
   await playAuto();
 }
 
@@ -131,6 +146,7 @@ async function playScene(s: VNScene) {
   loc?.setState(c);
   refresh();
   save();
+  guide.notify({ kind: 'scene', id: s.id });
 }
 
 function refresh() {
@@ -149,6 +165,10 @@ function refresh() {
   // domingo: botón del partido
   const sunday = c.day >= MATCH_DAY && c.status === 'playing';
   $('btnMatch').hidden = !sunday;
+  if (sunday && !c.flags.hintSunday && c.guide < 0) {
+    c.flags.hintSunday = true;
+    guide.showHint('¡Domingo de partido! Si quieres, revisa el once en «Club». Cuando estés, pulsa «¡A jugar!»: primero la charla en el vestuario y luego, al campo.', '#btnMatch');
+  }
   if (sunday) $('btnMatchSub').textContent = `${c.club.short} vs ${rivalOf(c).short} · ${weatherOf(c)[0] === 'clear' ? 'despejado' : WX[weatherOf(c)[0]]}`;
 }
 
@@ -268,6 +288,7 @@ async function useHotspot(id: string) {
     save();
     await card(out.title, out.lines, { tone: out.tone });
     busy = false;
+    guide.notify({ kind: 'action', id: a.id });
     if (out.dayEnded) await newDay();
     refresh();
   });
@@ -301,6 +322,7 @@ function openClub(tab?: string) {
   sheet.open('club', career!.club.name, clubTabs({ career: () => career!, changed: () => (sheet.refresh(), save(), refresh()) }, panelState), tab);
   sheet.onClose = () => renderDock();
   renderDock();
+  guide.notify({ kind: 'sheet', id: 'club' });
 }
 
 // ═════════════════════════ domingo ═════════════════════════
@@ -330,6 +352,12 @@ function startMatch() {
   match = new MatchScreen(c, stage, sheet, () => vn.open || !$('result').hidden);
   match.onFinish = (o) => finishMatch(o);
   resize();
+  if (!c.flags.hintMatch) {
+    c.flags.hintMatch = true;
+    guide.showHint('El partido se juega solo, pero tú mandas: «Órdenes» cambia la táctica en vivo y «Cambios» mete a los del banquillo. Toca a un jugador para ver su ficha.', '#btnOrders');
+    match.paused = true;
+    $('btnPause').querySelector('b')!.textContent = 'Seguir';
+  }
 }
 
 async function finishMatch(o: MatchOutcome) {
@@ -399,6 +427,7 @@ let last = performance.now();
 function frame(now: number) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
+  guide.frame(vn.open || !$('result').hidden || app.dataset.screen === 'title' || busy);
   if (app.dataset.screen === 'match' && match) match.frame(dt);
   else if (loc) {
     world.render(dt);

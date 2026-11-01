@@ -21,7 +21,7 @@ Simulador de gestión y dirección técnica de fútbol: mezcla de Football Manag
 - `npm run dev` — el juego en local.
 - `npm test` — pruebas del motor y banco de equilibrado.
 - `npm run typecheck`.
-- `npm run bake:sprites` — genera las hojas de sprites que falten (`-- --force` las regenera y pisa retoques).
+- `npm run bake:sprites` — genera las hojas de sprites que falten. `-- --force` regenera las no retocadas (respeta las PNG retocadas a mano); `-- --force --pisar-retoques` las pisa todas.
 - `npm run build:artifact` — página autocontenida en `artifact/the-gaffer.html`.
 
 ## Reglas de trabajo
