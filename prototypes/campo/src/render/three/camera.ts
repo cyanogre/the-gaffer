@@ -42,9 +42,9 @@ export class BroadcastCamera {
       look.set(fx + dir * 4, 1, fz);
       fov = 44;
     } else {
-      desired.set(fx * 0.95, 15.5, 33 + fz * 0.3);
-      look.set(fx, 0, fz * 0.7 - 2);
-      fov = 32;
+      desired.set(fx * 0.9, 17, 37 + fz * 0.25);
+      look.set(fx * 0.95, 0, fz * 0.55 - 6);
+      fov = 34;
     }
     this.punch = Math.max(0, this.punch - dt * 0.8);
     fov -= this.punch * 6;

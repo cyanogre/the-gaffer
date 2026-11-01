@@ -25,9 +25,19 @@ const CELEBRATION: Record<string, string[]> = {
   ear: ['¿Qué decíais?', 'No os oigo…'],
 };
 
+export interface BanterContext {
+  sponsorShout: boolean;
+  manolo: 'cheer' | 'sulk' | 'normal';
+}
+
 export class Banter {
   private lastFeedAt: Record<string, number> = {};
   private ambientAt = 8;
+  ctx: BanterContext = { sponsorShout: false, manolo: 'normal' };
+
+  thunder(): Line[] {
+    return [{ feed: '¡Trueno! La abuela Mari se santigua. Dos veces, por si acaso.', tone: 'fun' }];
+  }
 
   private throttle(key: string, t: number, gap: number) {
     if ((this.lastFeedAt[key] ?? -99) + gap > t) return false;
@@ -48,6 +58,11 @@ export class Banter {
         return [];
       case 'goal': {
         if (!a) return [];
+        const shout: Line[] = [];
+        if (a.team === 0 && this.ctx.sponsorShout) {
+          const mate = sim.players.find((p) => p.team === 0 && p.idx !== a.idx && !p.sentOff && Math.hypot(p.x - a.x, p.y - a.y) < 30);
+          shout.push({ feed: 'Cumplen con el patrocinador: «¡VIVA EL BAR MANOLO!». Manolo llora detrás de la barra.', tone: 'fun', bubbles: mate ? [{ idx: mate.idx, text: '¡VIVA EL BAR MANOLO!', delay: 1.2 }] : [] });
+        }
         if (e.detail === 'og') {
           return [{ feed: `¡Gol en propia puerta de ${n(a)}! Lo celebra el rival y, en silencio, su suegro.`, tone: 'goal', bubbles: [{ idx: a.idx, text: '¿Pero qué he hecho?' }] }];
         }
@@ -55,11 +70,11 @@ export class Banter {
           const d = a.profile.drought ?? 0;
           const feed = d > 0 ? `¡GOOOL de ${n(a)}! Se acaba una sequía de ${d} partidos. Ya está pidiendo una estatua.` : `¡GOOOL de ${n(a)}! Dice que lo había avisado. Nadie lo recuerda.`;
           a.profile.drought = 0;
-          return [{ feed, tone: 'goal', bubbles: [{ idx: a.idx, text: '¡Os lo dije! ¡NATO!' }] }];
+          return [{ feed, tone: 'goal', bubbles: [{ idx: a.idx, text: a.profile.look.gender === 'f' ? '¡Os lo dije! ¡NATA!' : '¡Os lo dije! ¡NATO!' }] }, ...shout];
         }
         const assist = b ? ` Pase de ${n(b)}.` : '';
         const flavor = a.team === 0 ? pick([' La grada del Bar Manolo se viene arriba.', ' Hasta el utillero lo celebra.', ' Manolo invita a una ronda. Dice.']) : pick([' Silencio en el barrio.', ' Alguien en la grada culpa al árbitro por si acaso.']);
-        return [{ feed: `¡GOOOL de ${n(a)}!${assist}${flavor}`, tone: 'goal', bubbles: [{ idx: a.idx, text: pick(CELEBRATION[a.profile.look.celebration]) }] }];
+        return [{ feed: `¡GOOOL de ${n(a)}!${assist}${flavor}`, tone: 'goal', bubbles: [{ idx: a.idx, text: pick(CELEBRATION[a.profile.look.celebration]) }] }, ...shout];
       }
       case 'shot':
         if (!a) return [];
@@ -80,6 +95,12 @@ export class Banter {
         const feed = belly ? `¡${n(a)} vuela! Bueno, se desplaza lateralmente con mucha dignidad.` : `¡Paradón de ${n(a)}!`;
         return [{ feed, tone: 'info', bubbles: b ? [{ idx: b.idx, text: pick(['¡Noooo!', '¿Cómo la ha sacado?']) }] : [] }];
       }
+      case 'bobble':
+        if (sim.conditions.pitch < 0.4 && this.throttle('bobble', sim.t, 35)) return [{ feed: pick(['El balón bota en una piedra. El Barrizal también juega.', 'Socavón traicionero: el balón sale disparado hacia donde nadie esperaba.', 'El balón tropieza con un hueso de aceituna. Herencia del Bar Manolo.']), tone: 'fun' }];
+        return [];
+      case 'slip':
+        if (!a) return [];
+        return [{ feed: this.throttle('slip', sim.t, 15) ? `${n(a)} resbala ${sim.conditions.weather === 'snow' ? 'en la nieve' : 'en el barro'} y acaba ${a.profile.look.gender === 'f' ? 'sentada' : 'sentado'}.` : undefined, tone: 'fun', bubbles: [{ idx: a.idx, text: pick(['¡Uy!', '¡Mi chándal!', 'Esto no cuenta.']) }] }];
       case 'block':
         if (a && rng.chance(0.4)) return [{ bubbles: [{ idx: a.idx, text: pick(['¡Por aquí no pasa!', '¡Con la cara no!']) }] }];
         return [];

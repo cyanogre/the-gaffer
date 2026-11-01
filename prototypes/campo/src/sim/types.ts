@@ -55,6 +55,8 @@ export interface TeamProfile {
   players: PlayerProfile[];
   tactics: Tactics;
   motto: string;
+  /** Id del jugador que tira los penaltis (si el míster lo ha decidido). */
+  penaltyTaker?: string;
 }
 
 /** -1 juega simple, 0 normal, 1 libertad creativa. */
@@ -194,6 +196,8 @@ export type MatchEventKind =
   | 'intercept'
   | 'tactic'
   | 'block'
+  | 'bobble'
+  | 'slip'
   | 'fulltime';
 
 export interface MatchEvent {
@@ -209,5 +213,6 @@ export interface MatchEvent {
 
 export type Command =
   | { kind: 'tactics'; team: TeamSide; patch: Partial<Tactics> }
+  | { kind: 'conditions'; value: import('./conditions').MatchConditions }
   | { kind: 'signal'; team: TeamSide; signal: SignalKind }
   | { kind: 'freedom'; player: number; value: Freedom };

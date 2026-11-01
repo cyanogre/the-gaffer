@@ -56,7 +56,7 @@ export class SheetStore {
 /** La complexión "normal" femenina usa el patrón de hombros estrechos. */
 export const bodyKey = (look: Look) => (look.gender === 'f' && look.body === 'normal' ? 'slim' : look.body);
 
-export function variantFor(layer: LayerId, look: Look, kit: Kit): string | null {
+export function variantFor(layer: LayerId, look: Look, kit: Kit, civil = false): string | null {
   switch (layer) {
     case 'arm_back':
     case 'arm_front':
@@ -65,7 +65,7 @@ export function variantFor(layer: LayerId, look: Look, kit: Kit): string | null 
     case 'torso':
       return `${bodyKey(look)}_${kit.pattern}`;
     case 'legs':
-      return look.accessory === 'socksDown' ? 'socksdown' : 'socks';
+      return civil ? 'trousers' : look.accessory === 'socksDown' ? 'socksdown' : 'socks';
     case 'head':
       return look.nose;
     case 'facial':
@@ -103,11 +103,12 @@ function recolorMap(look: Look, kit: Kit) {
 const OUT = hex(FIXED.outline);
 const ROT: Partial<Record<SheetFrame, [FrameId, 1 | -1]>> = { slideU: ['slide', -1], fallU: ['fall', -1], diveU: ['dive', 1] };
 
-export function composeSprites(store: SheetStore, look: Look, kit: Kit, num: number): SpriteSet {
+/** `num` < 0: sin dorsal. `civil`: pantalón largo y zapatos (público, míster, personajes). */
+export function composeSprites(store: SheetStore, look: Look, kit: Kit, num: number, civil = false): SpriteSet {
   const out: SpriteSet = { front: {}, back: {}, side: {} };
   const map = recolorMap(look, kit);
   const layers = LAYER_ORDER.map((l) => {
-    const v = variantFor(l, look, kit);
+    const v = variantFor(l, look, kit, civil);
     return v ? store.get(l, v) : undefined;
   }).filter((x): x is ImageData => !!x);
   const trim = hex(kit.trim === kit.shirt ? '#ffffff' : kit.trim);
@@ -124,9 +125,9 @@ export function composeSprites(store: SheetStore, look: Look, kit: Kit, num: num
             cell[y * SW + x] = ((map.get(c) ?? c) | 0x1000000) >>> 0;
           }
       }
-      if (view === 'back') {
+      if (view === 'back' && num >= 0) {
         const digits = String(num).split('');
-        let x0 = 12 - Math.floor((digits.length * 4 - 1) / 2);
+        let x0 = SW / 2 - Math.floor((digits.length * 4 - 1) / 2);
         const y0 = torsoTop(view, frame) + 1;
         for (const d of digits) {
           DIGITS[d].forEach((r, ry) => r.split('').forEach((b, rx) => b === '1' && (cell[(y0 + ry) * SW + x0 + rx] = (trim | 0x1000000) >>> 0)));

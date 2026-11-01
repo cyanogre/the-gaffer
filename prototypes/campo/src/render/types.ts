@@ -1,7 +1,7 @@
 import type { MatchSim } from '../sim/match';
 import type { MatchEvent } from '../sim/types';
 
-export type RendererId = 'pixel' | 'lowpoly' | 'cromos';
+export type RendererId = 'pixel' | 'lowpoly' | 'cromos' | 'hybrid';
 export type CameraMode = 'tv' | 'tactical' | 'close';
 
 export interface ScreenPoint {

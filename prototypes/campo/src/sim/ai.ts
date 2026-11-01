@@ -439,7 +439,7 @@ export function decideCarrier(sim: MatchSim, c: SimPlayer) {
     if (L < 3.5) continue;
     if (restrict === 'throw' && L > 25) continue;
     if (restrict === 'kickoff' && sim.toU(team, tx) > sim.toU(team, c.x) + 0.02) continue;
-    if (L > 18 + A.vision * 1.6 && sim.rng.next() > 0.12) continue;
+    if (L > (18 + A.vision * 1.6) * sim.phys.vision && sim.rng.next() > 0.12) continue;
     const ground = passSuccess(sim, c, tx, ty, false);
     const air = L > 14 && restrict !== 'throw' ? passSuccess(sim, c, tx, ty, true) : 0;
     const lofted = air > ground;

@@ -1,4 +1,5 @@
 import { decideCarrier, think } from './ai';
+import { DEFAULT_CONDITIONS, physicsOf, type MatchConditions } from './conditions';
 import { FORMATIONS, type Slot } from './formations';
 import {
   BOX_D,
@@ -67,11 +68,15 @@ export class MatchSim {
   possTeam: TeamSide = 0;
   lastGoal: { team: TeamSide; scorer: number; at: number } | null = null;
   readonly seed: number;
+  conditions: MatchConditions;
+  phys: ReturnType<typeof physicsOf>;
   private events: MatchEvent[] = [];
   private queue: Command[] = [];
 
-  constructor(seed: number, profiles: [TeamProfile, TeamProfile]) {
+  constructor(seed: number, profiles: [TeamProfile, TeamProfile], conditions: MatchConditions = DEFAULT_CONDITIONS) {
     this.seed = seed;
+    this.conditions = conditions;
+    this.phys = physicsOf(conditions);
     this.rng = new Rng(seed);
     this.teams = profiles.map((profile, side) => ({
       side: side as TeamSide,
@@ -232,7 +237,10 @@ export class MatchSim {
 
   private applyCommands() {
     for (const c of this.queue) {
-      if (c.kind === 'tactics') {
+      if (c.kind === 'conditions') {
+        this.conditions = c.value;
+        this.phys = physicsOf(c.value);
+      } else if (c.kind === 'tactics') {
         Object.assign(this.teams[c.team].tactics, c.patch);
         this.emit('tactic', { team: c.team, detail: JSON.stringify(c.patch) });
       } else if (c.kind === 'freedom') {
@@ -389,7 +397,7 @@ export class MatchSim {
     const spd = Math.hypot(p.vx, p.vy);
     const m = modsOf(p);
     const staminaFactor = (1.5 - p.profile.attrs.stamina / 20) * m.staminaMult;
-    p.fatigue += DT * (spd / 8.6) ** 2 * 0.006 * staminaFactor;
+    p.fatigue += DT * (spd / 8.6) ** 2 * 0.006 * staminaFactor * this.phys.fatigue;
     if (spd < 2.5) p.fatigue -= DT * 0.0014;
     p.fatigue = clamp(p.fatigue, 0, 1);
     if (spd > 0.6) {
@@ -423,6 +431,9 @@ export class MatchSim {
       b.vz -= GRAVITY * DT;
       b.vx *= 1 - 0.12 * DT;
       b.vy *= 1 - 0.12 * DT;
+      // el viento desvía los balones aéreos
+      b.vx += this.conditions.windX * 0.14 * DT;
+      b.vy += this.conditions.windY * 0.14 * DT;
     }
     if (b.z <= 0) {
       b.z = 0;
@@ -434,9 +445,20 @@ export class MatchSim {
     }
     const sp = Math.hypot(b.vx, b.vy);
     if (b.z === 0 && b.vz === 0 && sp > 0) {
-      const nsp = Math.max(0, sp - (1.6 + sp * 0.18) * DT);
+      const nsp = Math.max(0, sp - (1.6 + sp * 0.18) * this.phys.roll * DT);
       b.vx *= nsp / sp;
       b.vy *= nsp / sp;
+      // campo de tierra: piedras y socavones desvían el balón
+      if (sp > 3 && this.phase === 'play' && this.rng.next() < this.phys.bobble * DT) {
+        const a = this.rng.range(-0.5, 0.5);
+        const c = Math.cos(a);
+        const s2 = Math.sin(a);
+        const vx = b.vx * c - b.vy * s2;
+        b.vy = b.vx * s2 + b.vy * c;
+        b.vx = vx;
+        b.vz = this.rng.range(1, 2.5);
+        this.emit('bobble', { a: b.lastTouch });
+      }
     }
     b.spin += sp * DT * 2.5;
     // Red de la portería durante la celebración.
@@ -532,6 +554,14 @@ export class MatchSim {
     d.action = slide ? 'tackle' : 'poke';
     d.actionDur = d.actionT = slide ? 0.9 : 0.35;
     d.actionSide = 1;
+    // terreno mojado o helado: el que entra puede acabar en el suelo
+    if (this.rng.next() < this.phys.slip) {
+      d.action = 'fall';
+      d.actionDur = d.actionT = 1.1;
+      d.stunT = 1.2;
+      this.emit('slip', { team: d.team, a: d.idx });
+      return;
+    }
     if (this.rng.next() < pFoul) {
       this.foul(d, c, slide);
       return;
@@ -645,7 +675,7 @@ export class MatchSim {
     let pSave = Math.pow(clamp(1 - lateral / reach, 0, 1), 0.25) * (0.8 + (K / 20) * 0.2) * clamp(1.2 - speed / 60, 0.75, 1);
     if (zL > 1.9 && lateral > 1.8) pSave *= 0.7;
     if (this.rng.next() >= pSave) return;
-    const catchIt = speed < 20 && lateral < 1.4 && this.rng.next() < 0.6;
+    const catchIt = speed < 20 && lateral < 1.4 && this.rng.next() < 0.6 * (1 - this.phys.gripLoss);
     this.emit('save', { team: def, a: gk.idx, b: f.from, value: catchIt ? 1 : 0 });
     if (catchIt) {
       this.takePossession(gk, 'save');
@@ -688,6 +718,7 @@ export class MatchSim {
       } else {
         p = 0.92 - Math.max(0, sp - 8) * 0.03 + tech;
       }
+      p -= this.phys.control;
       if (this.rng.next() < clamp(p, 0.05, 0.98)) {
         this.takePossession(q);
         return;
@@ -777,7 +808,10 @@ export class MatchSim {
     const mates = this.active(team);
     let taker: SimPlayer;
     if (kind === 'goalkick') taker = this.keeper(team);
-    else if (kind === 'penalty') taker = mates.filter((p) => !this.isGK(p)).sort((a, z) => z.profile.attrs.shooting - a.profile.attrs.shooting)[0];
+    else if (kind === 'penalty')
+      taker =
+        mates.find((p) => p.profile.id === this.teams[team].profile.penaltyTaker) ??
+        mates.filter((p) => !this.isGK(p)).sort((a, z) => z.profile.attrs.shooting - a.profile.attrs.shooting)[0];
     else if (kind === 'kickoff') taker = mates.find((p) => p.slot === 9) ?? mates[mates.length - 1];
     else taker = mates.filter((p) => !this.isGK(p)).sort((a, z) => dist(a.x, a.y, x, y) - dist(z.x, z.y, x, y))[0];
     this.restart = { kind, team, x, y, taker: taker.idx };
@@ -820,7 +854,7 @@ export class MatchSim {
     const m = modsOf(p);
     const pressure = Math.exp(-this.nearestOpponentDist(p.team, p.x, p.y) / 1.8);
     const L = dist(p.x, p.y, tx, ty);
-    const sigma = (0.015 + (1 - A.passing / 20) * 0.07 + (pressure * 0.05) / m.composure) * (1 + p.fatigue * 0.6);
+    const sigma = (0.015 + (1 - A.passing / 20) * 0.07 + (pressure * 0.05) / m.composure) * (1 + p.fatigue * 0.6) * this.phys.error;
     const a = Math.atan2(ty - p.y, tx - p.x) + this.rng.gauss() * sigma;
     const sErr = 1 + this.rng.gauss() * (0.02 + (1 - A.passing / 20) * 0.06);
     const offside = this.isOffside(q);
@@ -869,7 +903,7 @@ export class MatchSim {
     const aimY = gk.y < PITCH_W / 2 ? GOAL_Y1 - margin : GOAL_Y0 + margin;
     const d = dist(p.x, p.y, gx, aimY);
     const pressure = Math.exp(-this.nearestOpponentDist(p.team, p.x, p.y) / 1.5);
-    const sig = (0.35 + d * (0.035 + (1 - A.shooting / 20) * 0.085 + (pressure * 0.06) / m.composure)) * (1 + p.fatigue * 0.5);
+    const sig = (0.35 + d * (0.035 + (1 - A.shooting / 20) * 0.085 + (pressure * 0.06) / m.composure)) * (1 + p.fatigue * 0.5) * this.phys.error;
     const yL = aimY + this.rng.gauss() * sig;
     const zL = this.rng.range(0.3, 1.9) + this.rng.gauss() * sig * 0.55;
     const vh = 19 + (A.shooting / 20) * 9 + this.rng.next() * 2 - (d < 10 ? 3 : 0);

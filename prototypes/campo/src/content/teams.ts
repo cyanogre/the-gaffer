@@ -115,7 +115,7 @@ const QUIRKS: Record<Gender, Record<TraitId | 'none', string[]>> = {
   },
 };
 
-function polygono(rng: Rng, gender: Gender): PlayerProfile[] {
+function polygono(rng: Rng, gender: Gender, rival: RivalDef): PlayerProfile[] {
   const roles: Role[] = ['POR', 'DEF', 'DEF', 'DEF', 'DEF', 'MED', 'MED', 'MED', 'DEL', 'DEL', 'MED'];
   const traitsPool: TraitId[] = ['goleadorNato', 'egoista', 'lenero', 'padel', 'pulmon', 'artista', 'piscinero', 'nervioso'];
   const first = gender === 'f' ? FIRST_F : FIRST_M;
@@ -124,7 +124,7 @@ function polygono(rng: Rng, gender: Gender): PlayerProfile[] {
     const traits: TraitId[] = i > 0 && rng.chance(0.4) ? [rng.pick(traitsPool)] : [];
     const over: Partial<Attributes> = role === 'POR' ? { keeping: rng.int(10, 15), pace: rng.int(5, 9) } : {};
     return {
-      id: `poli-${gender}-${i}`,
+      id: `${rival.id}-${gender}-${i}`,
       name: `${rng.pick(first)} ${rng.pick(LAST)}`,
       nick: rng.chance(0.45) ? rng.pick(nicks) : undefined,
       num: i + 1,
@@ -132,15 +132,49 @@ function polygono(rng: Rng, gender: Gender): PlayerProfile[] {
       traits,
       quirk: rng.pick(QUIRKS[gender][traits[0] ?? 'none']),
       look: randomLook(rng, gender),
-      attrs: attrs(11, rng, over),
+      attrs: attrs(rival.level, rng, over),
     };
   });
 }
 
-export function buildTeams(seed: number, gender: Gender = 'm'): [TeamProfile, TeamProfile] {
+function addMods(a: Attributes, m?: Partial<Attributes>): Partial<Attributes> {
+  if (!m) return {};
+  const out: Partial<Attributes> = {};
+  for (const k of Object.keys(m) as (keyof Attributes)[]) out[k] = a[k] + (m[k] ?? 0);
+  return out;
+}
+function clampAttrs(a: Attributes): Attributes {
+  for (const k of Object.keys(a) as (keyof Attributes)[]) a[k] = Math.max(1, Math.min(20, a[k]));
+  return a;
+}
+
+/** Rival de la jornada: nombre, colores y carácter. */
+export interface RivalDef {
+  id: string;
+  name: string;
+  short: string;
+  letter: string;
+  kit: Kit;
+  gkKit: Kit;
+  motto: string;
+  formation: '4-3-3' | '4-4-2' | '5-3-2';
+  level: number;
+}
+
+export const RIVALS: RivalDef[] = [
+  { id: 'poligono', name: 'Deportivo Polígono', short: 'POL', letter: 'P', kit: POLI_KIT, gkKit: POLI_GK, motto: 'Patrocinado por Talleres El Chispas desde que nadie recuerda.', formation: '4-4-2', level: 10 },
+  { id: 'rotonda', name: 'Unión Rotonda', short: 'ROT', letter: 'R', kit: { shirt: '#3fae5a', shirt2: '#f4f4f0', pattern: 'hoops', shorts: '#1d1d22', socks: '#3fae5a', trim: '#f4f4f0' }, gkKit: POLI_GK, motto: 'Juegan siempre en círculos. Literalmente.', formation: '4-3-3', level: 10 },
+  { id: 'gasolinera', name: 'CD Gasolinera', short: 'GAS', letter: 'G', kit: { shirt: '#d93b3b', shirt2: '#f2c94c', pattern: 'half', shorts: '#d93b3b', socks: '#f2c94c', trim: '#f2c94c' }, gkKit: BARRIO_GK, motto: 'Su presidente vende boletos de lotería en el descanso.', formation: '5-3-2', level: 11 },
+  { id: 'descampado', name: 'Racing Descampado', short: 'DES', letter: 'D', kit: { shirt: '#f4f4f0', shirt2: '#7a4fd6', pattern: 'sash', shorts: '#7a4fd6', socks: '#f4f4f0', trim: '#7a4fd6' }, gkKit: POLI_GK, motto: 'Entrenan en un solar. Se les nota en los controles.', formation: '4-4-2', level: 11 },
+];
+
+export function buildTeams(seed: number, gender: Gender = 'm', rival: RivalDef = RIVALS[0], mods: Record<number, Partial<Attributes>> = {}): [TeamProfile, TeamProfile] {
   const rng = new Rng(seed * 7919 + 13);
   const seeds = gender === 'f' ? BARRIO_F : BARRIO_M;
-  const barrio: PlayerProfile[] = seeds.map((s, i) => ({
+  const barrio: PlayerProfile[] = seeds.map((s, i) => {
+    const look = randomLook(rng, gender, s.look);
+    const base = attrs(11, rng, s.attrs);
+    return {
     id: `barrio-${gender}-${i}`,
     name: s.name,
     nick: s.nick,
@@ -149,9 +183,10 @@ export function buildTeams(seed: number, gender: Gender = 'm'): [TeamProfile, Te
     traits: s.traits,
     quirk: s.quirk,
     drought: s.drought,
-    look: randomLook(rng, gender, s.look),
-    attrs: attrs(11, rng, s.attrs),
-  }));
+    look,
+    attrs: clampAttrs({ ...base, ...addMods(base, mods[i]) }),
+    };
+  });
   return [
     {
       id: 'barrio',
@@ -165,15 +200,15 @@ export function buildTeams(seed: number, gender: Gender = 'm'): [TeamProfile, Te
       motto: 'Fundado en 1974 en la trastienda del Bar Manolo.',
     },
     {
-      id: 'poligono',
-      name: 'Deportivo Polígono',
-      short: 'POL',
+      id: rival.id,
+      name: rival.name,
+      short: rival.short,
       gender,
-      kit: POLI_KIT,
-      gkKit: POLI_GK,
-      players: polygono(rng, gender),
-      tactics: { formation: '4-4-2', block: 1, style: 'mixed' },
-      motto: 'Patrocinado por Talleres El Chispas desde que nadie recuerda.',
+      kit: rival.kit,
+      gkKit: rival.gkKit,
+      players: polygono(rng, gender, rival),
+      tactics: { formation: rival.formation, block: 1, style: 'mixed' },
+      motto: rival.motto,
     },
   ];
 }

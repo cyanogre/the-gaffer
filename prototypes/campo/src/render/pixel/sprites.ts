@@ -6,10 +6,10 @@ import type { Accessory, Body, Facial, HairStyle, KitPattern, Nose } from '../..
  * Las hojas resultantes viven en assets/sprites/ y son el arte editable del juego:
  * el motor carga esas PNG, no este código.
  *
- * Rejilla de cada hoja: columnas = FRAMES (14), filas = VIEWS (3), celda 24×30, pies en la fila 29.
+ * Rejilla de cada hoja: columnas = FRAMES (14), filas = VIEWS (3), celda 48×48, pies en la fila 47.
  */
-export const SW = 24;
-export const SH = 30;
+export const SW = 48;
+export const SH = 48;
 export const VIEWS = ['front', 'back', 'side'] as const;
 export type View = (typeof VIEWS)[number];
 export const FRAMES = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'kick', 'up0', 'up1', 'out', 'ear', 'slideU', 'fallU', 'diveU'] as const;
@@ -56,7 +56,7 @@ export function layerVariants(layer: LayerId): string[] {
     case 'torso':
       return BODIES.flatMap((b) => PATTERNS.map((p) => `${b}_${p}`));
     case 'legs':
-      return ['socks', 'socksdown'];
+      return ['socks', 'socksdown', 'trousers'];
     case 'head':
       return NOSES;
     case 'facial':
@@ -70,6 +70,7 @@ export function layerVariants(layer: LayerId): string[] {
 }
 
 interface VariantSet {
+  trousers?: boolean;
   body: Body;
   pattern: KitPattern;
   hair: HairStyle;
@@ -129,7 +130,7 @@ export function cellUsed(view: View, frame: SheetFrame) {
 }
 /** Fila donde empieza el torso en la celda: ahí se estampa el dorsal. */
 export function torsoTop(view: View, frame: SheetFrame) {
-  return 11 + (SPECS[view]?.[frame]?.bob ?? 0);
+  return 14 + (SPECS[view]?.[frame]?.bob ?? 0);
 }
 
 export class Px {
@@ -173,98 +174,115 @@ export class Px {
 
 /**
  * Dibuja una pose. Con `layer` solo pinta las partes de esa capa. Todo en colores clave.
- * Las secciones siguen el orden de LAYER_ORDER. Proporciones humanas: cabeza ≈ 1/4,5 de la
- * altura y hombros del doble de ancho que la cabeza.
+ * Las secciones siguen el orden de LAYER_ORDER.
+ *
+ * Anatomía (celda 48×48, pies en la fila 47, figura de ≈46 px): cabeza de 8 filas (≈1/6 de la
+ * altura), cuello, hombros que se estrechan hacia la cintura, piernas largas de 3 px con rodilla,
+ * manos de 2×2 y botas con suela. Luz desde arriba a la izquierda.
  */
 function figure(v: VariantSet, s: Spec, layer?: LayerId): Px {
   const g = new Px();
   const on = (id: LayerId) => !layer || layer === id;
   const K = KEY;
-  const ht = 4 + s.bob; // cabeza: 6 filas
-  const tt = ht + 7; // torso: 7 filas
-  const st = tt + 7; // pantalón: 3 filas
-  const lt = st + 3; // piernas hasta la fila 27; botas 28-29
-  const cx = 12;
+  const H: Ramp = K.hair;
+  const cx = 24;
+  const ht = 4 + s.bob; // cabeza: filas ht..ht+7
+  const tt = ht + 9; // torso: 12 filas
+  const st = tt + 12; // pantalón: 5 filas
+  const lt = st + 5; // piernas hasta la fila 44; botas 45-47
   const side = s.view === 'side';
   const back = s.view === 'back';
-  const half = { slim: 3, normal: 4, stocky: 5, belly: 4 }[v.body];
-  const tx0 = side ? cx - 2 : cx - half;
-  const tx1 = side ? cx + 2 + (v.body === 'stocky' ? 1 : 0) : cx + half;
-  const H: Ramp = K.hair;
-  const hx0 = cx - 2;
-  const hx1 = side ? cx + 3 : cx + 2;
-
-  const shirtAt = (x: number, y: number, edge: 'l' | 'r' | null) => {
-    const ix = x - tx0;
-    const iy = y - tt;
-    let t: Ramp = K.shirt;
-    if (v.pattern === 'stripes' && ix % 2 === 1) t = K.shirt2;
-    if (v.pattern === 'hoops' && iy % 2 === 1) t = K.shirt2;
-    if (v.pattern === 'half' && x < cx) t = K.shirt2;
-    if (v.pattern === 'sash' && ix + iy === tx1 - tx0) t = K.shirt2;
-    if (edge === 'r' || y === tt + 6) return t.s;
-    if (edge === 'l' && y < tt + 3) return t.l;
-    return t.b;
+  const front = s.view === 'front';
+  const B = {
+    slim: { sh: 4, waist: 3, arm: 2 },
+    normal: { sh: 5, waist: 4, arm: 2 },
+    stocky: { sh: 6, waist: 5, arm: 3 },
+    belly: { sh: 5, waist: 5, arm: 2 },
+  }[v.body];
+  // cabeza
+  const hx0 = side ? cx - 3 : cx - 3;
+  const hx1 = side ? cx + 4 : cx + 3;
+  // ancho del torso en cada fila (frente/espalda) o perfil
+  const torsoSpan = (row: number): [number, number] => {
+    if (side) {
+      const chest = row >= 2 && row <= 6 ? 1 : 0;
+      const belly = v.body === 'belly' && row >= 6 ? (row >= 8 ? 2 : 1) : 0;
+      const back0 = v.body === 'stocky' ? cx - 4 : cx - 3;
+      return [back0, cx + 3 + Math.max(chest, belly)];
+    }
+    if (row === 0) return [cx - B.sh + 1, cx + B.sh - 1];
+    if (row <= 5) return [cx - B.sh, cx + B.sh];
+    const k = (row - 5) / 6;
+    let half = Math.round(B.sh + (B.waist - B.sh) * k);
+    if (v.body === 'belly' && row >= 6) half = B.sh + (row >= 8 ? 1 : 0);
+    return [cx - half, cx + half];
   };
 
-  // ── brazos: 7 filas (manga 2, antebrazo 4, mano 1)
+  // ── brazos (10 filas: manga 4, antebrazo 4, mano 2)
   const armCol = (t: number, lit: boolean) => {
-    const row = t * 6;
-    if (row < 1.6) return lit ? K.shirt.b : K.shirt.s;
-    if (row > 5.4) return lit ? K.skin.l : K.skin.b;
+    const row = t * 9;
+    if (row < 3.5) return lit ? K.shirt.b : K.shirt.s;
+    if (row < 4.5) return K.trim;
+    if (row > 7.5) return lit ? K.skin.l : K.skin.b;
     return lit ? K.skin.b : K.skin.s;
   };
   const drawArm = (x: number, lit: boolean, dir: number, swing: number) => {
     const y = tt + 1;
+    const w = B.arm;
     switch (s.arms) {
       case 'up':
-        g.line(x, y, x + dir, y - 7, 2, (t) => armCol(1 - t, lit));
+        g.line(x, y, x + dir * 2, y - 10, w, (t) => armCol(1 - t, lit));
         break;
       case 'up2':
-        g.line(x, y, x + dir * 2, y - 6, 2, (t) => armCol(1 - t, lit));
+        g.line(x, y, x + dir * 4, y - 9, w, (t) => armCol(1 - t, lit));
         break;
       case 'out':
-        for (let i = 0; i < 7; i++) g.rect(x + dir * i, y, 1, 2, i < 2 ? (lit ? K.shirt.b : K.shirt.s) : lit ? K.skin.b : K.skin.s);
+        for (let i = 0; i < 10; i++) g.rect(dir > 0 ? x + i : x - i, y, 1, 2, i < 4 ? (lit ? K.shirt.b : K.shirt.s) : i === 4 ? K.trim : i > 7 ? K.skin.l : lit ? K.skin.b : K.skin.s);
         break;
       case 'ear':
-        if (lit) g.line(x, y, x - dir, y - 7, 2, (t) => armCol(1 - t, lit));
-        else g.line(x, y, x, y + 6, 2, (t) => armCol(t, lit));
+        if (lit) g.line(x, y, x - dir * 3, y - 9, w, (t) => armCol(1 - t, lit));
+        else g.line(x, y, x, y + 9, w, (t) => armCol(t, lit));
         break;
       default:
-        g.line(x, y, x + swing, y + 6, 2, (t) => armCol(t, lit));
+        g.line(x, y, x + swing, y + 9, w, (t) => armCol(t, lit));
     }
   };
-  const swingA = s.arms === 'swingL' ? 2 : s.arms === 'swingR' ? -2 : 0;
+  const swingA = s.arms === 'swingL' ? 3 : s.arms === 'swingR' ? -3 : 0;
+  const [sx0, sx1] = torsoSpan(1);
   if (on('arm_back')) {
     if (side) drawArm(cx - 1, false, 1, -swingA);
-    else drawArm(tx0 - 2, true, -1, 0);
+    else drawArm(sx0 - B.arm, true, -1, 0);
   }
 
   // ── pelo trasero
   if (on('hair_back')) {
-    if (v.hair === 'afro') g.disc(cx, ht + 1.5, 4.6, H.b, H.s);
+    if (v.hair === 'afro') g.disc(cx, ht + 2, 6.5, H.b, H.s);
     if (side) {
-      if (v.hair === 'long') g.rect(hx0 - 1, ht + 1, 3, 9, H.s);
-      if (v.hair === 'mullet') g.rect(hx0 - 1, ht + 2, 3, 6, H.s);
+      if (v.hair === 'long') {
+        g.rect(hx0 - 1, ht + 2, 4, 12, H.s);
+        g.rect(hx0, ht + 3, 1, 9, H.b);
+      }
+      if (v.hair === 'mullet') g.rect(hx0 - 1, ht + 3, 4, 8, H.s);
       if (v.hair === 'ponytail') {
-        g.set(hx0 - 1, ht + 1, K.acc);
-        g.rect(hx0 - 3, ht + 1, 2, 2, H.b);
-        g.rect(hx0 - 3, ht + 3, 2, 3, H.s);
+        g.set(hx0 - 1, ht + 2, K.acc);
+        g.rect(hx0 - 4, ht + 1, 3, 3, H.b);
+        g.rect(hx0 - 4, ht + 4, 2, 6, H.s);
+        g.set(hx0 - 4, ht + 2, H.l);
       }
       if (v.hair === 'braids') {
-        g.line(hx0 - 1, ht + 3, hx0 - 1, ht + 10, 1, (t) => (Math.round(t * 7) % 2 ? H.b : H.s));
-        g.set(hx0 - 1, ht + 11, K.acc);
+        g.line(hx0 - 1, ht + 4, hx0 - 2, ht + 15, 2, (t) => (Math.round(t * 10) % 2 ? H.b : H.s));
+        g.rect(hx0 - 2, ht + 16, 2, 1, K.acc);
       }
-      if (v.hair === 'bun') g.disc(hx0, ht - 0.5, 1.6, H.b, H.s);
-    } else if (!back) {
+      if (v.hair === 'bun') g.disc(hx0, ht - 1, 2.4, H.b, H.s);
+    } else if (front) {
       if (v.hair === 'long') {
-        g.rect(hx0 - 1, ht + 1, 1, 9, H.s);
-        g.rect(hx1 + 1, ht + 1, 1, 9, H.d);
+        g.rect(hx0 - 2, ht + 2, 2, 13, H.s);
+        g.rect(hx1 + 1, ht + 2, 2, 13, H.d);
       }
       if (v.hair === 'braids')
-        for (const x of [hx0 - 1, hx1 + 1]) {
-          g.line(x, ht + 2, x, ht + 10, 1, (t) => (Math.round(t * 8) % 2 ? H.b : H.s));
-          g.set(x, ht + 11, K.acc);
+        for (const x of [hx0 - 2, hx1 + 1]) {
+          g.line(x, ht + 4, x, ht + 16, 2, (t) => (Math.round(t * 12) % 2 ? H.b : H.s));
+          g.rect(x, ht + 17, 2, 1, K.acc);
         }
     }
   }
@@ -273,224 +291,290 @@ function figure(v: VariantSet, s: Spec, layer?: LayerId): Px {
   if (on('legs')) {
     const down = v.accessory === 'socksDown';
     const leg = (x0: number, x1: number, lift: number, lit: boolean) => {
-      const sk = lit ? K.skin.b : K.skin.s;
-      const so = lit ? K.socks.b : K.socks.s;
-      const yEnd = 27 - lift;
+      const yEnd = 44 - lift;
       const len = yEnd - lt;
-      g.line(x0, lt, x1, yEnd, 2, (t, k) => {
+      g.line(x0, lt, x1, yEnd, 3, (t, k) => {
         const y = t * len;
-        const c = y < 2.5 ? sk : down ? (y > len - 1.5 ? so : sk) : so;
-        if (!side && k === 1) return c === sk ? K.skin.s : K.socks.s;
-        if (!down && Math.abs(y - 2.6) < 0.5) return K.trim;
+        const shade = k === 2 || !lit;
+        if (v.trousers) return shade ? K.shorts.s : K.shorts.b;
+        let c: string;
+        if (y < 4) c = shade ? K.skin.s : K.skin.b;
+        else if (y < 5) c = shade ? K.skin.d : K.skin.s;
+        else if (down) c = y > len - 3 ? (shade ? K.socks.s : K.socks.b) : shade ? K.skin.s : K.skin.b;
+        else if (y < 7) c = K.trim;
+        else c = shade ? K.socks.s : K.socks.b;
+        if (k === 0 && lit && c === K.socks.b) c = K.socks.l;
         return c;
       });
-      const bx = side ? x1 : x1 + (x1 < cx ? -1 : 0);
-      g.rect(bx, yEnd + 1, 3, 1, lit ? K.boots.b : K.boots.s);
-      g.rect(bx, yEnd + 2, 3, 1, lit ? K.boots.s : K.boots.d);
-      if (side) g.set(bx + 2, yEnd + 1, K.boots.l);
+      // bota: empeine, cordones y suela
+      if (side) {
+        g.rect(x1, yEnd + 1, 5, 2, lit ? K.boots.b : K.boots.s);
+        g.rect(x1 + 1, yEnd + 1, 2, 1, K.boots.l);
+        g.rect(x1, yEnd + 3, 5, 1, K.boots.d);
+      } else {
+        const bx = x1 + (x1 < cx ? -1 : 0);
+        g.rect(bx, yEnd + 1, 4, 2, lit ? K.boots.b : K.boots.s);
+        g.set(bx + 1, yEnd + 1, K.boots.l);
+        g.rect(bx, yEnd + 3, 4, 1, K.boots.d);
+      }
     };
     if (side) {
       switch (s.legs) {
         case 'runA':
-          leg(cx - 1, cx - 4, 1, false);
-          leg(cx, cx + 3, 0, true);
+          leg(cx - 2, cx - 6, 1, false);
+          leg(cx, cx + 4, 0, true);
           break;
         case 'runB':
-          leg(cx - 1, cx, 0, false);
-          leg(cx, cx - 1, 2, true);
+          leg(cx - 2, cx - 1, 0, false);
+          leg(cx, cx - 1, 3, true);
           break;
         case 'runC':
-          leg(cx - 1, cx + 2, 0, false);
-          leg(cx, cx - 3, 1, true);
+          leg(cx - 2, cx + 3, 0, false);
+          leg(cx, cx - 5, 1, true);
           break;
         case 'runD':
-          leg(cx - 1, cx - 2, 2, false);
+          leg(cx - 2, cx - 3, 3, false);
           leg(cx, cx + 1, 0, true);
           break;
         case 'kick':
-          leg(cx - 1, cx - 1, 0, false);
-          g.line(cx, lt, cx + 6, lt + 4, 2, (t) => (t < 0.3 ? K.skin.b : K.socks.b));
-          g.rect(cx + 7, lt + 4, 2, 2, K.boots.b);
+          leg(cx - 2, cx - 2, 0, false);
+          g.line(cx, lt, cx + 9, lt + 6, 3, (t) => (t < 0.3 ? K.skin.b : t < 0.42 ? K.trim : K.socks.b));
+          g.rect(cx + 10, lt + 5, 3, 3, K.boots.b);
+          g.rect(cx + 10, lt + 8, 3, 1, K.boots.d);
           break;
         default:
-          leg(cx - 1, cx - 1, 0, false);
+          leg(cx - 2, cx - 2, 0, false);
           leg(cx, cx, 0, true);
       }
     } else {
-      leg(cx - 2, cx - 2, s.legs === 'liftL' ? 2 : 0, true);
-      leg(cx + 1, cx + 1, s.legs === 'liftR' ? 2 : 0, !back);
+      leg(cx - 4, cx - 4, s.legs === 'liftL' ? 3 : 0, true);
+      leg(cx + 1, cx + 1, s.legs === 'liftR' ? 3 : 0, !back);
     }
   }
 
-  // ── pantalón
+  // ── pantalón con franja lateral
   if (on('shorts')) {
-    for (let y = st; y < st + 3; y++)
-      for (let x = tx0; x <= tx1; x++) {
-        if (!side && y === st + 2 && x === cx) continue;
-        g.set(x, y, x === tx1 || y === st + 2 ? K.shorts.s : K.shorts.b);
+    const [w0, w1] = torsoSpan(11);
+    const x0 = side ? cx - 3 : w0;
+    const x1 = side ? cx + 3 : w1;
+    for (let y = st; y < st + 5; y++)
+      for (let x = x0; x <= x1; x++) {
+        if (!side && y >= st + 3 && (x === cx || x === cx - 1)) continue;
+        let c: string = x >= x1 - 1 || y === st + 4 ? K.shorts.s : K.shorts.b;
+        if (x === x0 && y < st + 2) c = K.shorts.l;
+        if (!side && (x === x0 || x === x1) && y < st + 4) c = K.trim;
+        if (side && x === cx && y < st + 4) c = K.trim;
+        g.set(x, y, c);
       }
-    if (!side) g.set(tx1, st + 1, K.trim);
   }
 
-  // ── torso con hombros redondeados
+  // ── camiseta: cuello en pico, escudo, pliegues y sombreado
   if (on('torso')) {
-    for (let y = tt; y < tt + 7; y++) {
-      const inset = y === tt ? 1 : 0;
-      for (let x = tx0 + inset; x <= tx1 - inset; x++) g.set(x, y, shirtAt(x, y, x === tx0 + inset ? 'l' : x === tx1 - inset ? 'r' : null));
+    for (let r = 0; r < 12; r++) {
+      const [a, b] = torsoSpan(r);
+      const y = tt + r;
+      for (let x = a; x <= b; x++) {
+        const ix = x - a;
+        let t: Ramp = K.shirt;
+        if (v.pattern === 'stripes' && Math.floor((x - cx + 20) / 2) % 2 === 1) t = K.shirt2;
+        if (v.pattern === 'hoops' && Math.floor(r / 2) % 2 === 1) t = K.shirt2;
+        if (v.pattern === 'half' && x < cx) t = K.shirt2;
+        if (v.pattern === 'sash' && Math.abs(x - cx - (r - 6)) <= 1) t = K.shirt2;
+        let c: string = t.b;
+        if (x >= b - 1 || r >= 10) c = t.s;
+        if (x === b && r >= 10) c = t.d;
+        if (ix === 0 && r < 5) c = t.l;
+        g.set(x, y, c);
+      }
     }
-    if (v.body === 'belly') {
-      if (side) for (let y = tt + 3; y < tt + 7; y++) g.set(tx1 + 1, y, shirtAt(tx1, y, 'r'));
-      else
-        for (let y = tt + 3; y < tt + 7; y++) {
-          g.set(tx0 - 1, y, shirtAt(tx0, y, 'l'));
-          g.set(tx1 + 1, y, shirtAt(tx1, y, 'r'));
-        }
+    // pliegue bajo el pecho
+    if (!side) {
+      g.set(cx - 2, tt + 7, K.shirt.s);
+      g.set(cx - 1, tt + 8, K.shirt.s);
+      g.set(cx + 2, tt + 7, K.shirt.s);
     }
-    if (s.view === 'front') {
-      g.set(cx, tt, K.trim);
+    if (front) {
+      g.set(cx - 1, tt, K.trim);
+      g.set(cx + 1, tt, K.trim);
+      g.set(cx, tt, K.skin.s);
       g.set(cx, tt + 1, K.trim);
+      g.rect(cx + 2, tt + 3, 2, 2, K.trim); // escudo
     }
+    if (back) g.rect(cx - 1, tt, 3, 1, K.trim);
+    if (side) g.rect(cx + 1, tt, 2, 1, K.trim);
   }
 
-  // ── cuello y cabeza (5×6 de frente, 6×6 de perfil)
+  // ── cuello y cabeza
   if (on('head')) {
-    g.set(cx, ht + 6, K.skin.s);
-    g.set(side ? cx + 1 : cx - 1, ht + 6, K.skin.s);
-    for (let y = 0; y < 6; y++)
+    g.rect(cx - 1, ht + 8, 3, 1, K.skin.s);
+    for (let y = 0; y < 8; y++)
       for (let x = hx0; x <= hx1; x++) {
-        if ((y === 0 || y === 5) && (x === hx0 || x === hx1)) continue;
-        const shadow = side ? x === hx0 || y === 5 : x === hx1 || y === 5;
-        g.set(x, ht + y, shadow ? K.skin.s : K.skin.b);
+        const round = (y === 0 || y === 7) && (x === hx0 || x === hx1);
+        const jaw = y === 7 && (x === hx0 + 1 || x === hx1 - 1) && !side;
+        if (round || jaw) continue;
+        const shade = side ? x === hx0 || y >= 6 : x === hx1 || y === 7;
+        g.set(x, ht + y, shade ? K.skin.s : x === hx0 + 1 && y < 3 && !side ? K.skin.l : K.skin.b);
       }
-    const eyeY = ht + 2;
-    if (s.view === 'front') {
-      g.set(hx0 - 1, eyeY, K.skin.s);
-      g.set(hx1 + 1, eyeY, K.skin.s);
-      g.set(cx - 1, eyeY, FIXED.eye);
-      g.set(cx + 1, eyeY, FIXED.eye);
-      g.set(cx, eyeY + 1, K.skin.s);
-      if (v.nose === 'big') g.set(cx, eyeY + 2, K.skin.s);
-      if (s.shout) g.rect(cx - 1, eyeY + 2, 3, 2, FIXED.mouth);
-      else g.rect(cx - 1, eyeY + 2 + (v.nose === 'big' ? 1 : 0), 3, 1, K.lip);
+    const ey = ht + 3;
+    if (front) {
+      g.rect(hx0 - 1, ey, 1, 2, K.skin.s);
+      g.rect(hx1 + 1, ey, 1, 2, K.skin.d);
+      g.set(cx - 2, ey, FIXED.eye);
+      g.set(cx + 2, ey, FIXED.eye);
+      g.set(cx - 1, ey, K.skin.l);
+      g.set(cx, ey + 1, K.skin.s);
+      if (v.nose === 'big') {
+        g.set(cx, ey + 2, K.skin.s);
+        g.set(cx + 1, ey + 2, K.skin.d);
+      } else if (v.nose === 'hook') g.set(cx + 1, ey + 1, K.skin.d);
+      if (s.shout) {
+        g.rect(cx - 1, ey + 3, 3, 2, FIXED.mouth);
+        g.rect(cx - 1, ey + 3, 3, 1, '#f4f0ea');
+      } else g.rect(cx - 1, ey + 3, 3, 1, K.lip);
     } else if (side) {
-      g.set(cx, eyeY, K.skin.s);
-      g.set(cx, eyeY + 1, K.skin.s);
-      g.set(cx + 2, eyeY, FIXED.eye);
+      g.rect(cx, ey, 1, 2, K.skin.s);
+      g.set(cx, ey + 1, K.skin.d);
+      g.set(cx + 3, ey, FIXED.eye);
       const nx = hx1 + 1;
-      if (v.nose === 'small') g.set(nx, eyeY + 1, K.skin.b);
+      if (v.nose === 'small') g.set(nx, ey + 1, K.skin.b);
       else if (v.nose === 'big') {
-        g.rect(nx, eyeY + 1, 2, 1, K.skin.b);
-        g.set(nx, eyeY + 2, K.skin.s);
+        g.rect(nx, ey + 1, 2, 2, K.skin.b);
+        g.set(nx + 1, ey + 2, K.skin.s);
       } else {
-        g.set(nx, eyeY, K.skin.b);
-        g.set(nx + 1, eyeY + 1, K.skin.b);
+        g.set(nx, ey, K.skin.b);
+        g.rect(nx, ey + 1, 2, 1, K.skin.b);
+        g.set(nx, ey + 2, K.skin.s);
       }
-      if (s.shout) g.rect(cx + 2, eyeY + 2, 2, 2, FIXED.mouth);
-      else g.rect(cx + 2, eyeY + 2, 2, 1, K.lip);
+      if (s.shout) g.rect(cx + 3, ey + 3, 2, 2, FIXED.mouth);
+      else g.rect(cx + 3, ey + 3, 2, 1, K.lip);
+    } else {
+      g.rect(hx0 - 1, ey, 1, 2, K.skin.s);
+      g.rect(hx1 + 1, ey, 1, 2, K.skin.s);
     }
   }
 
   // ── vello facial
   if (on('facial')) {
-    const eyeY = ht + 2;
+    const ey = ht + 3;
     const fh = H.d;
-    if (s.view === 'front') {
-      if (v.facial === 'mustache') g.rect(cx - 1, eyeY + 2, 3, 1, fh);
-      if (v.facial === 'beard')
-        for (let y = eyeY + 1; y <= ht + 6; y++)
-          for (let x = hx0; x <= hx1; x++) if (!(y >= eyeY + 2 && y <= eyeY + 2 + (s.shout ? 1 : 0) && x === cx) && !(y === eyeY + 1 && x > hx0 && x < hx1)) g.set(x, y, fh);
-      if (v.facial === 'goatee') g.rect(cx, ht + 5, 1, 2, fh);
-      if (v.facial === 'stubble') {
-        g.set(cx - 1, ht + 5, K.stubble);
-        g.set(cx + 1, ht + 5, K.stubble);
+    if (front) {
+      if (v.facial === 'mustache') {
+        g.rect(cx - 2, ey + 2, 5, 1, fh);
+        g.set(cx - 2, ey + 3, fh);
+        g.set(cx + 2, ey + 3, fh);
       }
+      if (v.facial === 'beard')
+        for (let y = ey + 1; y <= ht + 8; y++)
+          for (let x = hx0; x <= hx1; x++) {
+            const mouth = y === ey + 3 && Math.abs(x - cx) <= 1;
+            const cheek = y === ey + 1 && x > hx0 && x < hx1;
+            if (!mouth && !cheek && !(y === ht + 8 && (x === hx0 || x === hx1))) g.set(x, y, x === hx1 ? H.d : fh);
+          }
+      if (v.facial === 'goatee') g.rect(cx - 1, ey + 4, 3, 2, fh);
+      if (v.facial === 'stubble') for (let x = hx0 + 1; x <= hx1 - 1; x += 2) g.set(x, ey + 4, K.stubble);
     } else if (side) {
-      if (v.facial === 'mustache') g.rect(cx + 2, eyeY + 2, 3, 1, fh);
-      if (v.facial === 'beard') for (let y = eyeY + 1; y <= ht + 6; y++) for (let x = cx; x <= hx1; x++) if (!(y >= eyeY + 2 && x >= cx + 2 && y <= eyeY + 2 + (s.shout ? 1 : 0))) g.set(x, y, fh);
-      if (v.facial === 'goatee') g.rect(cx + 2, ht + 5, 2, 2, fh);
-      if (v.facial === 'stubble') g.set(cx + 2, ht + 5, K.stubble);
+      if (v.facial === 'mustache') g.rect(cx + 3, ey + 2, 3, 1, fh);
+      if (v.facial === 'beard') for (let y = ey + 1; y <= ht + 8; y++) for (let x = cx; x <= hx1; x++) if (!(y === ey + 3 && x >= cx + 3)) g.set(x, y, fh);
+      if (v.facial === 'goatee') g.rect(cx + 3, ey + 4, 2, 2, fh);
+      if (v.facial === 'stubble') g.set(cx + 2, ey + 4, K.stubble);
     }
   }
 
-  // ── pelo superior
+  // ── pelo superior (con volumen y brillo)
   if (on('hair_front')) {
-    const crown = (rows: number, sidesTo: number) => {
-      for (let y = ht - 1; y < ht - 1 + rows; y++)
-        for (let x = hx0 - 1; x <= hx1 + (side ? 0 : 1); x++) {
-          if (y === ht - 1 && (x <= hx0 || x >= hx1)) continue;
-          if (side && y > ht && x > cx + 1) continue;
-          g.set(x, y, y === ht - 1 ? H.l : x >= hx1 && !side ? H.s : H.b);
-        }
-      for (let y = ht; y < sidesTo; y++) {
-        g.set(hx0 - 1 + (side ? 1 : 0), y, H.s);
+    const crown = (sidesTo: number, fringe: boolean) => {
+      for (let x = hx0; x <= hx1; x++) g.set(x, ht - 2, x === hx0 || x === hx1 ? H.s : H.l);
+      for (let x = hx0 - 1; x <= hx1 + 1; x++) g.set(x, ht - 1, x === hx1 + 1 ? H.s : H.b);
+      for (let x = hx0 - 1; x <= hx1 + 1; x++) {
+        if (side && x > cx + 1) continue;
+        g.set(x, ht, x >= hx1 ? H.s : H.b);
+      }
+      if (fringe && !back) for (let x = side ? cx - 1 : hx0; x <= (side ? cx + 3 : cx + 1); x++) g.set(x, ht + 1, H.b);
+      for (let y = ht + 1; y < sidesTo; y++) {
+        g.set(side ? hx0 : hx0 - 1, y, H.s);
         if (!side) g.set(hx1 + 1, y, H.d);
       }
-      if (side) for (let y = ht; y < ht + 4; y++) for (let x = hx0; x < cx; x++) g.set(x, y, x === hx0 ? H.s : H.b);
+      if (side) for (let y = ht; y < ht + 5; y++) for (let x = hx0; x < cx; x++) g.set(x, y, x === hx0 ? H.s : y === ht ? H.l : H.b);
     };
     switch (v.hair) {
       case 'bald':
-        g.set(cx - 1, ht, K.skin.l);
+        g.rect(hx0 + 1, ht, 2, 1, K.skin.l);
         break;
       case 'buzz':
-        for (let x = hx0; x <= hx1; x++) g.set(x, ht, H.s);
-        if (side || back) for (let y = ht; y < ht + 4; y++) for (let x = hx0; x <= (side ? cx : hx1); x++) if ((x + y) % 2 === 0) g.set(x, y, H.s);
+        for (let x = hx0; x <= hx1; x++) {
+          g.set(x, ht - 1, H.s);
+          if ((x + ht) % 2) g.set(x, ht, H.s);
+        }
+        if (side || back) for (let y = ht; y < ht + 5; y++) for (let x = hx0; x <= (side ? cx : hx1); x++) if ((x + y) % 2 === 0) g.set(x, y, H.s);
         break;
       case 'combover':
-        for (let x = hx0; x <= hx1; x += 2) g.set(x, ht, H.b);
-        g.rect(hx0 - (side ? 0 : 1), ht + 1, 1, 3, H.b);
-        if (!side) g.rect(hx1 + 1, ht + 1, 1, 3, H.s);
+        for (let x = hx0; x <= hx1; x += 2) g.set(x, ht - 1, H.b);
+        for (let x = hx0 + 1; x <= hx1; x += 2) g.set(x, ht, H.b);
+        g.rect(side ? hx0 : hx0 - 1, ht + 2, 1, 4, H.b);
+        if (!side) g.rect(hx1 + 1, ht + 2, 1, 4, H.s);
         break;
       case 'mohawk':
-        if (side) for (let x = hx0 + 1; x <= hx1; x++) g.rect(x, ht - 2 - (x % 2), 1, 2 + (x % 2), x % 2 ? H.l : H.b);
+        if (side) for (let x = hx0 + 1; x <= hx1; x++) g.rect(x, ht - 4 + (x % 2), 1, 4 - (x % 2), x % 2 ? H.b : H.l);
         else {
-          g.rect(cx, ht - 3, 1, 4, H.b);
-          g.set(cx, ht - 3, H.l);
+          g.rect(cx - 1, ht - 4, 3, 5, H.b);
+          g.rect(cx, ht - 5, 1, 2, H.l);
         }
+        for (let x = hx0; x <= hx1; x++) if (Math.abs(x - cx) > 1 && x % 2) g.set(x, ht, H.d);
         break;
       case 'curly':
-        crown(2, ht + 3);
-        for (let x = hx0 - 1; x <= hx1 + 1; x += 2) g.set(x, ht - 2, H.b);
+        crown(ht + 4, false);
+        for (let x = hx0 - 1; x <= hx1 + 1; x += 2) g.set(x, ht - 3, H.b);
+        g.set(hx0 - 2, ht, H.b);
+        if (!side) g.set(hx1 + 2, ht, H.s);
         break;
       case 'bun':
-        crown(2, ht + 2);
-        if (!side) g.disc(cx, ht - 2, 1.6, H.b, H.s);
+        crown(ht + 2, false);
+        if (!side) {
+          g.disc(cx, ht - 4, 2.4, H.b, H.s);
+          g.rect(cx - 2, ht - 2, 5, 1, K.acc);
+        }
         break;
       case 'pixie':
-        crown(2, ht + 2);
-        if (s.view === 'front') g.rect(hx0, ht + 1, 3, 1, H.b);
-        if (side) g.rect(cx + 1, ht + 1, 3, 1, H.b);
+        crown(ht + 3, true);
+        if (front) g.rect(hx0, ht + 2, 2, 1, H.b);
+        break;
+      case 'short':
+        crown(ht + 4, true);
         break;
       default:
-        crown(2, ht + 3);
+        crown(ht + 4, false);
     }
     if (back) {
-      const rowsBack: Record<string, number> = { long: 10, mullet: 8, braids: 5, ponytail: 5, bun: 5, afro: 6, curly: 5, short: 5, pixie: 5 };
+      const rowsBack: Record<string, number> = { long: 14, mullet: 11, braids: 7, ponytail: 7, bun: 7, afro: 8, curly: 7, short: 6, pixie: 6 };
       const rb = rowsBack[v.hair];
-      if (rb) for (let y = ht; y < ht + rb; y++) for (let x = hx0 - (y < ht + 5 ? 1 : 0); x <= hx1 + (y < ht + 5 ? 1 : 0); x++) g.set(x, y, x >= hx1 || y === ht + rb - 1 ? H.s : H.b);
+      if (rb)
+        for (let y = ht; y < ht + rb; y++)
+          for (let x = hx0 - (y < ht + 7 ? 1 : 0); x <= hx1 + (y < ht + 7 ? 1 : 0); x++) g.set(x, y, x >= hx1 || y === ht + rb - 1 ? H.s : x === hx0 && y < ht + 4 ? H.l : H.b);
       if (v.hair === 'ponytail') {
-        g.set(cx, ht + 2, K.acc);
-        g.rect(cx, ht + 3, 1, 5, H.s);
+        g.set(cx, ht + 3, K.acc);
+        g.rect(cx - 1, ht + 4, 2, 8, H.s);
+        g.set(cx - 1, ht + 5, H.b);
       }
       if (v.hair === 'braids') {
-        g.line(cx - 1, ht + 4, cx - 1, ht + 10, 1, (t) => (Math.round(t * 6) % 2 ? H.b : H.s));
-        g.line(cx + 1, ht + 4, cx + 1, ht + 10, 1, (t) => (Math.round(t * 6) % 2 ? H.b : H.s));
+        g.line(cx - 2, ht + 6, cx - 2, ht + 15, 2, (t) => (Math.round(t * 9) % 2 ? H.b : H.s));
+        g.line(cx + 1, ht + 6, cx + 1, ht + 15, 2, (t) => (Math.round(t * 9) % 2 ? H.b : H.s));
       }
-      if (v.hair === 'bun') g.disc(cx, ht - 1, 1.6, H.b, H.s);
+      if (v.hair === 'bun') g.disc(cx, ht - 2, 2.4, H.b, H.s);
     }
   }
 
   // ── accesorios
   if (on('acc')) {
-    const eyeY = ht + 2;
-    if (v.accessory === 'headband') g.rect(hx0 - (side ? 0 : 1), ht + 1, hx1 - hx0 + (side ? 1 : 3), 1, K.acc);
+    const ey = ht + 3;
+    if (v.accessory === 'headband') g.rect(side ? hx0 : hx0 - 1, ht + 1, hx1 - hx0 + (side ? 1 : 3), 1, K.acc);
     if (v.accessory === 'glasses') {
-      if (s.view === 'front') {
-        g.rect(hx0, eyeY, 5, 1, FIXED.frame);
-        g.set(cx - 1, eyeY, FIXED.lens);
-        g.set(cx + 1, eyeY, FIXED.lens);
+      if (front) {
+        g.rect(hx0, ey, 7, 1, FIXED.frame);
+        g.set(cx - 2, ey, FIXED.lens);
+        g.set(cx + 2, ey, FIXED.lens);
       } else if (side) {
-        g.rect(cx + 1, eyeY, 3, 1, FIXED.frame);
-        g.set(cx + 2, eyeY, FIXED.lens);
+        g.rect(cx + 1, ey, 4, 1, FIXED.frame);
+        g.set(cx + 3, ey, FIXED.lens);
       }
     }
   }
@@ -498,7 +582,7 @@ function figure(v: VariantSet, s: Spec, layer?: LayerId): Px {
   // ── brazo delantero
   if (on('arm_front')) {
     if (side) drawArm(cx, true, 1, swingA);
-    else drawArm(tx1 + 1, false, 1, 0);
+    else drawArm(sx1 + 1, false, 1, 0);
   }
   return g;
 }
@@ -520,6 +604,7 @@ function variantSet(layer: LayerId, variant: string): VariantSet {
     }
     case 'legs':
       v.accessory = variant === 'socksdown' ? 'socksDown' : 'none';
+      v.trousers = variant === 'trousers';
       break;
     case 'head':
       v.nose = variant as Nose;

@@ -74,3 +74,21 @@ describe('motor de partido', () => {
     expect(fatigue(true)).toBeGreaterThan(fatigue(false));
   });
 });
+
+describe('condiciones del partido', () => {
+  it('la lluvia en un campo de tierra provoca más resbalones y botes raros que un césped seco', async () => {
+    const { conditionsFor } = await import('../src/sim/conditions');
+    const count = (cond: ReturnType<typeof conditionsFor>) => {
+      let n = 0;
+      for (const seed of [2, 4, 6]) {
+        const sim = new MatchSim(seed, buildTeams(seed), cond);
+        for (let i = 0; i < 5000; i++) {
+          sim.step();
+          for (const e of sim.drainEvents()) if (e.kind === 'slip' || e.kind === 'bobble') n++;
+        }
+      }
+      return n;
+    };
+    expect(count(conditionsFor('rain', 'night', 0.15, 1))).toBeGreaterThan(count(conditionsFor('clear', 'day', 0.95, 1)) + 5);
+  });
+});

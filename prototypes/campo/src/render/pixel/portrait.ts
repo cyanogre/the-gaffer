@@ -1,4 +1,4 @@
-import { expressionOf, type Kit, type Look } from '../../content/look';
+import { expressionOf, type Expression, type Kit, type Look } from '../../content/look';
 import { Rng } from '../../sim/rng';
 
 /**
@@ -61,6 +61,8 @@ export interface PortraitSpec {
   traits: readonly string[];
   num: number;
   seed: number;
+  /** Gesto forzado (novela visual); si no, sale de la personalidad. */
+  expr?: Expression;
 }
 
 export function pixelPortrait(spec: PortraitSpec): HTMLCanvasElement {
@@ -68,7 +70,7 @@ export function pixelPortrait(spec: PortraitSpec): HTMLCanvasElement {
   const g = new Grid();
   const rng = new Rng(spec.seed);
   const f = look.gender === 'f';
-  const expr = expressionOf(spec.traits);
+  const expr = spec.expr ?? expressionOf(spec.traits);
   const sk = { b: look.skin, s: mix(look.skin, COOL, 0.3), d: mix(look.skin, COOL, 0.5), l: mix(look.skin, WARM, 0.35) };
   const hr = { b: look.hairColor, s: mix(look.hairColor, COOL, 0.38), d: mix(look.hairColor, COOL, 0.6), l: mix(look.hairColor, WARM, 0.38) };
   const sh = { b: kit.shirt, s: mix(kit.shirt, COOL, 0.35), l: mix(kit.shirt, WARM, 0.3) };
