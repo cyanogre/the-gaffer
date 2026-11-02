@@ -492,7 +492,7 @@ function startMatch() {
   guide.notify({ kind: 'match' });
   if (!c.flags.hintMatch) {
     c.flags.hintMatch = true;
-    guide.showHint('El partido se juega solo, pero tú mandas: «Órdenes» cambia la táctica en vivo y «Cambios» mete a los del banquillo. Toca a un jugador para ver su ficha.', '#btnOrders');
+    guide.showHint('El partido se juega solo, pero tú mandas: «Órdenes» cambia la táctica en vivo y «Cambios» mete a los del banquillo. Toca a un jugador para ver su ficha. Con prisa, «Final» salta al resultado.', '#btnOrders');
     match.paused = true;
     $('btnPause').querySelector('b')!.textContent = 'Seguir';
   }

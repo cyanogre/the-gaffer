@@ -10,7 +10,7 @@ import { FORMATION_NAMES } from '../sim/formations';
 import { MatchSim } from '../sim/match';
 import { TRAITS, traitLabel } from '../sim/traits';
 import type { Block, Command, Formation, Freedom, MatchEventKind, PassStyle, SimPlayer } from '../sim/types';
-import { $, h, nameEl, portrait, type Sheet } from './dom';
+import { $, card, h, nameEl, portrait, type Sheet } from './dom';
 import { Overlay } from './overlay';
 import { drawCrest, iconSvg } from './pixelart';
 
@@ -38,6 +38,8 @@ export class MatchScreen {
   private ownGoals: [number, number] = [0, 0];
   /** Lo que hace cada uno de los tuyos (para su nota). */
   private pstats = new Map<string, PlayerMatchStats>();
+  /** Saltando al resultado (para no hacerlo dos veces). */
+  private skipping = false;
   private slowAt = 0;
   onFinish: ((o: MatchOutcome) => void) | null = null;
 
@@ -94,6 +96,18 @@ export class MatchScreen {
       $('btnPause').setAttribute('aria-pressed', String(this.paused));
     };
     $('btnFt').onclick = () => this.onFinish?.(this.outcome());
+    // saltar al resultado: se juega lo que queda sin dibujarlo (mismo motor, mismo resultado que viéndolo)
+    $('btnSkip').onclick = async () => {
+      if (this.skipping) return;
+      if (this.sim.phase !== 'fulltime') {
+        const i = await card('¿Saltar al resultado?', ['Se juega lo que queda sin verlo, con tu once y tus órdenes de ahora. Los cambios que no hayas hecho, no se hacen.'], { choices: [{ label: 'Ir al resultado' }] });
+        if (i !== 0) return;
+      }
+      this.skipping = true;
+      this.sheet.close();
+      this.fastForward();
+      this.onFinish?.(this.outcome());
+    };
     this.stage.onpointerdown = (ev) => {
       if (this.blocked()) return;
       const r = this.stage.getBoundingClientRect();
