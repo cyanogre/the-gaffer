@@ -1,0 +1,192 @@
+{
+  "cell": {
+    "w": 48,
+    "h": 48
+  },
+  "expressionColumns": [
+    "neutral",
+    "smug",
+    "angry",
+    "sleepy",
+    "nervous",
+    "happy",
+    "dreamy",
+    "dramatic"
+  ],
+  "expressiveLayers": [
+    "ojos",
+    "cejas",
+    "boca"
+  ],
+  "layerOrder": [
+    "pelo_detras",
+    "camiseta",
+    "cabeza",
+    "ojos",
+    "cejas",
+    "nariz",
+    "boca",
+    "barba",
+    "pelo",
+    "accesorio",
+    "pendientes"
+  ],
+  "layers": {
+    "hombre": {
+      "pelo_detras": [
+        "bald",
+        "buzz",
+        "short",
+        "afro",
+        "mohawk",
+        "long",
+        "ponytail",
+        "mullet",
+        "curly",
+        "combover",
+        "bun",
+        "braids",
+        "pixie",
+        "bob",
+        "pigtails",
+        "fade",
+        "quiff"
+      ],
+      "camiseta": [
+        "plain",
+        "stripes",
+        "hoops",
+        "half",
+        "sash"
+      ],
+      "cabeza": [
+        "slim",
+        "normal",
+        "stocky",
+        "belly"
+      ],
+      "ojos": [
+        "base"
+      ],
+      "cejas": [
+        "thin",
+        "thick",
+        "uni"
+      ],
+      "nariz": [
+        "small",
+        "big",
+        "hook"
+      ],
+      "boca": [
+        "base"
+      ],
+      "barba": [
+        "mustache",
+        "beard",
+        "goatee",
+        "stubble"
+      ],
+      "pelo": [
+        "bald",
+        "buzz",
+        "short",
+        "afro",
+        "mohawk",
+        "long",
+        "ponytail",
+        "mullet",
+        "curly",
+        "combover",
+        "bun",
+        "braids",
+        "pixie",
+        "bob",
+        "pigtails",
+        "fade",
+        "quiff"
+      ],
+      "accesorio": [
+        "glasses",
+        "headband"
+      ],
+      "pendientes": []
+    },
+    "mujer": {
+      "pelo_detras": [
+        "bald",
+        "buzz",
+        "short",
+        "afro",
+        "mohawk",
+        "long",
+        "ponytail",
+        "mullet",
+        "curly",
+        "combover",
+        "bun",
+        "braids",
+        "pixie",
+        "bob",
+        "pigtails",
+        "fade",
+        "quiff"
+      ],
+      "camiseta": [
+        "plain",
+        "stripes",
+        "hoops",
+        "half",
+        "sash"
+      ],
+      "cabeza": [
+        "slim",
+        "normal",
+        "stocky"
+      ],
+      "ojos": [
+        "base"
+      ],
+      "cejas": [
+        "thin",
+        "thick",
+        "uni"
+      ],
+      "nariz": [
+        "small",
+        "big",
+        "hook"
+      ],
+      "boca": [
+        "base"
+      ],
+      "barba": [],
+      "pelo": [
+        "bald",
+        "buzz",
+        "short",
+        "afro",
+        "mohawk",
+        "long",
+        "ponytail",
+        "mullet",
+        "curly",
+        "combover",
+        "bun",
+        "braids",
+        "pixie",
+        "bob",
+        "pigtails",
+        "fade",
+        "quiff"
+      ],
+      "accesorio": [
+        "glasses",
+        "headband"
+      ],
+      "pendientes": [
+        "aros"
+      ]
+    }
+  }
+}

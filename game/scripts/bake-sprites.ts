@@ -1,6 +1,7 @@
 /**
- * Hornea las hojas de sprites por capas en assets/sprites/<capa>/<variante>.png
- * a partir del generador procedimental. Úsalo para regenerar la base; después,
+ * Hornea el arte por capas a partir del generador procedimental, separado por sexo:
+ *   assets/sprites/<hombre|mujer>/<capa>/<variante>.png   (cuerpo: escenario y partido)
+ *   assets/retratos/<hombre|mujer>/<capa>/<variante>.png  (caras grandes: diálogos y fichas) Úsalo para regenerar la base; después,
  * cualquier PNG se puede retocar a mano y el juego usará la versión retocada.
  *
  *   npm run bake:sprites            → solo crea las hojas que no existen
@@ -15,9 +16,11 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { deflateSync } from 'node:zlib';
-import { FIXED, FRAMES, KEY, LAYER_ORDER, SH, SW, VIEWS, bakeSheet, layerVariants } from '../src/render/pixel/sprites';
+import { EXPRESSIONS, EXPRESSIVE, PN, PORTRAIT_LAYERS, bakePortraitSheet, portraitVariants } from '../src/render/pixel/portraitArt';
+import { FIXED, FRAMES, KEY, LAYER_ORDER, SEXES, SH, SW, VIEWS, bakeSheet, layerVariants, type Px } from '../src/render/pixel/sprites';
 
-const OUT = join(process.cwd(), 'assets', 'sprites');
+const ASSETS = join(process.cwd(), 'assets');
+const OUT = join(ASSETS, 'sprites');
 const force = process.argv.includes('--force');
 const overwriteEdits = process.argv.includes('--pisar-retoques');
 const HASHES = join(OUT, 'generadas.json');
@@ -72,32 +75,51 @@ function write(path: string, buf: Buffer | string) {
 let made = 0;
 let kept = 0;
 const protectedEdits: string[] = [];
-const manifest: Record<string, string[]> = {};
-for (const layer of LAYER_ORDER) {
-  manifest[layer] = layerVariants(layer);
-  for (const variant of layerVariants(layer)) {
-    const key = `${layer}/${variant}`;
-    const path = join(OUT, layer, `${variant}.png`);
-    if (existsSync(path)) {
-      if (!force) {
-        kept++;
-        continue;
-      }
-      const current = sha1(readFileSync(path));
-      if (hashes[key] !== current && !overwriteEdits) {
-        // retocada a mano (o de antes de que existiera el registro): no se toca
-        protectedEdits.push(key);
-        kept++;
-        continue;
-      }
+const seen = new Set<string>();
+/** Escribe una hoja si falta, o si se fuerza y no está retocada a mano. `key` = ruta relativa a assets. */
+function bakeOne(key: string, make: () => Px) {
+  seen.add(key);
+  const path = join(ASSETS, `${key}.png`);
+  if (existsSync(path)) {
+    if (!force) {
+      kept++;
+      return;
     }
-    const sheet = bakeSheet(layer, variant);
-    const buf = png(sheet.w, sheet.h, toRgba(sheet.data, sheet.w, sheet.h));
-    write(path, buf);
-    hashes[key] = sha1(buf);
-    made++;
+    const current = sha1(readFileSync(path));
+    if (hashes[key] !== current && !overwriteEdits) {
+      // retocada a mano (o de antes de que existiera el registro): no se toca
+      protectedEdits.push(key);
+      kept++;
+      return;
+    }
+  }
+  const sheet = make();
+  const buf = png(sheet.w, sheet.h, toRgba(sheet.data, sheet.w, sheet.h));
+  write(path, buf);
+  hashes[key] = sha1(buf);
+  made++;
+}
+
+// cuerpo (sprites del escenario y del partido), por sexo
+const manifest: Record<string, Record<string, string[]>> = {};
+for (const sex of SEXES) {
+  manifest[sex] = {};
+  for (const layer of LAYER_ORDER) {
+    manifest[sex][layer] = layerVariants(layer, sex);
+    for (const variant of layerVariants(layer, sex)) bakeOne(`sprites/${sex}/${layer}/${variant}`, () => bakeSheet(layer, variant, sex));
   }
 }
+// retratos (diálogos, fichas, banquillo), por sexo
+const portraits: Record<string, Record<string, string[]>> = {};
+for (const sex of SEXES) {
+  portraits[sex] = {};
+  for (const layer of PORTRAIT_LAYERS) {
+    portraits[sex][layer] = portraitVariants(layer, sex);
+    for (const variant of portraitVariants(layer, sex)) bakeOne(`retratos/${sex}/${layer}/${variant}`, () => bakePortraitSheet(layer, variant, sex));
+  }
+}
+// lo que ya no genera el generador (rutas antiguas) se olvida del registro
+for (const k of Object.keys(hashes)) if (!seen.has(k)) delete hashes[k];
 write(HASHES, JSON.stringify(hashes, null, 1));
 if (protectedEdits.length) {
   console.log(`Retocadas a mano (no se han tocado): ${protectedEdits.join(', ')}`);
@@ -129,5 +151,9 @@ write(join(OUT, 'paleta-clave.png'), png(palW, sw, pal));
 write(
   join(OUT, 'manifest.json'),
   JSON.stringify({ cell: { w: SW, h: SH, feetRow: SH - 1 }, columns: FRAMES, rows: VIEWS, layerOrder: LAYER_ORDER, layers: manifest, keyColors: Object.fromEntries(swatches) }, null, 2),
+);
+write(
+  join(ASSETS, 'retratos', 'manifest.json'),
+  JSON.stringify({ cell: { w: PN, h: PN }, expressionColumns: EXPRESSIONS, expressiveLayers: EXPRESSIVE, layerOrder: PORTRAIT_LAYERS, layers: portraits }, null, 2),
 );
 console.log(`Hojas creadas: ${made} · conservadas (ya existían): ${kept}`);

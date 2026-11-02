@@ -1,4 +1,23 @@
-# Hojas de sprites de los futbolistas
+# Arte de los personajes (cuerpo y retratos)
+
+Todo está **separado por sexo**: `hombre/` y `mujer/`. Cada archivo es solo de uno, así que puedes
+retocar a las mujeres sin tocar a los hombres (y al revés).
+
+- `assets/sprites/<hombre|mujer>/<capa>/<variante>.png` — el cuerpo (escenarios y partido).
+- `assets/retratos/<hombre|mujer>/<capa>/<variante>.png` — las caras grandes (diálogos, fichas, banquillo, barra de arriba).
+
+## Retratos
+
+Celda de 48 × 48 px, mismos colores clave que el cuerpo. Capas, de atrás adelante: `pelo_detras`,
+`camiseta`, `cabeza` (cuello, orejas, cara y mandíbula según complexión), `ojos`, `cejas`, `nariz`,
+`boca`, `barba` (solo hombre), `pelo`, `accesorio` (gafas, cinta) y `pendientes` (solo mujer).
+
+`ojos`, `cejas` y `boca` tienen **una columna por gesto**, en este orden: `neutral smug angry sleepy
+nervous happy dreamy dramatic` (normal, chulo, enfadado, dormido, nervioso, contento, soñador,
+dramático). Las demás capas son una sola celda. Colores clave extra: colorete `#ff4060`. El contorno
+y el fondo con los colores del equipo los pone el juego.
+
+## Cuerpo
 
 Estas PNG **son el arte del juego**. El motor las carga, las apila por capas y repinta los
 colores clave con la piel, el pelo y la equipación de cada jugador. Si retocas una PNG, el
@@ -36,9 +55,9 @@ De atrás adelante (cada carpeta es una capa; cada PNG, una variante):
 | `acc` | accesorio | gafas, cinta |
 | `arm_front` | complexión | brazo de delante |
 
-**Complexiones**: masculinas `slim`, `normal`, `stocky`, `belly`; femeninas `fslim`, `fnormal`,
-`fstocky` (hombros más estrechos, cintura marcada, cadera más ancha y pecho; de perfil, pecho y
-glúteo). Las jugadoras usan siempre las femeninas.
+**Complexiones**: en `hombre/`, `slim`, `normal`, `stocky`, `belly`; en `mujer/`, `slim`, `normal`,
+`stocky` (hombros más estrechos, cintura marcada, cadera más ancha y pecho; de perfil, pecho y
+glúteo). Vello facial (`facial`) solo hay en `hombre/`.
 
 **Poses (rodillas y codos)**: brazos y piernas no se dibujan como palos. El generador usa una persona
 de referencia en 3D (`src/render/pixel/skeleton.ts`): ángulos de muslo, espinilla, brazo y antebrazo
@@ -105,7 +124,7 @@ Para pisarlas todas, también las retocadas:
 npm run bake:sprites -- --force --pisar-retoques
 ```
 
-El script sabe qué está retocado porque guarda la huella de lo que generó en `generadas.json`.
+El script sabe qué está retocado porque guarda la huella de lo que generó en `generadas.json` (cuerpo y retratos).
 
 **¿Se ve el cambio al momento?** Con `npm run dev` abierto, guardar una PNG recarga el juego solo.
 La versión publicada en la web no: hay que volver a construirla y publicarla.

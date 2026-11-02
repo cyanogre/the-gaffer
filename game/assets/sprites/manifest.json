@@ -54,128 +54,193 @@
     "arm_front"
   ],
   "layers": {
-    "arm_back": [
-      "slim",
-      "normal",
-      "stocky",
-      "belly",
-      "fslim",
-      "fnormal",
-      "fstocky"
-    ],
-    "hair_back": [
-      "bald",
-      "buzz",
-      "short",
-      "afro",
-      "mohawk",
-      "long",
-      "ponytail",
-      "mullet",
-      "curly",
-      "combover",
-      "bun",
-      "braids",
-      "pixie",
-      "bob",
-      "pigtails",
-      "fade",
-      "quiff"
-    ],
-    "legs": [
-      "socks",
-      "socksdown",
-      "trousers"
-    ],
-    "shorts": [
-      "slim",
-      "normal",
-      "stocky",
-      "belly",
-      "fslim",
-      "fnormal",
-      "fstocky"
-    ],
-    "torso": [
-      "slim_plain",
-      "slim_stripes",
-      "slim_hoops",
-      "slim_half",
-      "slim_sash",
-      "normal_plain",
-      "normal_stripes",
-      "normal_hoops",
-      "normal_half",
-      "normal_sash",
-      "stocky_plain",
-      "stocky_stripes",
-      "stocky_hoops",
-      "stocky_half",
-      "stocky_sash",
-      "belly_plain",
-      "belly_stripes",
-      "belly_hoops",
-      "belly_half",
-      "belly_sash",
-      "fslim_plain",
-      "fslim_stripes",
-      "fslim_hoops",
-      "fslim_half",
-      "fslim_sash",
-      "fnormal_plain",
-      "fnormal_stripes",
-      "fnormal_hoops",
-      "fnormal_half",
-      "fnormal_sash",
-      "fstocky_plain",
-      "fstocky_stripes",
-      "fstocky_hoops",
-      "fstocky_half",
-      "fstocky_sash"
-    ],
-    "head": [
-      "small",
-      "big",
-      "hook"
-    ],
-    "facial": [
-      "mustache",
-      "beard",
-      "goatee",
-      "stubble"
-    ],
-    "hair_front": [
-      "bald",
-      "buzz",
-      "short",
-      "afro",
-      "mohawk",
-      "long",
-      "ponytail",
-      "mullet",
-      "curly",
-      "combover",
-      "bun",
-      "braids",
-      "pixie",
-      "bob",
-      "pigtails",
-      "fade",
-      "quiff"
-    ],
-    "acc": [
-      "glasses",
-      "headband"
-    ],
-    "arm_front": [
-      "slim",
-      "normal",
-      "stocky",
-      "belly",
-      "fslim",
-      "fnormal",
-      "fstocky"
-    ]
+    "hombre": {
+      "arm_back": [
+        "slim",
+        "normal",
+        "stocky",
+        "belly"
+      ],
+      "hair_back": [
+        "bald",
+        "buzz",
+        "short",
+        "afro",
+        "mohawk",
+        "long",
+        "ponytail",
+        "mullet",
+        "curly",
+        "combover",
+        "bun",
+        "braids",
+        "pixie",
+        "bob",
+        "pigtails",
+        "fade",
+        "quiff"
+      ],
+      "legs": [
+        "socks",
+        "socksdown",
+        "trousers"
+      ],
+      "shorts": [
+        "slim",
+        "normal",
+        "stocky",
+        "belly"
+      ],
+      "torso": [
+        "slim_plain",
+        "slim_stripes",
+        "slim_hoops",
+        "slim_half",
+        "slim_sash",
+        "normal_plain",
+        "normal_stripes",
+        "normal_hoops",
+        "normal_half",
+        "normal_sash",
+        "stocky_plain",
+        "stocky_stripes",
+        "stocky_hoops",
+        "stocky_half",
+        "stocky_sash",
+        "belly_plain",
+        "belly_stripes",
+        "belly_hoops",
+        "belly_half",
+        "belly_sash"
+      ],
+      "head": [
+        "small",
+        "big",
+        "hook"
+      ],
+      "facial": [
+        "mustache",
+        "beard",
+        "goatee",
+        "stubble"
+      ],
+      "hair_front": [
+        "bald",
+        "buzz",
+        "short",
+        "afro",
+        "mohawk",
+        "long",
+        "ponytail",
+        "mullet",
+        "curly",
+        "combover",
+        "bun",
+        "braids",
+        "pixie",
+        "bob",
+        "pigtails",
+        "fade",
+        "quiff"
+      ],
+      "acc": [
+        "glasses",
+        "headband"
+      ],
+      "arm_front": [
+        "slim",
+        "normal",
+        "stocky",
+        "belly"
+      ]
+    },
+    "mujer": {
+      "arm_back": [
+        "slim",
+        "normal",
+        "stocky"
+      ],
+      "hair_back": [
+        "bald",
+        "buzz",
+        "short",
+        "afro",
+        "mohawk",
+        "long",
+        "ponytail",
+        "mullet",
+        "curly",
+        "combover",
+        "bun",
+        "braids",
+        "pixie",
+        "bob",
+        "pigtails",
+        "fade",
+        "quiff"
+      ],
+      "legs": [
+        "socks",
+        "socksdown",
+        "trousers"
+      ],
+      "shorts": [
+        "slim",
+        "normal",
+        "stocky"
+      ],
+      "torso": [
+        "slim_plain",
+        "slim_stripes",
+        "slim_hoops",
+        "slim_half",
+        "slim_sash",
+        "normal_plain",
+        "normal_stripes",
+        "normal_hoops",
+        "normal_half",
+        "normal_sash",
+        "stocky_plain",
+        "stocky_stripes",
+        "stocky_hoops",
+        "stocky_half",
+        "stocky_sash"
+      ],
+      "head": [
+        "small",
+        "big",
+        "hook"
+      ],
+      "facial": [],
+      "hair_front": [
+        "bald",
+        "buzz",
+        "short",
+        "afro",
+        "mohawk",
+        "long",
+        "ponytail",
+        "mullet",
+        "curly",
+        "combover",
+        "bun",
+        "braids",
+        "pixie",
+        "bob",
+        "pigtails",
+        "fade",
+        "quiff"
+      ],
+      "acc": [
+        "glasses",
+        "headband"
+      ],
+      "arm_front": [
+        "slim",
+        "normal",
+        "stocky"
+      ]
+    }
   },
   "keyColors": {
     "skin.l": "#ffe0c0",
@@ -210,6 +275,7 @@
     "acc": "#ff8000",
     "lip": "#ff0080",
     "stubble": "#c06080",
+    "blush": "#ff4060",
     "fijo.outline": "#1a1226",
     "fijo.eye": "#1a1226",
     "fijo.mouth": "#5a1820",
@@ -221,6 +287,12 @@
     "fijo.crust": "#a8642a",
     "fijo.filling": "#c8402a",
     "fijo.tile": "#f6f4ee",
-    "fijo.pip": "#1a1226"
+    "fijo.pip": "#1a1226",
+    "fijo.eyeWhite": "#f4f0ea",
+    "fijo.shine": "#ffffff",
+    "fijo.pupil": "#3c3546",
+    "fijo.sweat": "#9fd8ff",
+    "fijo.gold": "#f2c230",
+    "fijo.goldShade": "#d8a21a"
   }
 }

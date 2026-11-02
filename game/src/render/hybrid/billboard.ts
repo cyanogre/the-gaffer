@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { Kit, Look } from '../../content/look';
 import type { MatchSim } from '../../sim/match';
 import type { SimPlayer } from '../../sim/types';
-import { SheetStore, composeSprites, type FrameSet } from '../pixel/sheets';
+import { composeSprites, sheetStore, type FrameSet } from '../pixel/sheets';
 import { SH, SW, type FrameId, type View } from '../pixel/sprites';
 import { PIXEL_GRID } from '../pixelgrid';
 
@@ -10,7 +10,7 @@ import { PIXEL_GRID } from '../pixelgrid';
  * Personajes 2D dentro del mundo 3D: cada muñeco es un sprite que mira siempre a cámara,
  * con su hoja de animación como textura pixel (sin suavizado). La luz de la escena le tiñe.
  */
-export const sheetStore = new SheetStore();
+export { sheetStore };
 
 const COLS: FrameId[] = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'kick', 'up0', 'up1', 'out', 'ear', 'slide', 'fall', 'dive', 'poke', 'head', 'push', 'kneel', 'throw', 'catch', 'sit', 'point', 'talk', 'sleep', 'wipe0', 'wipe1', 'eat', 'table', 'play', 'eatSit'];
 const ROWS: View[] = ['front', 'back', 'side'];

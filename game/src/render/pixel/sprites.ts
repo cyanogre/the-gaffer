@@ -30,6 +30,7 @@ export const KEY = {
   acc: '#ff8000',
   lip: '#ff0080',
   stubble: '#c06080',
+  blush: '#ff4060',
 } as const;
 type Ramp = { l: string; b: string; s: string; d: string };
 
@@ -48,7 +49,18 @@ export const FIXED = {
   filling: '#c8402a',
   tile: '#f6f4ee',
   pip: '#1a1226',
+  // retratos: blanco del ojo, brillo, pupila, gota de sudor y pendientes
+  eyeWhite: '#f4f0ea',
+  shine: '#ffffff',
+  pupil: '#3c3546',
+  sweat: '#9fd8ff',
+  gold: '#f2c230',
+  goldShade: '#d8a21a',
 };
+
+/** Carpeta de cada sexo: todo el arte (cuerpo y retratos) va separado para hombres y para mujeres. */
+export type SexFolder = 'hombre' | 'mujer';
+export const SEXES: SexFolder[] = ['hombre', 'mujer'];
 
 export type LayerId = 'arm_back' | 'hair_back' | 'legs' | 'shorts' | 'torso' | 'head' | 'facial' | 'hair_front' | 'acc' | 'arm_front';
 /** Orden de pintado (de atrás adelante). */
@@ -56,28 +68,30 @@ export const LAYER_ORDER: LayerId[] = ['arm_back', 'hair_back', 'legs', 'shorts'
 
 /** Complexiones de las hojas: las masculinas y las femeninas (cintura, cadera y pecho). */
 export type SpriteBody = Body | 'fslim' | 'fnormal' | 'fstocky';
-export const BODIES: SpriteBody[] = ['slim', 'normal', 'stocky', 'belly', 'fslim', 'fnormal', 'fstocky'];
 export const PATTERNS: KitPattern[] = ['plain', 'stripes', 'hoops', 'half', 'sash'];
 export const HAIRS: HairStyle[] = ['bald', 'buzz', 'short', 'afro', 'mohawk', 'long', 'ponytail', 'mullet', 'curly', 'combover', 'bun', 'braids', 'pixie', 'bob', 'pigtails', 'fade', 'quiff'];
 export const FACIALS: Exclude<Facial, 'none'>[] = ['mustache', 'beard', 'goatee', 'stubble'];
 export const NOSES: Nose[] = ['small', 'big', 'hook'];
 export const ACCS: Exclude<Accessory, 'none' | 'socksDown'>[] = ['glasses', 'headband'];
 
-/** Variantes que existen de cada capa: una PNG por variante. */
-export function layerVariants(layer: LayerId): string[] {
+/** Complexiones de cada sexo (las de mujer, con cintura, cadera y pecho). */
+export const SEX_BODIES: Record<SexFolder, string[]> = { hombre: ['slim', 'normal', 'stocky', 'belly'], mujer: ['slim', 'normal', 'stocky'] };
+
+/** Variantes que existen de cada capa y sexo: una PNG por variante. */
+export function layerVariants(layer: LayerId, sex: SexFolder): string[] {
   switch (layer) {
     case 'arm_back':
     case 'arm_front':
     case 'shorts':
-      return BODIES;
+      return SEX_BODIES[sex];
     case 'torso':
-      return BODIES.flatMap((b) => PATTERNS.map((p) => `${b}_${p}`));
+      return SEX_BODIES[sex].flatMap((b) => PATTERNS.map((p) => `${b}_${p}`));
     case 'legs':
       return ['socks', 'socksdown', 'trousers'];
     case 'head':
       return NOSES;
     case 'facial':
-      return FACIALS;
+      return sex === 'hombre' ? FACIALS : [];
     case 'hair_back':
     case 'hair_front':
       return HAIRS;
@@ -766,17 +780,18 @@ function figure(v: VariantSet, s: Spec, layer?: LayerId): Px {
 }
 
 /** Variante concreta de una capa → rasgos con los que se dibuja. */
-function variantSet(layer: LayerId, variant: string): VariantSet {
-  const v: VariantSet = { body: 'normal', pattern: 'plain', hair: 'bald', facial: 'none', nose: 'small', accessory: 'none' };
+function variantSet(layer: LayerId, variant: string, sex: SexFolder): VariantSet {
+  const fb = (b: string) => (sex === 'mujer' ? `f${b}` : b) as SpriteBody;
+  const v: VariantSet = { body: fb('normal'), pattern: 'plain', hair: 'bald', facial: 'none', nose: 'small', accessory: 'none' };
   switch (layer) {
     case 'arm_back':
     case 'arm_front':
     case 'shorts':
-      v.body = variant as SpriteBody;
+      v.body = fb(variant);
       break;
     case 'torso': {
       const [b, p] = variant.split('_');
-      v.body = b as SpriteBody;
+      v.body = fb(b);
       v.pattern = p as KitPattern;
       break;
     }
@@ -802,9 +817,9 @@ function variantSet(layer: LayerId, variant: string): VariantSet {
 }
 
 /** Hoja completa (una columna por FRAME × 3 filas) de una capa y variante, en colores clave. */
-export function bakeSheet(layer: LayerId, variant: string): Px {
+export function bakeSheet(layer: LayerId, variant: string, sex: SexFolder): Px {
   const sheet = new Px(SW * FRAMES.length, SH * VIEWS.length);
-  const v = variantSet(layer, variant);
+  const v = variantSet(layer, variant, sex);
   VIEWS.forEach((view, row) => {
     FRAMES.forEach((frame, col) => {
       const spec = SPECS[view]?.[frame];

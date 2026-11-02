@@ -1,12 +1,12 @@
 import type { Kit, Look } from '../../content/look';
-import { DIGITS, FIXED, FRAMES, KEY, LAYER_ORDER, SH, SW, VIEWS, cellUsed, torsoTop, type FrameId, type LayerId, type SheetFrame, type View } from './sprites';
+import { DIGITS, FIXED, FRAMES, KEY, LAYER_ORDER, SH, SW, VIEWS, cellUsed, torsoTop, type FrameId, type LayerId, type SexFolder, type SheetFrame, type View } from './sprites';
 
 /**
  * Carga las hojas de sprites editables (assets/sprites/**.png) y compone el muñeco de cada
  * jugador: capa a capa, repintando los colores clave con su piel, su pelo y su equipación.
  * Editar una PNG cambia el juego sin tocar código.
  */
-const FILES = import.meta.glob('../../../assets/sprites/**/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const FILES = import.meta.glob(['../../../assets/sprites/**/*.png', '../../../assets/retratos/**/*.png'], { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
 export type FrameSet = Record<View, Partial<Record<FrameId, HTMLCanvasElement>>>;
 /**
@@ -38,7 +38,7 @@ export class SheetStore {
     if (this.ready) return;
     await Promise.all(
       Object.entries(FILES).map(async ([path, url]) => {
-        const m = path.match(/sprites\/([^/]+)\/([^/]+)\.png$/);
+        const m = path.match(/assets\/((?:sprites|retratos)\/(?:hombre|mujer)\/[^/]+\/[^/]+)\.png$/);
         if (!m) return;
         const img = new Image();
         img.src = url;
@@ -48,14 +48,15 @@ export class SheetStore {
         c.height = img.height;
         const g = c.getContext('2d')!;
         g.drawImage(img, 0, 0);
-        this.sheets.set(`${m[1]}/${m[2]}`, g.getImageData(0, 0, img.width, img.height));
+        this.sheets.set(m[1], g.getImageData(0, 0, img.width, img.height));
       }),
     );
     this.ready = true;
   }
 
-  get(layer: LayerId, variant: string) {
-    return this.sheets.get(`${layer}/${variant}`);
+  /** `key`: ruta dentro de assets sin extensión (sprites/mujer/torso/normal_plain). */
+  get(key: string) {
+    return this.sheets.get(key);
   }
 
   get count() {
@@ -63,8 +64,10 @@ export class SheetStore {
   }
 }
 
-/** Las mujeres usan las hojas femeninas (cintura, cadera y pecho); «barriga» pasa a robusta. */
-export const bodyKey = (look: Look) => (look.gender === 'f' ? `f${look.body === 'belly' ? 'stocky' : look.body}` : look.body);
+/** Carpeta de su sexo: todo su arte sale de ahí. */
+export const sexOf = (look: Look): SexFolder => (look.gender === 'f' ? 'mujer' : 'hombre');
+/** Complexión de sus hojas; las mujeres no tienen «barriga» (pasa a robusta). */
+export const bodyKey = (look: Look) => (look.gender === 'f' && look.body === 'belly' ? 'stocky' : look.body);
 
 export function variantFor(layer: LayerId, look: Look, kit: Kit, civil = false): string | null {
   switch (layer) {
@@ -79,7 +82,7 @@ export function variantFor(layer: LayerId, look: Look, kit: Kit, civil = false):
     case 'head':
       return look.nose;
     case 'facial':
-      return look.facial === 'none' ? null : look.facial;
+      return look.facial === 'none' || look.gender === 'f' ? null : look.facial;
     case 'hair_back':
     case 'hair_front':
       return look.hair;
@@ -88,7 +91,7 @@ export function variantFor(layer: LayerId, look: Look, kit: Kit, civil = false):
   }
 }
 
-function recolorMap(look: Look, kit: Kit) {
+export function recolorMap(look: Look, kit: Kit) {
   const m = new Map<number, number>();
   const ramp = (key: { l: string; b: string; s: string; d: string }, c: string) => {
     m.set(hex(key.l), mix(c, WARM, 0.32));
@@ -107,6 +110,7 @@ function recolorMap(look: Look, kit: Kit) {
   m.set(hex(KEY.acc), hex(look.accColor));
   m.set(hex(KEY.lip), look.gender === 'f' ? mix(look.skin, '#b8344a', 0.5) : mix(look.skin, COOL, 0.58));
   m.set(hex(KEY.stubble), mix(look.skin, look.hairColor, 0.5));
+  m.set(hex(KEY.blush), mix(look.skin, '#e0566a', 0.35));
   return m;
 }
 
@@ -117,9 +121,10 @@ const ROT: Partial<Record<SheetFrame, [FrameId, 1 | -1]>> = { slideU: ['slide', 
 export function composeSprites(store: SheetStore, look: Look, kit: Kit, num: number, civil = false): SpriteSet {
   const out: SpriteSet = { front: {}, back: {}, side: {}, parts: { front: {}, back: {}, side: {} } };
   const map = recolorMap(look, kit);
+  const sex = sexOf(look);
   const layers = LAYER_ORDER.map((l) => {
     const v = variantFor(l, look, kit, civil);
-    const sheet = v ? store.get(l, v) : undefined;
+    const sheet = v ? store.get(`sprites/${sex}/${l}/${v}`) : undefined;
     return sheet && { sheet, arm: l === 'arm_front' || l === 'arm_back' ? ARM : 0 };
   }).filter((x): x is { sheet: ImageData; arm: number } => !!x);
   const trim = hex(kit.trim === kit.shirt ? '#ffffff' : kit.trim);
@@ -315,3 +320,6 @@ export function cellOf(c: HTMLCanvasElement) {
   for (let i = 0; i < out.length; i++) if (d[i * 4 + 3] > 127) out[i] = ((d[i * 4] << 16) | (d[i * 4 + 1] << 8) | d[i * 4 + 2] | SOLID) >>> 0;
   return out;
 }
+
+/** El almacén de hojas del juego (cuerpo y retratos), cargado al arrancar. */
+export const sheetStore = new SheetStore();
