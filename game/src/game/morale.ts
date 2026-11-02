@@ -57,11 +57,16 @@ export function rating(s: PlayerMatchStats, gk: boolean, result: 'win' | 'draw' 
 
 // ───────────────────────── charlas (desde su ficha) ─────────────────────────
 export type Talk = 'elogiar' | 'exigir' | 'minutos' | 'interesarse';
-export const TALK_OPTIONS: Record<Talk, { label: string; hint: string }> = {
-  elogiar: { label: 'Elogiar su forma', hint: 'Funciona si de verdad está jugando bien.' },
-  exigir: { label: 'Pedirle más', hint: 'A algunos les pica para bien; a otros les hunde.' },
-  minutos: { label: 'Prometerle minutos', hint: 'Le alegra ahora. Si el domingo no juega, se acordará.' },
-  interesarse: { label: 'Preguntarle cómo está', hint: 'Te cuenta qué le preocupa.' },
+/**
+ * Lo que puede decirle el míster. Sin avisar de qué pasará: elogiar funciona si de verdad está
+ * jugando bien; pedirle más pica a unos y hunde a otros; prometer minutos alegra ahora y se paga
+ * si el domingo no juega; preguntarle cómo está le hace contar qué le preocupa.
+ */
+export const TALK_OPTIONS: Record<Talk, { label: string }> = {
+  elogiar: { label: 'Elogiar su forma' },
+  exigir: { label: 'Pedirle más' },
+  minutos: { label: 'Prometerle minutos' },
+  interesarse: { label: 'Preguntarle cómo está' },
 };
 
 export interface TalkResult {

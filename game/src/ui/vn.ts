@@ -7,7 +7,8 @@ import { NPC, choiceLocked, coachCharacter, type CharId, type VNChoice, type VNL
 
 /**
  * Novela visual sobre el escenario: retrato pixel grande, placa con nombre, texto que se escribe
- * solo y decisiones que explican qué cambian. Las que piden una estadística salen bloqueadas.
+ * solo y decisiones. No se anuncia qué pasará con cada una: se ve después. Las que piden una
+ * estadística llevan su etiqueta delante (como en los juegos de rol) y, si no llegas, salen bloqueadas.
  */
 export class VNPlayer {
   private root = document.createElement('div');
@@ -121,10 +122,15 @@ export class VNPlayer {
           ...choices.map((ch, i) => {
             const b = document.createElement('button');
             b.type = 'button';
-            b.innerHTML = '<b></b><small></small>';
             const lock = choiceLocked(c, ch);
-            b.querySelector('b')!.textContent = ch.text;
-            b.querySelector('small')!.textContent = lock ? `Requiere ${STATS[lock.stat].label} ${lock.lv} (tienes ${c.coach.stats[lock.stat].lv})` : ch.effect;
+            if (ch.req) {
+              const tag = document.createElement('i');
+              tag.className = 'vn-req';
+              tag.textContent = `${STATS[ch.req.stat].label} ${ch.req.lv}`;
+              b.append(tag);
+              if (lock) b.title = `Te falta ${STATS[lock.stat].label.toLowerCase()}: nivel ${lock.lv} (tienes ${c.coach.stats[lock.stat].lv})`;
+            }
+            b.append(ch.text);
             b.disabled = !!lock;
             b.onclick = () => resolve(i);
             return b;

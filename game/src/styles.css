@@ -1543,25 +1543,40 @@ canvas.px,
   display: none;
 }
 .vn-choices button {
-  display: grid;
-  gap: 2px;
+  display: block;
   text-align: left;
   padding: 9px 10px;
   border: 2px solid #1a1226;
   border-radius: 3px;
   background: #f2e9d8;
   color: #1a1226;
+  font: 700 1rem/1.25 var(--body);
 }
 .vn-choices button:not(:disabled):hover,
 .vn-choices button:focus-visible {
   background: var(--gold);
 }
-.vn-choices b {
-  font: 700 1rem/1.25 var(--body);
+/* opción que pide una estadística: su etiqueta delante, como en los juegos de rol */
+.vn-req {
+  display: inline-block;
+  margin-right: 7px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: #1a1226;
+  color: var(--gold);
+  font: 800 0.72rem/1.4 var(--cond);
+  font-style: normal;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 2px;
 }
-.vn-choices small {
-  font: 600 0.8rem/1.25 var(--cond);
-  color: #6b4a5a;
+.vn-choices button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.vn-choices button:disabled .vn-req {
+  background: #6b4a5a;
+  color: #f2e9d8;
 }
 @media (max-width: 700px) {
   .vn {

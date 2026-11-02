@@ -114,7 +114,7 @@ function moraleBox(c: Career, p: SquadPlayer, onTalk?: (t: Talk) => void) {
     onTalk
       ? talked
         ? h('p', { class: 'note', text: 'Ya habéis hablado esta semana.' })
-        : h('div', { class: 'seg' }, ...(Object.keys(TALK_OPTIONS) as Talk[]).map((t) => h('button', { type: 'button', title: TALK_OPTIONS[t].hint, onclick: () => onTalk(t) }, TALK_OPTIONS[t].label, h('small', { text: TALK_OPTIONS[t].hint }))))
+        : h('div', { class: 'seg' }, ...(Object.keys(TALK_OPTIONS) as Talk[]).map((t) => h('button', { type: 'button', onclick: () => onTalk(t) }, TALK_OPTIONS[t].label)))
       : null,
   );
 }

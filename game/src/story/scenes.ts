@@ -85,9 +85,8 @@ export interface VNLine {
   text: string;
 }
 export interface VNChoice {
+  /** Lo que dice el míster. Las consecuencias no se anuncian: se ven después (moral con su motivo, caja, cartera...). */
   text: string;
-  /** Qué cambia (se muestra al elegir, para que la decisión se entienda). */
-  effect: string;
   /** Opción que pide una estadística mínima del míster. */
   req?: { stat: StatId; lv: number };
   /** Aplica la consecuencia y devuelve la respuesta del personaje. */
@@ -138,7 +137,6 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'El del Atlético Barriobajo (masculino).',
-        effect: 'Tu equipo y tu liga serán masculinos.',
         pick: (c) => {
           setLeagueGender(c, 'm');
           return [{ who: 'narrador', text: 'Llamas al número del cartel. Contesta una voz con ruido de taladro de fondo.' }];
@@ -146,7 +144,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: 'El del Atlético Barriobajo Femenino.',
-        effect: 'Tu equipo y tu liga serán femeninos.',
         pick: (c) => {
           setLeagueGender(c, 'f');
           return [{ who: 'narrador', text: 'Llamas al número del cartel. Contesta una voz con ruido de taladro de fondo.' }];
@@ -171,14 +168,12 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Cuente conmigo, presidente.',
-        effect: 'Empiezas con buen pie con Don Ramón.',
         pick: () => {
           return [{ who: 'presidente', expr: 'happy', text: '¡Así me gusta! Le dejo, que tengo una señora esperando con un grifo.' }];
         },
       },
       {
         text: '¿Y no habría un adelanto? Por lo del alquiler...',
-        effect: '+30 € en tu cartera. Te los descontará de tu primer turno en la ferretería.',
         pick: (c) => {
           c.coach.wallet += 30;
           c.flags.adelanto = true;
@@ -213,7 +208,6 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: '«Aquí se viene a disfrutar. Y a aprender.»',
-        effect: 'Moral de la plantilla: sube (les quitas presión). A los más nerviosos, aún más.',
         pick: (c) => {
           c.flags.metSquad = true;
           for (const p of c.squad) morale(c, p.id, p.traits.includes('nervioso') ? 8 : 4, 'Primer día: el míster les quitó presión');
@@ -222,7 +216,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: '«Vamos a ganar la liga. Empieza hoy.»',
-        effect: 'Moral: los ambiciosos se vienen arriba; a los nerviosos les pesa.',
         pick: (c) => {
           c.flags.metSquad = true;
           for (const p of c.squad) {
@@ -235,7 +228,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: '«¿Quién ha traído los balones?»',
-        effect: 'Nadie. Pero aparece la abuela Mari con una red llena (y se queda como aficionada).',
         pick: (c) => {
           c.flags.metSquad = true;
           c.fans += 1;
@@ -260,7 +252,6 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Vamos a ganar, presidente. Palabra.',
-        effect: 'Prometes ganar. La directiva lo juzgará el domingo: si ganas, mucha confianza; si no, la pierdes.',
         pick: (c) => {
           c.promise = 'win';
           return [{ who: 'presidente', expr: 'happy', text: '¡Así me gusta! Se lo digo a mi cuñado. Bueno, se lo grito, que está sordo.' }];
@@ -268,15 +259,13 @@ export const SCENES: VNScene[] = [
       },
       {
         text: 'Le prometo espectáculo. Goles, en una portería o en la otra.',
-        effect: 'Prometes espectáculo. Si el domingo hay 3 goles o más, la directiva y la afición lo agradecerán.',
         pick: (c) => {
           c.promise = 'fun';
-          return [{ who: 'presidente', expr: 'dreamy', text: 'Espectáculo... Eso vende. Como las bisagras de oferta.' }];
+          return [{ who: 'presidente', expr: 'dreamy', text: 'Espectáculo... Eso vende. Como las bisagras de oferta. Tres goles para arriba, ¿eh? Entre los dos equipos me vale.' }];
         },
       },
       {
         text: 'Con este campo, bastante es que no se nos rompa nadie un tobillo.',
-        effect: 'Sin promesas: el domingo solo cuenta el resultado.',
         pick: (c) => {
           c.promise = 'realist';
           return [{ who: 'presidente', expr: 'angry', text: 'Ese campo lo allanó mi padre con una carretilla, míster. Con cariño.' }];
@@ -300,7 +289,6 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Vale, pero el domingo lo das todo.',
-        effect: 'Se pierde el entreno del jueves (no mejora ese día). Su moral sube: le dejaste ir.',
         pick: (c) => {
           c.absent[pid(c, 'padel')] = true;
           morale(c, pid(c, 'padel'), 9, 'Le dejaste ir al torneo de pádel');
@@ -309,7 +297,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: 'Ni hablar. Primero el fútbol.',
-        effect: 'Viene a entrenar (y mejora), pero de morros: su moral baja.',
         pick: (c) => {
           morale(c, pid(c, 'padel'), -9, 'No le dejaste ir al torneo de pádel');
           return [{ who: 'padel', expr: 'angry', text: 'Vale. Pues nada. Ya ganaremos el torneo el año que viene. O nunca.' }];
@@ -317,7 +304,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: 'Te dejo si consigues que Pádel Cristal nos anuncie.',
-        effect: 'Se pierde el entreno del jueves; su moral sube y el club sale anunciado en Pádel Cristal (más gente os conoce).',
         req: { stat: 'labia', lv: 2 },
         pick: (c) => {
           c.absent[pid(c, 'padel')] = true;
@@ -344,7 +330,6 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Trato hecho, Manolo.',
-        effect: '+150 € a la caja y +25 € por semana. Tus jugadores gritarán al marcar.',
         pick: (c) => {
           c.money += 150;
           c.sponsor = 'manolo';
@@ -354,7 +339,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: '¿Y si son 200 y lo de gritar lo dejamos?',
-        effect: '+200 € y patrocinio, sin gritos. Manolo se queda un poco mosca.',
         req: { stat: 'labia', lv: 2 },
         pick: (c) => {
           c.money += 200;
@@ -365,7 +349,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: 'Gracias, pero la camiseta no se vende.',
-        effect: 'Sin dinero. Manolo no animará el domingo y el bocata te saldrá caro.',
         pick: (c) => {
           c.flags.manoloEnfadado = true;
           return [{ who: 'manolo', expr: 'angry', text: 'Pues muy bien. Muy bien. El domingo, el bocadillo de calamares a precio de turista.' }];
@@ -389,7 +372,6 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Son tuyos. Confío en ti.',
-        effect: 'Los penaltis los tira el 9 (lo puedes cambiar en la pizarra). Su moral sube.',
         pick: (c) => {
           c.penaltyTaker = pid(c, 'goleador');
           morale(c, pid(c, 'goleador'), 8, 'Le diste los penaltis');
@@ -398,7 +380,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: 'Los tira el 11, que no falla.',
-        effect: 'Los penaltis los tira el 11. El 9 se pica (su moral baja); al 11 le hace ilusión.',
         pick: (c) => {
           c.penaltyTaker = pid(c, 'penaltiSeguro');
           morale(c, pid(c, 'goleador'), -8, 'No le dejaste tirar los penaltis');
@@ -422,7 +403,6 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Los goles llegarán. Sigue rematando.',
-        effect: 'Su moral sube: le arropas.',
         pick: (c) => {
           morale(c, pid(c, 'goleador'), 7, 'El míster le arropó en el bar');
           return [{ who: 'goleador', expr: 'happy', text: 'Tienes razón. Soy un depredador. Un depredador con mala suerte, pero depredador.' }];
@@ -430,7 +410,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: 'Quizá te venga bien una semana en el banquillo.',
-        effect: 'Su moral baja: le has dicho que se juega el puesto.',
         pick: (c) => {
           c.flags.goleadorAvisado = true;
           morale(c, pid(c, 'goleador'), -6, 'El míster le dijo que se juega el puesto');
@@ -439,7 +418,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: 'Manolo, ponle unas bravas. Invito yo.',
-        effect: '−6 € de tu cartera. Su moral sube: le invitas tú.',
         pick: (c) => {
           c.coach.wallet -= 6;
           morale(c, pid(c, 'goleador'), 6, 'El míster le invitó a unas bravas');
@@ -456,12 +434,11 @@ export const SCENES: VNScene[] = [
     title: 'Un proyecto textil',
     lines: () => [
       { who: 'narrador', text: 'Junto a la valla, la abuela Mari despliega una sábana enorme. Pone «BARRIOBAJO» con una B al revés.' },
-      { who: 'abuela', expr: 'happy', text: 'Míster, quiero hacer una pancarta como Dios manda. Que se vea desde la autovía. Solo necesito tela y pintura.' },
+      { who: 'abuela', expr: 'happy', text: 'Míster, quiero hacer una pancarta como Dios manda. Que se vea desde la autovía. Solo necesito tela y pintura: treinta euros, y la pinto yo.' },
     ],
     choices: [
       {
         text: 'Adelante, abuela. El club paga.',
-        effect: '−30 € de la caja. La pancarta irá a todos los partidos y se verá desde la calle: vendrá más gente.',
         pick: (c) => {
           c.money -= 30;
           c.fans += 4;
@@ -471,7 +448,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: 'La de la B al revés tiene su encanto.',
-        effect: 'Gratis. La foto corre por el grupo de WhatsApp del barrio.',
         pick: (c) => {
           c.fans += 1;
           return [{ who: 'abuela', expr: 'smug', text: 'Eso digo yo. Es estilo. Como Picasso.' }];
@@ -492,7 +468,6 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: '¡Hagámoslo!',
-        effect: `−${STADIUM_LEVELS[1].cost} € de la caja. El campo pasa a césped: el balón rueda mejor y caben 150 personas.`,
         pick: (c) => {
           c.money -= STADIUM_LEVELS[1].cost;
           c.stadiumLevel = 1;
@@ -501,8 +476,7 @@ export const SCENES: VNScene[] = [
       },
       {
         text: 'Mejor esperar. Quizá hace falta material de entrenamiento antes.',
-        effect: 'Nada cambia. Puedes hacer las obras cuando quieras desde la caja del club.',
-        pick: () => [{ who: 'presidente', expr: 'neutral', text: 'Usted manda. Los planos se quedan aquí, cogiendo polvo con cariño.' }],
+        pick: () => [{ who: 'presidente', expr: 'neutral', text: 'Usted manda. Los planos se quedan aquí, cogiendo polvo con cariño. Cuando quiera, se hacen desde la caja del club.' }],
       },
     ],
   },
@@ -522,7 +496,6 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Cuelgas sin decir nada.',
-        effect: 'Se lo cuentas al vestuario: se pican (la moral del once sube).',
         pick: (c) => {
           for (const id of c.lineup) morale(c, id, 4, 'Picados por la llamada del míster rival');
           return [{ who: 'narrador', text: 'El grupo de WhatsApp del equipo arde. Alguien pone un gif de un león.' }];
@@ -530,7 +503,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: '«¿Cinco? Con ese ascensor no llegáis ni al segundo.»',
-        effect: 'La moral de todo el equipo sube y se entera todo el bar (más gente vendrá el domingo).',
         req: { stat: 'labia', lv: 3 },
         pick: (c) => {
           for (const p of c.squad) morale(c, p.id, 6, 'El míster le ganó el duelo dialéctico al rival');
@@ -540,7 +512,6 @@ export const SCENES: VNScene[] = [
       },
       {
         text: '«Puede ser. Sois los favoritos.»',
-        effect: 'Quitas presión a los nerviosos, pero a los ambiciosos les sienta mal que des el partido por perdido.',
         pick: (c) => {
           for (const p of c.squad) {
             if (p.traits.includes('nervioso')) morale(c, p.id, 4, 'Sin presión: el rival es favorito');
@@ -606,12 +577,11 @@ export function seasonEndStory(c: Career, se: SeasonEnd): { lines: VNLine[]; cho
   const choices: VNChoice[] = [];
   if (se.offer) {
     const o = se.offer;
-    lines.push({ who: 'narrador', text: `Al día siguiente suena el teléfono. Es el director deportivo del ${o.name}, de Segunda Federación: «Hemos visto lo que ha hecho con ese equipo. Queremos que nos entrene. Con sueldo.»` });
+    lines.push({ who: 'narrador', text: `Al día siguiente suena el teléfono. Es el director deportivo del ${o.name}, de Segunda Federación: «Hemos visto lo que ha hecho con ese equipo. Queremos que nos entrene. Con sueldo: ${DIVISIONS.find((x) => x.id === 'segunda-federacion')!.salary} euros a la semana.»` });
     lines.push({ who: 'narrador', text: 'Un club semiprofesional, un estadio de verdad, una plantilla que no conoces. O seguir con los tuyos y subir con ellos, categoría a categoría, hasta donde lleguen.' });
     choices.push(
       {
         text: `Aceptar: entrenar al ${o.name}.`,
-        effect: `Segunda Federación (18 equipos). Sueldo de ${DIVISIONS.find((x) => x.id === 'segunda-federacion')!.salary} € a la semana, estadio nuevo y plantilla nueva. Dejas el Barriobajo.`,
         pick: (cc) => {
           nextSeason(cc, se, true);
           return [{ who: 'presidente', expr: 'sleepy', text: 'Lo entiendo, míster. Los sueños son los sueños. Aquí tiene su casa. Y su ferretería.' }];
@@ -619,7 +589,6 @@ export function seasonEndStory(c: Career, se: SeasonEnd): { lines: VNLine[]; cho
       },
       {
         text: 'Quedarme con los míos y subir con ellos.',
-        effect: `El Barriobajo juega en ${next.name}. Rivales nuevos, más nivel.`,
         pick: (cc) => {
           nextSeason(cc, se, false);
           return [{ who: 'presidente', expr: 'happy', text: '¡Lo sabía! Esto hay que celebrarlo. Manolo, ¡pon algo! Y apúntalo en la cuenta del club.' }];
@@ -630,10 +599,9 @@ export function seasonEndStory(c: Career, se: SeasonEnd): { lines: VNLine[]; cho
     const where = se.promoted ? next.name : se.relegated ? DIVISIONS[Math.max(0, c.division - 1)].name : d.name;
     choices.push({
       text: 'A por la siguiente temporada.',
-      effect: `${c.club.name} jugará en ${where}.`,
       pick: (cc) => {
         nextSeason(cc, se, false);
-        return [{ who: 'narrador', text: 'Pretemporada. Mismo barrio, mismas ganas.' }];
+        return [{ who: 'narrador', text: `Pretemporada en ${where}. Mismo barrio, mismas ganas.` }];
       },
     });
   }

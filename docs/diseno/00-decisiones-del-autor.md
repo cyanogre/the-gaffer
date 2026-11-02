@@ -41,6 +41,10 @@ Decisiones tomadas por el autor durante el diseño. Mandan sobre cualquier docum
   consecuencias.
 - **Gestión tipo Football Manager**: nada de parámetros que suben y bajan sin fundamento dentro de la novela
   visual. Las decisiones tienen consecuencias concretas y la moral de los jugadores sale de lo que pasa.
+- **Las elecciones de diálogo no anuncian lo que va a pasar** (nada de textos grises debajo de cada opción:
+  aburre). Lo que hace falta para decidir (precios, sueldos, condiciones) lo dicen los personajes; las
+  consecuencias se descubren después (respuesta del personaje, moral con su motivo, caja, cartera). Las
+  opciones que piden una estadística llevan su etiqueta delante, como en los juegos de rol.
 - **Estadísticas propias del míster** tipo Punch Club: cuesta subirlas y mantenerlas, y cada una tiene una
   finalidad tangible, fácil de entender, que da ganas de subirla.
 - **Sin tropecientos menús**. Secciones de historia pura (tipo Punch Club), de gestión, de interacción y de
