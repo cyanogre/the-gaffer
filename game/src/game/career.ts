@@ -99,6 +99,10 @@ export interface Coach {
   gender: Gender;
   stats: Record<StatId, CoachStat>;
   energy: number;
+  /** Comida (0–100). Con hambre no se puede entrenar ni trabajar (como en Punch Club). */
+  food: number;
+  /** Ánimo (0–100). Por debajo de 50, lo que entrenas rinde la mitad. */
+  mood: number;
   wallet: number;
   /** Sueldo semanal del club (en regional, cero: de ahí la ferretería). */
   salary: number;
@@ -219,6 +223,8 @@ export function newCareer(gender: Gender, coachGender: Gender = 'm', coachName =
       gender: coachGender,
       stats: { tactica: { lv: 1, value: 4 }, labia: { lv: 1, value: 4 }, ojo: { lv: 1, value: 4 }, forma: { lv: 1, value: 4 } },
       energy: 0,
+      food: 80,
+      mood: 65,
       wallet: 90,
       salary: 0,
     },
@@ -276,12 +282,16 @@ export const leagueName = (c: Career) => `${division(c).name}${c.gender === 'f' 
 export const maxEnergy = (c: Career) => 70 + 10 * c.coach.stats.forma.lv - (c.hungry ? 20 : 0);
 
 /** Suma experiencia y sube de nivel. Devuelve el texto de la subida si la hay. */
+/** Multiplicador de la sesión en curso (lo fija `perform`: ánimo y repetición). */
+let trainMult = 1;
+export const setTrainMult = (m: number) => (trainMult = m);
+
 export function gainXp(c: Career, stat: StatId, xp: number): string | null {
   const s = c.coach.stats[stat];
   c.dayDone[`trained:${stat}`] = true;
   const before = s.lv;
-  // rinde menos cuanto más alta está
-  s.value = Math.min(100, s.value + xp * 1.25 * Math.max(0.3, 1 - s.value / 120));
+  // rinde menos cuanto más alta está; y menos aún de bajón o repitiendo lo mismo (ver trainMult)
+  s.value = Math.min(100, s.value + xp * trainMult * 1.25 * Math.max(0.3, 1 - s.value / 120));
   s.lv = levelOf(s.value);
   if (s.lv <= before) return null;
   if (stat === 'forma') c.coach.energy = Math.min(maxEnergy(c), c.coach.energy + 10);

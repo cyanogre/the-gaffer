@@ -3,7 +3,7 @@ import type { Career } from '../../game/career';
 import { NPC } from '../../story/scenes';
 import { pixelText } from '../pixel/text';
 import { InteriorLights } from './bar';
-import { Location, canvas, pixTex, v3, type Walker } from './location';
+import { Location, canvas, pixTex, v3, type RoutineStep, type Spot, type Walker } from './location';
 
 /**
  * Ferretería Ramón: estanterías hasta el techo, panel de herramientas, máquina de llaves y el
@@ -12,7 +12,12 @@ import { Location, canvas, pixTex, v3, type Walker } from './location';
 export class FerreteriaView extends Location {
   private lights: InteriorLights;
   private ramon: Walker | null = null;
-  private nextMove = 3;
+  /** Don Ramón: en la punta del mostrador, quitando el polvo al mostrador y a la puerta del despacho. */
+  private static RAMON: RoutineStep[] = [
+    { spot: { at: v3(3.1, 0, -0.9), view: 'front', frames: ['idle0', 'idle1'], fps: 1.2 }, secs: 4 },
+    { spot: { at: v3(1.95, 0, -1.45), view: 'front', frames: ['wipe0', 'wipe1'], fps: 2, layers: { mostrador: 'arms' } }, secs: 5 },
+    { spot: { at: v3(3.3, 0, -2.2), view: 'front', frames: ['talk', 'idle0'], fps: 1.4 }, secs: 3 },
+  ];
 
   constructor() {
     super();
@@ -22,7 +27,14 @@ export class FerreteriaView extends Location {
     this.camera.lookAt(-0.2, 1.2, -0.3);
     this.lights = new InteriorLights(this.scene, v3(0.6, 2.7, -0.4), '#eef4ff');
     this.build();
+    this.flattenProps();
   }
+
+  protected activities: Record<string, Spot> = {
+    // detrás del mostrador atendiendo: el cuerpo tapado por el mostrador y las manos por encima
+    turno: { at: v3(1.0, 0, -1.35), view: 'front', frames: ['talk', 'idle0', 'talk', 'idle1'], fps: 1.6, layers: { mostrador: 'arms' } },
+    ramon: { at: v3(2.6, 0, -2.0), view: 'back', frames: ['talk', 'idle0'], fps: 1.5 },
+  };
 
   private build() {
     const b = this.b;
@@ -100,8 +112,7 @@ export class FerreteriaView extends Location {
     pixelText(sg, 'FERRETERIA RAMON 1971', 48, 4, '#f2c94c', 94);
     b.plane(3.6, 0.6, pixTex(sc), -1.2, 2.72, -2.9);
     // mostrador con caja registradora, máquina de llaves y catálogo
-    b.box(3.0, 1.0, 0.7, '#7a5236', 1.2, 0, -0.6);
-    b.box(3.1, 0.06, 0.8, '#d8cbb0', 1.2, 1.0, -0.6);
+    this.furniture('mostrador', b.box(3.0, 1.0, 0.7, '#7a5236', 1.2, 0, -0.6), b.box(3.1, 0.06, 0.8, '#d8cbb0', 1.2, 1.0, -0.6));
     b.box(0.5, 0.3, 0.4, '#3a3a40', 2.2, 1.06, -0.65);
     b.box(0.4, 0.12, 0.08, '#7aff9a', 2.2, 1.36, -0.75);
     b.box(0.45, 0.25, 0.3, '#9aa3ad', 0.2, 1.06, -0.6);
@@ -145,6 +156,7 @@ export class FerreteriaView extends Location {
     if (!this.ramon) {
       this.ramon = this.addWalker(NPC.presidente.look, NPC.presidente.clothes, -1, true, v3(3.1, 0, -0.9), 'front');
       this.ramon.speed = 1.1;
+      this.setRoutine(this.ramon, FerreteriaView.RAMON);
     }
   }
 
@@ -152,11 +164,5 @@ export class FerreteriaView extends Location {
     return out.set(this.lights.night ? '#dcdcf0' : '#ffffff');
   }
 
-  protected tick() {
-    // Don Ramón va y viene del mostrador a la puerta del despacho, con sus pausas
-    if (this.ramon && this.time > this.nextMove) {
-      this.nextMove = this.time + 4 + ((this.time * 5.1) % 3);
-      this.ramon.target.z = this.ramon.target.z > -0.9 ? -1.4 : -0.4;
-    }
-  }
+  protected tick() {}
 }

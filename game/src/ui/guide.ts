@@ -23,10 +23,11 @@ const is = (kind: GuideEvent['kind'], id?: string) => (e: GuideEvent) => e.kind 
 export const STEPS: Step[] = [
   { text: 'Tu primera semana como míster. Te enseño cómo funciona en un momento (puedes saltarlo cuando quieras).', target: null, until: 'tap' },
   { text: 'El reloj. Cada día tiene tres franjas: mañana, tarde y noche. Todo lo que haces gasta una. El domingo, partido.', target: { dom: '.hud-clock' }, until: 'tap' },
-  { text: 'Tu energía. Hacer cosas cansa; dormir la recupera. Sin energía, solo puedes descansar.', target: { dom: '.hud-meter' }, until: 'tap' },
+  { text: 'Tus necesidades: energía (dormir la recupera), comida (come en casa o en el bar: con hambre no puedes entrenar ni trabajar) y ánimo (de bajón, lo que entrenas rinde la mitad).', target: { dom: '.hud-needs' }, until: 'tap' },
+  { text: 'Tus estadísticas. Cada vez que trabajas una, su barra se llena; al llegar arriba, ganas un punto. Cada noche baja lo que no hayas trabajado: hay que mantenerlas.', target: { dom: '#hudStats' }, until: 'tap' },
   { text: 'Tu cartera. El club no te paga: cada lunes pagas 50 € de alquiler. Abajo, en la ferretería, hay turnos.', target: { dom: '#hudWallet' }, until: 'tap' },
   { text: 'Lo primero es conocer a tus chavales. Te esperan en El Barrizal: pulsa «Campo».', target: { dom: dock('campo') }, until: is('scene', 'presentacion') },
-  { text: 'Ahora tú: sal a correr. Cada etiqueta dice lo que cuesta (⚡ energía) y qué estadística del míster mejora.', target: { hotspot: 'track', orDock: 'campo' }, until: is('action', 'correr') },
+  { text: 'Ahora tú: sal a correr. Mira arriba cómo se llena la barra de Forma mientras das vueltas. Cada etiqueta dice lo que cuesta (⚡) y qué estadística mejora.', target: { hotspot: 'track', orDock: 'campo' }, until: is('action', 'correr') },
   { text: 'El papeleo no gasta tiempo. Pulsa «Club».', target: { dom: dock('club') }, until: is('sheet', 'club') },
   { text: 'Tu once. Toca un puesto del campo y luego a quien quieras poner. En la lista ves su edad, su nota y si va cargado.', target: { dom: '.pitchmap' }, until: 'tap' },
   { text: 'En «Pizarra» eliges formación, bloque y estilo. El porcentaje es lo que la conocen: si es bajo, se desordenan.', target: { dom: '#sheetTabs button:nth-child(2)' }, until: is('tab', 'pizarra') },

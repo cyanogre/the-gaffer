@@ -262,6 +262,15 @@ export function pixelPortrait(spec: PortraitSpec): HTMLCanvasElement {
     case 'buzz':
       g.ell(cx, 15, wide + 0.3, 11, (x, y) => (y > 12 ? null : dither(x, y, 0.55) ? hr.s : null));
       break;
+    case 'fade':
+      // arriba corto, lados degradados
+      g.ell(cx, 15, wide + 0.4, 11, (x, y) => (y > 13 ? null : y > 10 && Math.abs(x - cx) > wide - 3 ? (dither(x, y, 0.5) ? hr.s : null) : x > cx + 4 ? hr.s : y < 7 && dither(x, y, 0.4) ? hr.l : hr.b));
+      break;
+    case 'quiff':
+      g.ell(cx, 15, wide + 0.4, 11, (x, y) => (y > 12 ? null : x > cx + 4 ? hr.s : hr.b));
+      g.ell(cx + 1, 6, 6.5, 3.5, (x, y) => (x > cx + 4 ? hr.s : dither(x, y, 0.35) ? hr.l : hr.b));
+      for (const sx of [cx - wide - 1, cx + wide - 1]) g.rect(Math.round(sx), 13, 3, 4, (x, y) => (dither(x, y, 0.5) ? hr.s : null));
+      break;
     case 'combover':
       for (let x = cx - 7; x <= cx + 7; x += 2) g.set(x, 9 + Math.round(Math.abs(x - cx) / 4), hr.b);
       g.rect(Math.round(cx - wide - 1), 15, 3, 7, hr.b);

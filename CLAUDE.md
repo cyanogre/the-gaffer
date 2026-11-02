@@ -31,6 +31,7 @@ Simulador de gestión y dirección técnica de fútbol: mezcla de Football Manag
 - Gestión tipo Football Manager: las decisiones (historia, charlas, arenga) no suben ni bajan atributos a capricho; cambian la moral (con su motivo) o algo concreto (entrenos, penaltis, contratos). La moral cambia cómo juegan con una fórmula fija (`game/morale.ts`).
 - Estadísticas del míster tipo Punch Club: cuestan de subir y de mantener (bajan cada día que no se trabajan) y cada una sirve para algo tangible.
 - Las órdenes tácticas y los rasgos modifican decisiones de la IA, nunca dan bonificaciones arbitrarias.
+- Interacciones con el escenario: muebles con nombre y sitios (`Spot` en `game/src/render/world/location.ts`) con pose y cómo se tapa con cada mueble (delante, detrás o brazos por encima). Míster y vecinos usan el mismo sistema; nada de solapes a medias ni poses de pie sobre una silla o una cama.
 - Motor (`src/sim`) puro y determinista: sin DOM, sin `Math.random`; todo azar por `Rng`. La UI solo envía comandos.
 - El humor sale de eventos del motor y rasgos de personalidad, no de chistes aleatorios.
 - Arte: personajes antropomórficos (proporciones humanas, nada cúbico ni cabezón), reconocibles por su ADN visual. Las mujeres se leen como mujeres (cintura, cadera, pecho, peinados variados, sin vello facial); los críos, como críos (más bajitos, proporciones de crío). Los sprites son PNG editables por capas en colores clave (`game/assets/sprites/README.md`); el código no debe hardcodear arte que deba ser editable.

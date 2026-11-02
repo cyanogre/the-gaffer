@@ -312,7 +312,7 @@ export class HybridRenderer implements MatchRenderer {
   render(sim: MatchSim, alpha: number, dt: number) {
     this.ensure(sim);
     if (this.builtFor !== sim) {
-      this.renderer.setClearColor('#1a1230');
+      this.renderer.setClearColor('#162238');
       this.renderer.clear();
       return;
     }

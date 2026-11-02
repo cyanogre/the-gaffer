@@ -1,7 +1,7 @@
 import './styles.css';
 import type { Gender } from './content/look';
 import { ACTIONS, actionsAt, blocked, dayLabel, perform, scoutReport, type ActionDef } from './game/actions';
-import { DAYS_SHORT, LOCATIONS, MATCH_DAY, SLOTS, STATS, dailyDecay, leagueName, maxEnergy, newCareer, rivalOf, todayWeather, weatherOf, type Career, type LocationId, type SquadPlayer } from './game/career';
+import { DAYS_SHORT, LOCATIONS, MATCH_DAY, SLOTS, STATS, dailyDecay, leagueName, levelOf, type StatId, maxEnergy, newCareer, rivalOf, todayWeather, weatherOf, type Career, type LocationId, type SquadPlayer } from './game/career';
 import { talkTo, type Talk as PlayerTalk } from './game/morale';
 import { loadGame, saveGame, clearGame } from './game/save';
 import { FOCUS, isTrainingSlot, type Focus } from './game/squad';
@@ -114,9 +114,11 @@ function enterWorld(where: LocationId) {
   goTo(where);
 }
 
+let shownLoc: LocationId | null = null;
 async function goTo(where: LocationId) {
   const c = career!;
   c.location = where;
+  shownLoc = where;
   loc = world.show(where, VIEWS[where]);
   loc.resetCoach();
   const me = coachCharacter(c.coach.gender, c.coach.name);
@@ -181,12 +183,7 @@ function renderHud() {
   const c = career!;
   $('hudDay').textContent = c.day >= MATCH_DAY ? 'DOM' : DAYS_SHORT[c.day];
   $('hudSlot').textContent = c.day >= MATCH_DAY ? `Partido · J${c.week}` : `${SLOTS[c.slot]} · J${c.week}`;
-  const max = maxEnergy(c);
-  const e = $('hudEnergy');
-  e.style.width = `${Math.round((c.coach.energy / max) * 100)}%`;
-  e.dataset.tier = c.coach.energy > max * 0.5 ? 'hi' : c.coach.energy > max * 0.25 ? 'mid' : 'lo';
-  $('hudEnergyTxt').textContent = String(c.coach.energy);
-  $('hudWallet').textContent = `${c.coach.wallet} €`;
+  paintMeters(snapshot(c));
   $('hudMoney').textContent = `${c.money} €`;
   const t = $('hudTrust');
   t.style.width = `${c.boardTrust}%`;
@@ -207,6 +204,89 @@ function renderHud() {
   $('placeName').textContent = c.location === 'campo' ? c.club.id === 'barrio' ? 'El Barrizal' : `Estadio del ${c.club.short}` : LOCATIONS[c.location].name;
   $('placeSub').textContent = `${dayLabel(c)} · ${WX[todayWeather(c)]}`;
 }
+
+// ── necesidades y estadísticas del míster (como en Punch Club): barras que se llenan y puntos
+interface Meters {
+  energy: number;
+  max: number;
+  food: number;
+  mood: number;
+  wallet: number;
+  stats: Record<StatId, number>;
+}
+function snapshot(c: Career): Meters {
+  const stats = {} as Record<StatId, number>;
+  for (const id of Object.keys(c.coach.stats) as StatId[]) stats[id] = c.coach.stats[id].value;
+  return { energy: c.coach.energy, max: maxEnergy(c), food: c.coach.food, mood: c.coach.mood, wallet: c.coach.wallet, stats };
+}
+const shownPoints: Partial<Record<StatId, number>> = {};
+function paintMeters(m: Meters) {
+  const bar = (id: string, v: number, max = 100) => {
+    const e = $(id);
+    e.style.width = `${Math.max(0, Math.min(100, (v / max) * 100))}%`;
+    e.dataset.tier = v > max * 0.5 ? 'hi' : v > max * 0.25 ? 'mid' : 'lo';
+  };
+  bar('hudEnergy', m.energy, m.max);
+  bar('hudFood', m.food);
+  bar('hudMood', m.mood);
+  $('hudEnergy').parentElement!.parentElement!.title = `Energía ${Math.round(m.energy)}/${m.max}`;
+  $('hudFood').parentElement!.parentElement!.title = `Comida ${Math.round(m.food)}/100${m.food <= 5 ? ' · ¡con hambre no puedes entrenar ni trabajar!' : ''}`;
+  $('hudMood').parentElement!.parentElement!.title = `Ánimo ${Math.round(m.mood)}/100${m.mood < 50 ? ' · de bajón: entrenar rinde la mitad' : ''}`;
+  $('hudWallet').textContent = `${Math.round(m.wallet)} €`;
+  for (const id of Object.keys(m.stats) as StatId[]) {
+    const v = m.stats[id];
+    const pts = levelOf(v);
+    const el = document.querySelector<HTMLElement>(`.hs[data-stat=${id}]`)!;
+    el.querySelector('b')!.textContent = String(pts);
+    (el.querySelector('.bar > i') as HTMLElement).style.width = `${Math.round((v - (pts - 1) * 10) * 10)}%`;
+    const before = shownPoints[id];
+    if (before !== undefined && pts !== before) {
+      el.dataset.up = String(pts > before);
+      el.dataset.down = String(pts < before);
+      setTimeout(() => {
+        el.dataset.up = 'false';
+        el.dataset.down = 'false';
+      }, 900);
+      if (pts > before) toast(`¡+1 punto de ${STATS[id].label}!`);
+    }
+    shownPoints[id] = pts;
+  }
+}
+
+/**
+ * La actividad se ve mientras pasa: el míster la hace en el escenario y las barras van subiendo (o
+ * bajando) de lo que había a lo que queda. Tocar la pantalla la acaba antes.
+ */
+function playActivity(id: string, from: Meters, to: Meters, seconds: number) {
+  return new Promise<void>((resolve) => {
+    loc?.startActivity(id, seconds);
+    const skip = h('div', { class: 'skip-layer', title: 'Toca para terminar' });
+    app.append(skip);
+    $('hudTime').hidden = false;
+    const t0 = performance.now();
+    let end = seconds * 1000;
+    skip.onclick = () => (end = 0);
+    const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+    const step = () => {
+      const k = Math.min(1, end <= 0 ? 1 : (performance.now() - t0) / end);
+      const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      const stats = {} as Record<StatId, number>;
+      for (const s of Object.keys(to.stats) as StatId[]) stats[s] = lerp(from.stats[s], to.stats[s], e);
+      paintMeters({ energy: lerp(from.energy, to.energy, e), max: to.max, food: lerp(from.food, to.food, e), mood: lerp(from.mood, to.mood, e), wallet: lerp(from.wallet, to.wallet, e), stats });
+      ($('hudTime').firstElementChild as HTMLElement).style.width = `${k * 100}%`;
+      if (k < 1) requestAnimationFrame(step);
+      else {
+        skip.remove();
+        $('hudTime').hidden = true;
+        loc?.stopActivity();
+        resolve();
+      }
+    };
+    requestAnimationFrame(step);
+  });
+}
+/** Lo que dura cada actividad en pantalla (segundos). */
+const ACT_SECONDS: Record<string, number> = { comer: 1.4, bocata: 1.6, dormir: 2.4, descansar: 2.2, correr: 3.6, entrenar: 3.6 };
 
 function renderDock() {
   const c = career!;
@@ -293,8 +373,11 @@ async function useHotspot(id: string) {
   }
   busy = true;
   loc.walkTo(id, async () => {
+    const from = snapshot(c);
     const out = perform(c, a, arg);
+    const to = snapshot(c);
     if (a.id === 'entrenar' && loc instanceof CampoView) loc.drill(7);
+    await playActivity(a.id, from, to, ACT_SECONDS[a.id] ?? 2.8);
     refresh();
     save();
     await card(out.title, out.lines, { tone: out.tone });
@@ -307,9 +390,9 @@ async function useHotspot(id: string) {
 
 async function newDay() {
   const c = career!;
-  if (c.location !== 'casa') {
-    await goTo('casa');
-  } else refresh();
+  // al acabar el día se vuelve a casa: la escena tiene que cambiar aunque el estado ya diga «casa»
+  if (shownLoc !== 'casa') await goTo('casa');
+  else refresh();
   if (c.dayNotes.length) await card('Al despertarte', c.dayNotes, { tone: 'bad' });
   if (c.day >= MATCH_DAY) toast('¡Domingo de partido! Revisa el once en «Club» y dale a «¡A jugar!».', 4200);
   else toast(`Nuevo día: ${dayLabel(c)}${isTrainingSlot({ ...c, slot: 1 }) ? ' · hoy toca entreno por la tarde' : ''}.`, 3200);

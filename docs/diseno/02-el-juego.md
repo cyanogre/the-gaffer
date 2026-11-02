@@ -38,6 +38,10 @@ Cuatro estadísticas con un valor de 0 a 100 (nivel = 1 + una decena por nivel).
 - **Ojo** (vídeos, ojear al rival): formación del rival (1), su jugador peligroso (2), su punto débil (3).
 - **Forma** (correr): energía máxima (+10 por nivel).
 
+**Necesidades** (como en Punch Club): energía, hambre y ánimo. Con hambre no se puede entrenar ni trabajar (hay que comer: nevera de casa o bocadillo del bar); con el ánimo por debajo de 50 cada sesión rinde la mitad; repetir el mismo ejercicio el mismo día rinde menos. Cada noche baja la comida y el ánimo vuelve hacia lo normal.
+
+**Se ve hacerlo**: cada actividad se ve en el escenario mientras pasa (el míster da vueltas al campo, se sienta en el sofá, se tumba en la cama, come junto a la nevera) y las barras de la parte de arriba suben poco a poco; al llenarse una barra de estadística se gana un punto. Tocar la pantalla lo salta.
+
 ## 4. La plantilla
 
 - 15 jugadores: los 11 del brief (masculino o femenino) y 4 suplentes generados. Son **críos de 14 a 16 años**:
@@ -67,6 +71,21 @@ Efecto en el campo (fórmula única, en `game/morale.ts`): sangre fría + (moral
 - **El Barrizal** (el campo, el mismo que se juega el domingo y que evoluciona con las obras): entrenar (martes y jueves por la tarde), correr (por la mañana), ojear al rival (sábado).
 - **Bar Manolo**: charlar con la parroquia (labia, aficionados), invitar a un jugador (interacción), bocadillo (energía).
 - **Ferretería Ramón**: echar un turno (cartera, confianza del presidente), hablar con Don Ramón.
+
+### Muebles, sitios y poses (cómo se usa el escenario)
+
+Todo lo que alguien hace con un mueble sale del mismo sistema, para el míster y para los vecinos:
+
+- **Mueble**: piezas 3D con nombre (`barra`, `sofa`, `cama`, `silla-doma`...). Lo que está encima va con él (la caja registradora con el mostrador). Lo colgado de la pared y lo que está a ras de suelo (alfombras) no tapa a nadie.
+- **Sitio**: dónde se pone la persona, con qué pose en bucle (sentado, sentado a la mesa, jugando una ficha, limpiando con el trapo, comiendo, hablando, señalando, tumbado) y **cómo se tapa con cada mueble**:
+  - *delante* (en un taburete, con la barra detrás),
+  - *detrás* (en el sofá viendo la tele: el sofá le tapa y asoman cabeza y hombros),
+  - *brazos por encima* (Manolo limpia la barra: el cuerpo detrás de la barra, el brazo con el trapo por encima; lo mismo al atender en la ferretería o al jugar al dominó con los brazos sobre la mesa).
+  Lo que el sitio no dice se decide como en un point & click: si está más al fondo que la esquina delantera del mueble, detrás; si no, delante. Nunca a medias.
+- **Rutina** de un vecino: una lista de sitios con su rato en cada uno (Manolo limpia la barra, coge una botella, vuelve a limpiar, mira el bar; Ramón quita el polvo al mostrador y va al despacho; los del dominó, sentados jugando). Si Manolo está enfadado, su rutina es quedarse quieto.
+- **Cama**: quien se tumba se dibuja en 3D a lo largo de la cama (manta con el cuerpo marcado: pecho que respira, piernas y pies), así sigue la orientación de la cama en la vista isométrica; asoma su propia cabeza pixel (de perfil, ojos cerrados) sobre la almohada y le salen zetas.
+
+Para añadir una interacción nueva basta con nombrar el mueble y añadir un sitio (y, si hace falta, una pose nueva en el generador de sprites).
 
 ## 6. Pirámide, liga y carrera
 

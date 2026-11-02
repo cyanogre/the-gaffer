@@ -7,9 +7,9 @@ import type { Stadium } from './stadium';
  * para teñir los sprites 2D igual que el escenario (de noche solo brilla lo que alumbra un foco).
  */
 const SKY: Record<string, [string, string]> = {
-  day: ['#4f8fd8', '#cfe3f2'],
-  dusk: ['#2c2160', '#ff9a5a'],
-  night: ['#05081a', '#1f1c3d'],
+  day: ['#4f9be0', '#d8ecf7'],
+  dusk: ['#4a6fb0', '#ffb070'],
+  night: ['#0d1a3a', '#2e3f6e'],
 };
 
 export class WeatherFX {
@@ -63,7 +63,7 @@ export class WeatherFX {
     }
     col.needsUpdate = true;
     // luz principal
-    const hemiCfg = { day: ['#e6efff', '#6b5a40', 1.5], dusk: ['#ffcfaa', '#4a3550', 1.15], night: ['#4b5c8f', '#120e1e', 0.4] } as const;
+    const hemiCfg = { day: ['#f2f6ff', '#7a6a50', 1.6], dusk: ['#ffd9b8', '#5a4a58', 1.3], night: ['#6f86c0', '#1c1e30', 0.65] } as const;
     const sunCfg = { day: ['#fff2d8', 2.4, [-30, 70, 40]], dusk: ['#ffad6a', 1.9, [-80, 22, -60]], night: ['#9fb4ff', 0.3, [40, 60, -30]] } as const;
     const [hs, hg, hi] = hemiCfg[t];
     this.hemi.color.set(hs);
@@ -202,7 +202,7 @@ export class WeatherFX {
   lightAt(x: number, z: number, out: THREE.Color) {
     const c = this.cond;
     if (!c) return out.setScalar(1);
-    const base = { day: 1, dusk: 0.86, night: 0.3 }[c.time];
+    const base = { day: 1, dusk: 0.92, night: 0.5 }[c.time];
     const gloom = c.weather === 'storm' ? 0.75 : c.weather === 'rain' ? 0.82 : c.weather === 'cloudy' || c.weather === 'fog' ? 0.9 : 1;
     this.ambient.setRGB(base * gloom, base * gloom * (c.time === 'dusk' ? 0.9 : 1), base * gloom * (c.time === 'night' ? 1.25 : c.time === 'dusk' ? 0.85 : 1));
     out.copy(this.ambient);

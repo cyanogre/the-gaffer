@@ -2,13 +2,13 @@
    biselados, tipografía condensada de retransmisión y acentos naranja del Barriobajo.
    Móvil primero: todo cabe en vertical; en pantallas anchas los paneles se van a un lado. */
 :root {
-  --bg: #120d1f;
-  --panel: #241a3b;
-  --panel-2: #2e2350;
-  --edge: #4a3a78;
-  --edge-hi: #6a56a8;
-  --ink: #f3eeff;
-  --muted: #a99cc9;
+  --bg: #0f1828;
+  --panel: #1b2a42;
+  --panel-2: #243a5c;
+  --edge: #36507a;
+  --edge-hi: #5677ab;
+  --ink: #f3f6ff;
+  --muted: #a3b3cc;
   --home: #ff7a2f;
   --away: #4fb3ff;
   --hot: #e8457c;
@@ -71,6 +71,8 @@ canvas.px,
 /* qué se ve en cada pantalla */
 #app:not([data-screen='title']) #title,
 #app:not([data-screen='world']) #hud,
+#app:not([data-screen='world']) #hudStats,
+#app:not([data-screen='world']) #hudTime,
 #app:not([data-screen='world']) #placeTag,
 #app:not([data-screen='world']) #dock,
 #app:not([data-screen='world']) #btnMatch,
@@ -98,7 +100,7 @@ canvas.px,
 .stage {
   position: absolute;
   inset: 0;
-  background: #1a1230;
+  background: #162238;
   touch-action: manipulation;
 }
 .stage-canvas {
@@ -119,7 +121,7 @@ canvas.px,
   display: grid;
   place-items: center;
   padding: calc(16px + var(--safe-t)) 16px calc(16px + var(--safe-b));
-  background: radial-gradient(700px 420px at 50% 30%, rgba(42, 28, 74, 0.55), rgba(18, 13, 31, 0.92));
+  background: radial-gradient(700px 420px at 50% 30%, rgba(28, 46, 80, 0.55), rgba(12, 20, 36, 0.92));
   overflow-y: auto;
 }
 .title-card {
@@ -179,7 +181,7 @@ canvas.px,
   padding: 10px 12px;
   border-radius: 4px;
   border: 2px solid var(--edge);
-  background: #160f28;
+  background: #132036;
   color: var(--ink);
   font: 600 1.05rem/1.2 var(--body);
 }
@@ -203,12 +205,12 @@ canvas.px,
   padding: 8px;
   border-radius: 4px;
   border: 2px solid var(--edge);
-  background: #160f28;
+  background: #132036;
   font: 700 0.9rem/1 var(--cond);
 }
 .new-game fieldset button[aria-pressed='true'] {
   border-color: var(--gold);
-  background: #2b1f48;
+  background: #24385a;
 }
 .new-game fieldset canvas {
   image-rendering: pixelated;
@@ -234,6 +236,111 @@ canvas.px,
   color: var(--muted);
 }
 
+/* ── necesidades y estadísticas del míster (como en Punch Club) */
+.hud-needs {
+  flex-direction: column;
+  align-items: stretch !important;
+  justify-content: center;
+  gap: 3px !important;
+  min-width: 96px;
+  max-width: 200px;
+  flex: 1;
+}
+.need {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.need .hud-ico svg {
+  width: 11px;
+  height: 11px;
+}
+.need .bar {
+  height: 6px;
+}
+.need:nth-child(2) .bar > i {
+  background: #e8a33c;
+}
+.need:nth-child(3) .bar > i {
+  background: #6cb8ff;
+}
+.need .bar > i[data-tier='lo'] {
+  background: var(--bad) !important;
+}
+.hud-stats {
+  position: absolute;
+  top: calc(60px + var(--safe-t));
+  left: 8px;
+  right: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  max-width: 560px;
+  pointer-events: none;
+}
+.hs {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 6px;
+  padding: 3px 7px 5px;
+  background: rgba(18, 28, 48, 0.88);
+  border: 2px solid var(--edge);
+  border-radius: 5px;
+}
+.hs small {
+  font: 700 0.62rem/1 var(--cond);
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.hs b {
+  justify-self: end;
+  font: 400 0.9rem/1 var(--pixel);
+  color: var(--gold);
+}
+.hs .bar {
+  grid-column: 1 / -1;
+  height: 6px;
+  margin-top: 3px;
+}
+.hs .bar > i {
+  background: var(--gold);
+  transition: none;
+}
+.hs[data-up='true'] {
+  border-color: var(--gold);
+  animation: statup 0.6s ease-out;
+}
+.hs[data-down='true'] .bar > i {
+  background: var(--bad);
+}
+@keyframes statup {
+  30% {
+    scale: 1.15;
+    box-shadow: 0 0 14px var(--gold);
+  }
+}
+.hud-time {
+  position: absolute;
+  top: calc(56px + var(--safe-t));
+  left: 8px;
+  width: 120px;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+.hud-time > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--home);
+}
+.skip-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+}
+
 /* ── barra superior del mundo */
 .hud {
   position: absolute;
@@ -251,7 +358,7 @@ canvas.px,
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  background: rgba(26, 18, 46, 0.9);
+  background: rgba(18, 28, 48, 0.9);
   border: 2px solid var(--edge);
   border-radius: 5px;
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
@@ -336,7 +443,7 @@ canvas.px,
   display: block;
   flex: 1;
   height: 8px;
-  background: #120c20;
+  background: #0c1424;
   border: 1px solid #000;
   border-radius: 2px;
   overflow: hidden;
@@ -361,11 +468,11 @@ canvas.px,
 
 .place-tag {
   position: absolute;
-  top: calc(64px + var(--safe-t));
+  top: calc(106px + var(--safe-t));
   left: 8px;
   display: grid;
   padding: 4px 10px;
-  background: rgba(18, 13, 31, 0.75);
+  background: rgba(12, 20, 36, 0.75);
   border-left: 3px solid var(--home);
   pointer-events: none;
 }
@@ -420,7 +527,7 @@ canvas.px,
   grid-auto-columns: 1fr;
   gap: 4px;
   padding: 4px;
-  background: rgba(26, 18, 46, 0.94);
+  background: rgba(18, 28, 48, 0.94);
   border: 2px solid var(--edge);
   border-radius: 8px;
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.55);
@@ -645,7 +752,7 @@ canvas.px,
 .box {
   padding: 10px 12px;
   border-radius: 5px;
-  background: #1c1430;
+  background: #18253b;
   border: 1px solid var(--edge);
 }
 .row {
@@ -685,7 +792,7 @@ canvas.px,
   padding: 8px 6px;
   border-radius: 4px;
   border: 2px solid var(--edge);
-  background: #1c1430;
+  background: #18253b;
   font: 700 0.85rem/1.1 var(--cond);
 }
 .seg button[aria-pressed='true'] {
@@ -717,7 +824,7 @@ canvas.px,
   padding: 4px 8px 4px 4px;
   border-radius: 4px;
   border: 2px solid transparent;
-  background: #1c1430;
+  background: #18253b;
   text-align: left;
 }
 .prow[aria-pressed='true'] {
@@ -733,7 +840,7 @@ canvas.px,
 }
 .prow canvas {
   image-rendering: pixelated;
-  background: #2b2045;
+  background: #22344f;
   border-radius: 3px;
 }
 .prow b {
@@ -767,7 +874,7 @@ canvas.px,
   display: inline-block;
   padding: 1px 6px;
   border-radius: 9px;
-  background: #3a2c62;
+  background: #2f4a72;
   font: 700 0.7rem/1.4 var(--cond);
   color: var(--ink);
 }
@@ -787,7 +894,7 @@ canvas.px,
 }
 .pcard canvas {
   image-rendering: pixelated;
-  background: #2b2045;
+  background: #22344f;
   border: 2px solid #1a1226;
 }
 .attrs {
@@ -824,7 +931,7 @@ canvas.px,
 .quirk {
   margin: 0;
   font-style: italic;
-  color: #d8cfee;
+  color: #d6e0f0;
   font-size: 0.88rem;
 }
 
@@ -866,7 +973,7 @@ canvas.px,
 .pitchmap canvas {
   image-rendering: pixelated;
   border-radius: 50%;
-  background: #1c1430;
+  background: #18253b;
   border: 2px solid var(--home);
 }
 .pitchmap button[aria-pressed='true'] canvas {
@@ -879,7 +986,7 @@ canvas.px,
   text-overflow: ellipsis;
   white-space: nowrap;
   font: 700 0.7rem/1.2 var(--cond);
-  background: rgba(18, 13, 31, 0.8);
+  background: rgba(12, 20, 36, 0.8);
   padding: 0 3px;
   border-radius: 2px;
 }
@@ -894,7 +1001,7 @@ canvas.px,
 .table td {
   padding: 5px 4px;
   text-align: right;
-  border-bottom: 1px solid #33285a;
+  border-bottom: 1px solid #2c4064;
 }
 .table th:nth-child(2),
 .table td:nth-child(2) {
@@ -1049,7 +1156,7 @@ canvas.px,
   gap: 6px;
   width: min(640px, calc(100% - 12px));
   padding: 4px 8px;
-  background: rgba(18, 13, 31, 0.92);
+  background: rgba(12, 20, 36, 0.92);
   border: 2px solid var(--edge);
   border-radius: 6px;
 }
@@ -1120,7 +1227,7 @@ canvas.px,
   gap: 6px;
   align-items: center;
   padding: 4px 8px 4px 0;
-  background: rgba(18, 13, 31, 0.82);
+  background: rgba(12, 20, 36, 0.82);
   border-radius: 3px;
   font: 600 0.82rem/1.25 var(--cond);
   animation: up 0.2s ease-out;
@@ -1189,7 +1296,7 @@ canvas.px,
   border-radius: 3px;
   font: 700 0.72rem/1.4 var(--cond);
   color: #fff;
-  background: rgba(26, 18, 38, 0.85);
+  background: rgba(16, 24, 40, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.25);
   white-space: nowrap;
 }
@@ -1201,7 +1308,7 @@ canvas.px,
 }
 .tag-sel {
   translate: -50% calc(-100% - 40px);
-  background: #241a3b !important;
+  background: #1b2a42 !important;
   border: 2px solid var(--gold);
 }
 .goal-banner {
@@ -1249,7 +1356,7 @@ canvas.px,
   place-content: center;
   justify-items: center;
   gap: 10px;
-  background: rgba(18, 13, 31, 0.78);
+  background: rgba(12, 20, 36, 0.78);
   text-align: center;
   padding: 16px;
   z-index: 10;
@@ -1290,7 +1397,7 @@ canvas.px,
   padding: 8px;
   border-radius: 4px;
   border: 2px solid var(--edge);
-  background: #1c1430;
+  background: #18253b;
   text-align: left;
 }
 .orders button b {
@@ -1328,7 +1435,7 @@ canvas.px,
   align-items: end;
   gap: 12px;
   padding: 14px 14px calc(14px + var(--safe-b));
-  background: linear-gradient(180deg, rgba(18, 13, 31, 0.15) 30%, rgba(18, 13, 31, 0.85));
+  background: linear-gradient(180deg, rgba(12, 20, 36, 0.15) 30%, rgba(12, 20, 36, 0.85));
   cursor: pointer;
 }
 .vn-portrait canvas {
@@ -1448,7 +1555,7 @@ canvas.px,
 }
 .g-block {
   position: fixed;
-  background: rgba(10, 6, 20, 0.45);
+  background: rgba(6, 12, 24, 0.45);
   pointer-events: auto;
 }
 .g-halo {

@@ -13,10 +13,11 @@ con transparencia (Aseprite también, si lo tienes).
 Todas las hojas tienen la misma rejilla (ver `manifest.json`):
 
 - **Celda**: 48 × 48 px. Cabeza en las filas 4–11, camiseta 13–24, pantalón 25–29, piernas hasta la 44 y botas 45–47 (los pies apoyan abajo).
-- **Columnas** (20 fotogramas): `idle0 idle1 run0 run1 run2 run3 kick up0 up1 out ear slideU fallU diveU poke head push kneel throw catch` (correr, chutar, celebrar, segada, caída, estirada, entrada de pie, cabezazo, empujón, levantarse, saque de banda y portero con el balón).
+- **Columnas** (30 fotogramas): `idle0 idle1 run0 run1 run2 run3 kick up0 up1 out ear slideU fallU diveU poke head push kneel throw catch sit point talk sleepU wipe0 wipe1 eat table play eatSit`. Fútbol (correr, chutar, celebrar, segada, caída, estirada, entrada de pie, cabezazo, empujón, levantarse, saque de banda, portero con el balón) y vida diaria con los muebles (sentado, señalando, hablando, dormido, limpiando con el trapo, comiendo, sentado a la mesa, jugando una ficha, comiendo sentado).
 - **Filas** (3 vistas): `front` (de cara a la cámara), `back` (de espaldas), `side` (perfil mirando a la derecha; la izquierda se obtiene volteando).
 - Las celdas vacías no se usan (por ejemplo, no hay `kick` de frente).
-- `slideU`, `fallU` y `diveU` se dibujan **de pie**: el juego las gira 90º al componer (entrada, caída y estirada).
+- `slideU`, `fallU`, `diveU` y `sleepU` se dibujan **de pie**: el juego las gira 90º al componer (entrada, caída, estirada y tumbado). De `sleepU` de perfil sale también la cabeza dormida que asoma de la manta en la cama.
+- **Lo que llevan en la mano** (trapo, bocadillo, ficha de dominó) va en la capa `arm_front`, pegado a la mano: así se tapa y se destapa con el brazo.
 
 ## Capas y orden de pintado
 
@@ -55,6 +56,11 @@ la interfaz igual: siempre a múltiplos exactos de 48 px.
 según la edad (14 años = 7 filas menos) y los hace algo más bajitos: misma cabeza, cuerpo más
 corto. Cada temporada crecen y vuelven poco a poco a las proporciones adultas.
 
+**Brazos por encima de los muebles**: al componer, el juego recuerda qué píxeles vienen de
+`arm_back` y `arm_front` (y su contorno). Cuando alguien limpia la barra o apoya las manos en la
+mesa, esos píxeles se dibujan por encima del mueble y el resto del cuerpo queda detrás. Si retocas
+un brazo (o lo que lleva en la mano), hazlo en esas capas para que siga funcionando.
+
 El **dorsal** no está en las hojas: el juego lo estampa en la vista de espaldas con el color
 del ribete de la camiseta. El **contorno oscuro** tampoco: se calcula después de apilar las
 capas, así siempre envuelve la silueta final. No pintes contorno en las hojas.
@@ -77,7 +83,8 @@ Colores sueltos: ribete `#ffff00`, accesorio (cinta, coletero) `#ff8000`, labios
 sombra de barba `#c06080`.
 
 Cualquier otro color se respeta tal cual (ojos `#1a1226`, boca abierta `#5a1820`, montura de
-gafas `#20232a`, cristal `#8fd3ff`...). Úsalo para detalles que no deban cambiar.
+gafas `#20232a`, cristal `#8fd3ff`, trapo `#eef2f4`, pan `#e3a95c`, ficha `#f6f4ee`...). Úsalo para
+detalles que no deban cambiar.
 
 ## Regenerar la base
 

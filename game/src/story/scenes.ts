@@ -383,7 +383,7 @@ export const SCENES: VNScene[] = [
     day: 1,
     title: 'Visita inesperada',
     lines: (c) => [
-      { who: 'narrador', text: 'Otra vez la puerta. Una cresta pelirroja asoma por la mirilla.' },
+      { who: 'narrador', text: 'Otra vez la puerta. Un tupé pelirrojo, con medio bote de gomina, asoma por la mirilla.' },
       { who: 'goleador', expr: 'smug', text: `Míster, quiero tirar los penaltis. Soy ${gx(c.gender, 'un goleador nato', 'una goleadora nata')}. Lo pone en mi Instagram.` },
     ],
     choices: [

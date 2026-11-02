@@ -46,6 +46,18 @@ export class CasaView extends Location {
     this.sun.castShadow = true;
     this.lamp.position.set(0.9, 1.4, -2.3);
     this.phoneLed = this.build();
+    this.flattenProps();
+    this.activities = {
+      estudiar: { at: v3(-1.4, 0, -1.9), view: 'back', frames: ['point', 'idle0', 'point', 'talk'], fps: 1.6 },
+      // en la silla del escritorio, de espaldas, con las manos en el portátil
+      videos: { at: v3(0.55, 0, -1.85), view: 'back', frames: ['table'], fps: 1, layers: { silla: 'front' } },
+      // en el sofá mirando la tele: el sofá le tapa entero por delante, asoman la cabeza y los hombros
+      descansar: { at: v3(1.4, 0, 1.85), view: 'back', frames: ['sit'], fps: 1, layers: { sofa: 'behind' } },
+      // tumbado en la cama, tapado, con la cabeza en la almohada (sigue la cama en la vista isométrica)
+      dormir: { bed: 'cama' },
+      // de pie junto a la nevera, con el bocadillo
+      comer: { at: v3(-2.4, 0, -1.6), view: 'front', frames: ['eat', 'idle0', 'eat', 'idle1'], fps: 1.6 },
+    };
   }
 
   private build() {
@@ -86,10 +98,6 @@ export class CasaView extends Location {
       wg.fillRect(x + 4, 6, 2, 2);
       wg.fillRect(x + 4, 20, 2, 2);
     }
-    wg.fillStyle = 'rgba(110,90,60,0.35)';
-    wg.beginPath();
-    wg.ellipse(48, 4, 10, 6, 0, 0, Math.PI * 2);
-    wg.fill();
     const wt = texOf(wc);
     wt.wrapS = wt.wrapT = THREE.RepeatWrapping;
     wt.repeat.set(3, 1.2);
@@ -132,7 +140,7 @@ export class CasaView extends Location {
     led.position.set(1.15, 0.9, -2.3);
     s.add(led);
     box(0.08, 0.5, 0.08, '#3a3a40', 1.4, 0.8, -2.6);
-    box(0.4, 0.45, 0.4, '#4a4f6a', 0.55, 0, -1.85);
+    this.furniture('silla', box(0.4, 0.45, 0.4, '#4a4f6a', 0.55, 0, -1.85));
     // póster del club y calendario
     const [pc, pg] = cv(32, 40);
     pg.fillStyle = '#f0822a';
@@ -150,31 +158,37 @@ export class CasaView extends Location {
     // puerta
     box(0.95, 2.1, 0.08, '#7a4f30', 2.4, 0, -2.92);
     box(0.08, 0.08, 0.08, '#e2c26a', 2.75, 1.0, -2.86);
-    // cama deshecha
-    box(2.1, 0.35, 1.3, '#6b4a30', -2.3, 0, 1.6);
-    box(2.0, 0.2, 1.2, '#f2efe6', -2.3, 0.35, 1.6);
-    box(1.4, 0.18, 1.25, '#c24d16', -2.0, 0.5, 1.6);
-    box(0.4, 0.15, 0.7, '#ffffff', -3.0, 0.55, 1.6);
-    // sofá y tele vieja
-    box(1.6, 0.45, 0.7, '#5d6a3a', 1.6, 0, 1.9);
-    box(1.6, 0.6, 0.18, '#53602f', 1.6, 0.45, 2.2);
+    // cama deshecha (la manta se estira sobre quien se acuesta)
+    const spread = box(1.4, 0.18, 1.25, '#c24d16', -2.0, 0.5, 1.6);
+    this.furniture('cama', box(2.1, 0.35, 1.3, '#6b4a30', -2.3, 0, 1.6), box(2.0, 0.2, 1.2, '#f2efe6', -2.3, 0.35, 1.6), spread, box(0.4, 0.15, 0.7, '#ffffff', -3.0, 0.55, 1.6));
+    this.beds.push({ id: 'cama', head: v3(-3.0, 0.7, 1.6), foot: v3(-1.32, 0.55, 1.6), width: 1.22, blanket: '#c24d16', spread });
+    // sofá (asiento y respaldo: un solo mueble) y tele vieja
+    this.furniture('sofa', box(1.6, 0.45, 0.7, '#5d6a3a', 1.6, 0, 1.9), box(1.6, 0.6, 0.18, '#53602f', 1.6, 0.45, 2.2));
     box(0.7, 0.45, 0.45, '#3a2a20', 1.6, 0, 0.2);
     box(0.62, 0.48, 0.42, '#24242a', 1.6, 0.45, 0.2);
     const tvp = plane(0.48, 0.34, this.tvTex, 1.6, 0.7, 0.42, 0, true);
     tvp.rotation.y = 0;
-    // nevera y planta mustia
+    // nevera y planta (bien regada)
     box(0.75, 1.75, 0.65, '#e8e6e0', -2.9, 0, -2.45);
     box(0.06, 0.4, 0.04, '#b9b6ae', -2.62, 1.0, -2.1);
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.3, 8), m('#a5512e'));
     pot.position.set(3.0, 0.15, -2.5);
     s.add(pot);
-    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.5, 5), m('#7a7a3a'));
-    leaf.position.set(3.0, 0.5, -2.5);
-    leaf.rotation.z = 0.5;
-    s.add(leaf);
-    // caja de pizza y alfombra
-    box(0.5, 0.05, 0.5, '#d8b07a', 0.4, 0, 1.2);
-    const rug = new THREE.Mesh(new THREE.CircleGeometry(1.1, 16), m('#7d55d9'));
+    for (const [dx, dz, h] of [
+      [0, 0, 0.62],
+      [0.09, 0.05, 0.5],
+      [-0.08, -0.04, 0.48],
+    ]) {
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.16, h, 6), m('#4f9a3a'));
+      leaf.position.set(3.0 + dx, 0.3 + h / 2, -2.5 + dz);
+      s.add(leaf);
+    }
+    // estantería con un trofeo de alevines y unos libros de fútbol
+    box(0.9, 0.05, 0.3, '#8a5a3a', 2.75, 1.45, -2.82);
+    box(0.12, 0.28, 0.12, '#e2c26a', 2.5, 1.5, -2.8);
+    for (let i = 0; i < 4; i++) box(0.08, 0.26, 0.2, ['#c8102e', '#2f6fd6', '#f2c94c', '#25a55f'][i], 2.75 + i * 0.1, 1.5, -2.8);
+    // alfombra
+    const rug = new THREE.Mesh(new THREE.CircleGeometry(1.1, 16), m('#c8763a'));
     rug.rotation.x = -Math.PI / 2;
     rug.position.set(-0.3, 0.01, 0.4);
     rug.receiveShadow = true;
@@ -187,6 +201,7 @@ export class CasaView extends Location {
       { id: 'door', label: 'Puerta', anchor: v3(2.4, 2.35, -2.9), stand: v3(2.4, 0, -2.1) },
       { id: 'calendar', label: 'Calendario', anchor: v3(-3.4, 2.15, -1.5), stand: v3(-2.6, 0, -1.4) },
       { id: 'sofa', label: 'Sofá', anchor: v3(1.6, 1.2, 1.9), stand: v3(1.0, 0, 1.2) },
+      { id: 'fridge', label: 'Nevera', anchor: v3(-2.9, 2.0, -2.45), stand: v3(-2.4, 0, -1.6) },
       { id: 'bed', label: 'Cama', anchor: v3(-2.3, 1.0, 1.6), stand: v3(-1.0, 0, 1.4) },
     ];
     return led;
@@ -235,7 +250,7 @@ export class CasaView extends Location {
     this.sun.intensity = t === 'night' ? 0.1 : w === 'clear' ? 1.3 : 0.6;
     this.sun.color.set(t === 'dusk' ? '#ffb27a' : '#ffffff');
     this.lamp.intensity = t === 'night' ? 5 : 2;
-    this.scene.background = new THREE.Color(t === 'night' ? '#0e0a1a' : '#1a1330');
+    this.scene.background = new THREE.Color(t === 'night' ? '#0c1426' : '#16233a');
   }
 
   protected tintAt(_p: THREE.Vector3, out: THREE.Color) {
@@ -243,7 +258,7 @@ export class CasaView extends Location {
   }
 
   protected tick(_dt: number) {
-    // pantalla del portátil, tele con nieve y ventana
+    // pantalla del portátil, tele y ventana
     const [, sg] = this.screen;
     sg.fillStyle = '#1c2a4a';
     sg.fillRect(0, 0, 48, 32);
@@ -257,12 +272,18 @@ export class CasaView extends Location {
     }
     this.screenTex.needsUpdate = true;
     const [, tg] = this.tv;
-    for (let y = 0; y < 24; y += 2)
-      for (let x = 0; x < 32; x += 2) {
-        const v = 60 + Math.floor(((x * 7 + y * 13 + Math.floor(this.time * 12) * 31) % 97) * 1.24);
-        tg.fillStyle = `rgb(${v},${v},${v + 10})`;
-        tg.fillRect(x, y, 2, 2);
-      }
+    // la tele echa fútbol
+    tg.fillStyle = '#2f7a3a';
+    tg.fillRect(0, 0, 32, 24);
+    tg.fillStyle = '#e8f0e0';
+    tg.fillRect(16, 0, 1, 24);
+    const tt = this.time;
+    tg.fillStyle = '#c8102e';
+    tg.fillRect(Math.round(16 + Math.sin(tt * 0.9) * 11), Math.round(12 + Math.cos(tt * 1.3) * 7), 2, 2);
+    tg.fillStyle = '#f2c94c';
+    tg.fillRect(Math.round(16 + Math.sin(tt * 0.9 + 1) * 10), Math.round(12 + Math.cos(tt * 1.1 + 2) * 6), 2, 2);
+    tg.fillStyle = '#ffffff';
+    tg.fillRect(Math.round(16 + Math.sin(tt * 0.9 + 0.3) * 11), Math.round(12 + Math.cos(tt * 1.25) * 7), 1, 1);
     this.tvTex.needsUpdate = true;
     const [, wg] = this.win;
     wg.fillStyle = `#${this.sky.getHexString()}`;

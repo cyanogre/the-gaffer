@@ -21,7 +21,9 @@ export type HairStyle =
   | 'curly'
   | 'combover'
   | 'bob'
-  | 'pigtails';
+  | 'pigtails'
+  | 'fade'
+  | 'quiff';
 export type Facial = 'none' | 'mustache' | 'beard' | 'goatee' | 'stubble';
 export type Body = 'slim' | 'normal' | 'stocky' | 'belly';
 export type Accessory = 'none' | 'headband' | 'glasses' | 'socksDown';
@@ -66,7 +68,8 @@ export const HAIR_COLORS = ['#1f1a17', '#3b2a1e', '#6b4428', '#a8743c', '#d8b25c
 const ACC = ['#e23b3b', '#ffffff', '#2f6fd6', '#f2c230', '#25a55f'];
 const BOOTS = ['#1b1b1f', '#f4f4f4', '#ff4fa3', '#33d17a', '#ffb000', '#3a7bff'];
 
-const HAIR_M: HairStyle[] = ['bald', 'buzz', 'short', 'short', 'afro', 'mohawk', 'long', 'ponytail', 'mullet', 'curly', 'combover'];
+/** Peinados de futbolista de verdad (nada de crestas punk): degradados, tupés, rapados, rizos, moño. */
+const HAIR_M: HairStyle[] = ['buzz', 'short', 'short', 'fade', 'fade', 'fade', 'quiff', 'quiff', 'curly', 'afro', 'long', 'bun', 'bald'];
 const HAIR_F: HairStyle[] = ['ponytail', 'ponytail', 'bun', 'braids', 'pixie', 'long', 'long', 'bob', 'bob', 'pigtails', 'afro', 'curly'];
 
 export function randomLook(rng: Rng, gender: Gender, overrides: Partial<Look> = {}): Look {

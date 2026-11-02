@@ -34,6 +34,8 @@ const PASS = L([14, 2], [-22, 0]);
 
 export const LEG_POSES: Record<string, Pair> = {
   stand: [STAND, STAND],
+  // sentado: muslos hacia delante y espinillas abajo (el cuerpo baja 6 px)
+  sit: [L([84, 3], [-2, 0]), L([84, 3], [-2, 0])],
   pass: [PASS, PASS],
   liftL: [KNEE_UP, PLANT],
   liftR: [PLANT, KNEE_UP],
@@ -67,6 +69,21 @@ const MID = L([-6, 8], [78, 4]);
 
 export const ARM_POSES: Record<string, Pair> = {
   down: [HANG, HANG],
+  // manos sobre las rodillas (sentado)
+  lap: [L([20, 8], [74, 2]), L([20, 8], [74, 2])],
+  // señalando la pizarra con el brazo cercano estirado hacia arriba
+  point: [HANG, L([128, 18], [140, 14])],
+  // hablando con las manos
+  talk: [L([16, 30], [86, 40]), L([10, 22], [96, 36])],
+  // limpiando la barra: una mano apoyada y la del trapo va y viene por encima
+  wipeA: [L([34, 12], [62, 8]), L([36, 20], [66, 34])],
+  wipeB: [L([34, 12], [62, 8]), L([40, 4], [70, -34])],
+  // comiendo: el bocadillo a la boca
+  eat: [HANG, L([70, -10], [190, -50])],
+  // sentado a la mesa: antebrazos encima del tablero
+  table: [L([28, 10], [86, -18]), L([28, 10], [86, -18])],
+  // colocando una ficha: la mano cercana levantada
+  play: [L([28, 10], [86, -18]), L([44, 10], [128, -14])],
   mid: [MID, MID],
   swingL: [FWD, BACK],
   swingR: [BACK, FWD],

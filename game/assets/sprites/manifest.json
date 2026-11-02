@@ -24,7 +24,17 @@
     "push",
     "kneel",
     "throw",
-    "catch"
+    "catch",
+    "sit",
+    "point",
+    "talk",
+    "sleepU",
+    "wipe0",
+    "wipe1",
+    "eat",
+    "table",
+    "play",
+    "eatSit"
   ],
   "rows": [
     "front",
@@ -68,7 +78,9 @@
       "braids",
       "pixie",
       "bob",
-      "pigtails"
+      "pigtails",
+      "fade",
+      "quiff"
     ],
     "legs": [
       "socks",
@@ -147,7 +159,9 @@
       "braids",
       "pixie",
       "bob",
-      "pigtails"
+      "pigtails",
+      "fade",
+      "quiff"
     ],
     "acc": [
       "glasses",
@@ -200,6 +214,13 @@
     "fijo.eye": "#1a1226",
     "fijo.mouth": "#5a1820",
     "fijo.frame": "#20232a",
-    "fijo.lens": "#8fd3ff"
+    "fijo.lens": "#8fd3ff",
+    "fijo.cloth": "#eef2f4",
+    "fijo.clothShade": "#9fb4c2",
+    "fijo.bread": "#e3a95c",
+    "fijo.crust": "#a8642a",
+    "fijo.filling": "#c8402a",
+    "fijo.tile": "#f6f4ee",
+    "fijo.pip": "#1a1226"
   }
 }

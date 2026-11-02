@@ -39,6 +39,12 @@ export class CampoView extends Location {
       this.cones.push(c);
       this.scene.add(c);
     }
+    this.activities = {
+      // vueltas al Barrizal de verdad
+      correr: { path: [v3(-34, 0, -31.5), v3(-14, 0, -31.5), v3(-14, 0, -21), v3(-34, 0, -21)] },
+      entrenar: { at: v3(GROUP.x + 1.5, 0, GROUP.z + 3.5), view: 'front', frames: ['talk', 'point', 'talk', 'idle0'], fps: 1.8 },
+      ojear: { at: v3(-11, 0, -33.4), view: 'back', frames: ['idle0', 'idle1'], fps: 1 },
+    };
     this.hotspots = [
       { id: 'pitch', label: 'Césped', anchor: v3(GROUP.x, 3.4, GROUP.z), stand: v3(GROUP.x + 1.5, 0, GROUP.z + 3.5) },
       { id: 'track', label: 'Banda', anchor: v3(-32, 2.6, -30.5), stand: v3(-31, 0, -29) },

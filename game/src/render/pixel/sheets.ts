@@ -8,7 +8,17 @@ import { DIGITS, FIXED, FRAMES, KEY, LAYER_ORDER, SH, SW, VIEWS, cellUsed, torso
  */
 const FILES = import.meta.glob('../../../assets/sprites/**/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
-export type SpriteSet = Record<View, Partial<Record<FrameId, HTMLCanvasElement>>>;
+export type FrameSet = Record<View, Partial<Record<FrameId, HTMLCanvasElement>>>;
+/**
+ * Lo que sale de componer a una persona: sus fotogramas, el mapa de partes (blanco = brazo o lo que
+ * lleva en la mano; sirve para que el brazo pase por encima de un mueble y el cuerpo no) y su
+ * cabeza dormida (de perfil, ojos cerrados) para tumbarla en una cama.
+ */
+export type SpriteSet = FrameSet & { parts: FrameSet; sleepHead?: HTMLCanvasElement };
+
+/** Bits de cada píxel compuesto: 0xRRGGBB, opaco y «es brazo». */
+const SOLID = 0x1000000;
+const ARM = 0x2000000;
 
 const COOL = '#2a1840';
 const WARM = '#fff1d0';
@@ -101,28 +111,31 @@ function recolorMap(look: Look, kit: Kit) {
 }
 
 const OUT = hex(FIXED.outline);
-const ROT: Partial<Record<SheetFrame, [FrameId, 1 | -1]>> = { slideU: ['slide', -1], fallU: ['fall', -1], diveU: ['dive', 1] };
+const ROT: Partial<Record<SheetFrame, [FrameId, 1 | -1]>> = { slideU: ['slide', -1], fallU: ['fall', -1], diveU: ['dive', 1], sleepU: ['sleep', -1] };
 
 /** `num` < 0: sin dorsal. `civil`: pantalón largo y zapatos (público, míster, personajes). */
 export function composeSprites(store: SheetStore, look: Look, kit: Kit, num: number, civil = false): SpriteSet {
-  const out: SpriteSet = { front: {}, back: {}, side: {} };
+  const out: SpriteSet = { front: {}, back: {}, side: {}, parts: { front: {}, back: {}, side: {} } };
   const map = recolorMap(look, kit);
   const layers = LAYER_ORDER.map((l) => {
     const v = variantFor(l, look, kit, civil);
-    return v ? store.get(l, v) : undefined;
-  }).filter((x): x is ImageData => !!x);
+    const sheet = v ? store.get(l, v) : undefined;
+    return sheet && { sheet, arm: l === 'arm_front' || l === 'arm_back' ? ARM : 0 };
+  }).filter((x): x is { sheet: ImageData; arm: number } => !!x);
   const trim = hex(kit.trim === kit.shirt ? '#ffffff' : kit.trim);
   VIEWS.forEach((view, row) => {
     FRAMES.forEach((frame, col) => {
       if (!cellUsed(view, frame)) return;
-        let cell: Uint32Array<ArrayBuffer> = new Uint32Array(SW * SH); // 0 = transparente, si no 0xRRGGBB | 1<<24
-      for (const sheet of layers) {
+      let cell: Uint32Array<ArrayBuffer> = new Uint32Array(SW * SH); // 0 = transparente, si no 0xRRGGBB | SOLID (| ARM)
+      for (const { sheet, arm } of layers) {
+        // hojas retocadas a mano de antes de un fotograma nuevo: más estrechas, sin esa columna
+        if ((col + 1) * SW > sheet.width) continue;
         for (let y = 0; y < SH; y++)
           for (let x = 0; x < SW; x++) {
             const i = ((row * SH + y) * sheet.width + col * SW + x) * 4;
             if (sheet.data[i + 3] < 128) continue;
             const c = ((sheet.data[i] << 16) | (sheet.data[i + 1] << 8) | sheet.data[i + 2]) >>> 0;
-            cell[y * SW + x] = ((map.get(c) ?? c) | 0x1000000) >>> 0;
+            cell[y * SW + x] = ((map.get(c) ?? c) | SOLID | arm) >>> 0;
           }
       }
       if (view === 'back' && num >= 0) {
@@ -130,19 +143,31 @@ export function composeSprites(store: SheetStore, look: Look, kit: Kit, num: num
         let x0 = SW / 2 - Math.floor((digits.length * 4 - 1) / 2);
         const y0 = torsoTop(view, frame) + 1;
         for (const d of digits) {
-          DIGITS[d].forEach((r, ry) => r.split('').forEach((b, rx) => b === '1' && (cell[(y0 + ry) * SW + x0 + rx] = (trim | 0x1000000) >>> 0)));
+          DIGITS[d].forEach((r, ry) => r.split('').forEach((b, rx) => b === '1' && (cell[(y0 + ry) * SW + x0 + rx] = (trim | SOLID) >>> 0)));
           x0 += 4;
         }
       }
       // la altura se hace con filas (nunca escalando): críos, más bajos; adultos, ±2 filas
-      if (look.youth) cell = squash(cell, look.youth);
-      else if (look.height < 0.985) cell = squash(cell, Math.min(2, Math.round((1 - look.height) * 28)) / DROP_ROWS.length);
-      else if (look.height > 1.015) cell = stretch(cell, Math.min(2, Math.round((look.height - 1) * 28)));
+      let neck = NECK_ROW;
+      if (look.youth) {
+        cell = squash(cell, look.youth);
+        neck += Math.round(Math.min(1, look.youth) * DROP_ROWS.length);
+      } else if (look.height < 0.985) {
+        const n = Math.min(2, Math.round((1 - look.height) * 28));
+        cell = squash(cell, n / DROP_ROWS.length);
+        neck += n;
+      } else if (look.height > 1.015) {
+        const n = Math.min(2, Math.round((look.height - 1) * 28));
+        cell = stretch(cell, n);
+        neck -= n;
+      }
+      if (frame === 'sleepU' && view === 'side') out.sleepHead = toCanvas(headOf(cell, neck));
       const rot = ROT[frame];
       if (rot) cell = rotate(cell, rot[1]);
       outline(cell);
       const id = (rot ? rot[0] : frame) as FrameId;
       out[view][id] = toCanvas(cell);
+      out.parts[view][id] = partsCanvas(cell);
     });
   });
   return out;
@@ -167,6 +192,31 @@ function squash(cell: Uint32Array, youth: number): Uint32Array<ArrayBuffer> {
   return out;
 }
 
+/** Fila del cuello en la celda de pie (cabeza en las filas 4-11, cuello en la 12). */
+const NECK_ROW = 12;
+
+/**
+ * La cabeza sola (con el cuello), recortada a su caja: es lo que asoma de la manta en la cama.
+ * Sin contorno: se le pone después de girarla al ángulo de la cama.
+ */
+function headOf(cell: Uint32Array, neck: number) {
+  let minX = SW;
+  let maxX = -1;
+  let minY = SH;
+  for (let y = 0; y <= neck; y++)
+    for (let x = 0; x < SW; x++)
+      if (cell[y * SW + x]) {
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+      }
+  const w = Math.max(1, maxX - minX + 1);
+  const h = Math.max(1, neck - minY + 1);
+  const out = new Uint32Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) out[y * w + x] = cell[(minY + y) * SW + minX + x];
+  return { data: out, w, h };
+}
+
 /** Más alto: se repiten filas de espinilla y de torso y lo de arriba sube. */
 const DUP_ROWS = [36, 20];
 function stretch(cell: Uint32Array, n: number): Uint32Array<ArrayBuffer> {
@@ -182,15 +232,17 @@ function stretch(cell: Uint32Array, n: number): Uint32Array<ArrayBuffer> {
   return out;
 }
 
-function outline(cell: Uint32Array) {
-  const add: number[] = [];
-  const at = (x: number, y: number) => (x < 0 || y < 0 || x >= SW || y >= SH ? 0 : cell[y * SW + x]);
-  for (let y = 0; y < SH; y++)
-    for (let x = 0; x < SW; x++) {
-      if (cell[y * SW + x]) continue;
-      if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1)) add.push(y * SW + x);
+/** Contorno oscuro por fuera de la silueta; el contorno de un brazo es brazo (va con él por encima). */
+export function outline(cell: Uint32Array, w = SW, h = SH) {
+  const add: [number, number][] = [];
+  const at = (x: number, y: number) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : cell[y * w + x]);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      if (cell[y * w + x]) continue;
+      const n = [at(x - 1, y), at(x + 1, y), at(x, y - 1), at(x, y + 1)];
+      if (n.some(Boolean)) add.push([y * w + x, n.some((v) => v & ARM) ? ARM : 0]);
     }
-  for (const i of add) cell[i] = (OUT | 0x1000000) >>> 0;
+  for (const [i, arm] of add) cell[i] = (OUT | SOLID | arm) >>> 0;
 }
 
 /** Giro de 90º exacto y apoyado en el suelo (entradas, caídas y estiradas). */
@@ -221,14 +273,15 @@ function rotate(cell: Uint32Array, dir: 1 | -1) {
   return out;
 }
 
-function toCanvas(cell: Uint32Array) {
+export function toCanvas(cell: Uint32Array | { data: Uint32Array; w: number; h: number }) {
+  const { data, w, h } = cell instanceof Uint32Array ? { data: cell, w: SW, h: SH } : cell;
   const c = document.createElement('canvas');
-  c.width = SW;
-  c.height = SH;
+  c.width = w;
+  c.height = h;
   const g = c.getContext('2d')!;
-  const img = g.createImageData(SW, SH);
-  for (let i = 0; i < cell.length; i++) {
-    const v = cell[i];
+  const img = g.createImageData(w, h);
+  for (let i = 0; i < data.length; i++) {
+    const v = data[i];
     if (!v) continue;
     img.data[i * 4] = (v >> 16) & 255;
     img.data[i * 4 + 1] = (v >> 8) & 255;
@@ -237,4 +290,28 @@ function toCanvas(cell: Uint32Array) {
   }
   g.putImageData(img, 0, 0);
   return c;
+}
+
+/** Mapa de partes de un fotograma: blanco donde hay brazo (o lo que lleva en la mano). */
+function partsCanvas(cell: Uint32Array) {
+  const c = document.createElement('canvas');
+  c.width = SW;
+  c.height = SH;
+  const g = c.getContext('2d')!;
+  const img = g.createImageData(SW, SH);
+  for (let i = 0; i < cell.length; i++) {
+    const v = cell[i] & ARM ? 255 : 0;
+    img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v;
+    img.data[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+
+/** Píxeles de un lienzo como celda compuesta (0 = transparente). */
+export function cellOf(c: HTMLCanvasElement) {
+  const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+  const out = new Uint32Array(c.width * c.height);
+  for (let i = 0; i < out.length; i++) if (d[i * 4 + 3] > 127) out[i] = ((d[i * 4] << 16) | (d[i * 4 + 1] << 8) | d[i * 4 + 2] | SOLID) >>> 0;
+  return out;
 }

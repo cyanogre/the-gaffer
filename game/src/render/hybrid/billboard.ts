@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { Kit, Look } from '../../content/look';
 import type { MatchSim } from '../../sim/match';
 import type { SimPlayer } from '../../sim/types';
-import { SheetStore, composeSprites, type SpriteSet } from '../pixel/sheets';
+import { SheetStore, composeSprites, type FrameSet } from '../pixel/sheets';
 import { SH, SW, type FrameId, type View } from '../pixel/sprites';
 import { PIXEL_GRID } from '../pixelgrid';
 
@@ -12,7 +12,7 @@ import { PIXEL_GRID } from '../pixelgrid';
  */
 export const sheetStore = new SheetStore();
 
-const COLS: FrameId[] = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'kick', 'up0', 'up1', 'out', 'ear', 'slide', 'fall', 'dive', 'poke', 'head', 'push', 'kneel', 'throw', 'catch'];
+const COLS: FrameId[] = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'kick', 'up0', 'up1', 'out', 'ear', 'slide', 'fall', 'dive', 'poke', 'head', 'push', 'kneel', 'throw', 'catch', 'sit', 'point', 'talk', 'sleep', 'wipe0', 'wipe1', 'eat', 'table', 'play', 'eatSit'];
 const ROWS: View[] = ['front', 'back', 'side'];
 /** Altura en metros de la celda de 48 px (la figura de ≈46 px mide ≈ 2,1 m: exageración ligera para leerse). */
 export const CELL_H = 2.2;
@@ -25,21 +25,41 @@ export const CELL_W = (CELL_H * SW) / SH;
  * - Tamaño fijo en píxeles (no encoge con la distancia) y anclado a la rejilla de píxel: cada
  *   píxel de arte ocupa exactamente un píxel de la escena, sin columnas gordas ni finas.
  */
-export function flatDepth<T extends THREE.SpriteMaterial>(mat: T): T {
+export function flatDepth<T extends THREE.SpriteMaterial>(mat: T, parts?: THREE.Texture): T {
   mat.sizeAttenuation = false;
+  // profundidad impuesta desde fuera (delante/detrás de un mueble); 2 = la de sus pies
+  const uDepth = { value: 2 };
+  // los brazos pueden ir más adelante que el cuerpo (limpiando la barra); 2 = como el cuerpo
+  const uArmDepth = { value: 2 };
+  mat.userData.depth = uDepth;
+  mat.userData.armDepth = uArmDepth;
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uPixelGrid = PIXEL_GRID;
-    shader.vertexShader = 'uniform vec2 uPixelGrid;\n' + shader.vertexShader.replace(
+    shader.uniforms.uDepth = uDepth;
+    if (parts) {
+      // mapa de partes (misma rejilla que la hoja): donde es brazo, la profundidad de los brazos
+      shader.uniforms.uParts = { value: parts };
+      shader.uniforms.uArmDepth = uArmDepth;
+      shader.fragmentShader = 'uniform sampler2D uParts;\nuniform float uArmDepth;\n' + shader.fragmentShader.replace(
+        '#include <alphatest_fragment>',
+        `#include <alphatest_fragment>
+        float partZ = gl_FragCoord.z;
+        if ( uArmDepth < 1.5 && texture2D( uParts, vMapUv ).r > 0.5 ) partZ = min( partZ, uArmDepth * 0.5 + 0.5 );
+        gl_FragDepth = partZ;`,
+      );
+    }
+    shader.vertexShader = 'uniform vec2 uPixelGrid;\nuniform float uDepth;\n' + shader.vertexShader.replace(
       '#include <logdepthbuf_vertex>',
       `vec4 anchorClip = projectionMatrix * modelViewMatrix[ 3 ];
       vec2 anchorPix = ( anchorClip.xy / anchorClip.w * 0.5 + 0.5 ) * uPixelGrid;
       vec2 snapPix = floor( anchorPix + 0.5 ) - anchorPix;
       gl_Position.xy += snapPix / uPixelGrid * 2.0 * gl_Position.w;
-      gl_Position.z = ( anchorClip.z / anchorClip.w - 0.0004 ) * gl_Position.w;
+      float fz = uDepth < 1.5 ? uDepth : anchorClip.z / anchorClip.w - 0.0004;
+      gl_Position.z = fz * gl_Position.w;
       #include <logdepthbuf_vertex>`,
     );
   };
-  mat.customProgramCacheKey = () => 'pixel-sprite';
+  mat.customProgramCacheKey = () => (parts ? 'pixel-sprite-parts' : 'pixel-sprite');
   return mat;
 }
 
@@ -48,7 +68,7 @@ export function pixelSize(s: THREE.Sprite, w: number, h: number, u: number) {
   s.scale.set(w * u, h * u, 1);
 }
 
-export function atlasTexture(set: SpriteSet) {
+export function atlasTexture(set: FrameSet) {
   const cv = document.createElement('canvas');
   cv.width = SW * COLS.length;
   cv.height = SH * ROWS.length;
@@ -74,11 +94,12 @@ export class Billboard {
   view: View = 'side';
   flip = false;
 
-  constructor(atlas: THREE.Texture, shadowGeo: THREE.BufferGeometry, shadowMat: THREE.Material, scale = 1) {
+  /** `parts`: mapa de partes de la misma hoja, para tapar el cuerpo y no los brazos (o al revés). */
+  constructor(atlas: THREE.Texture, shadowGeo: THREE.BufferGeometry, shadowMat: THREE.Material, scale = 1, parts?: THREE.Texture) {
     this.tex = atlas.clone();
     this.tex.needsUpdate = true;
     this.tex.repeat.set(1 / COLS.length, 1 / ROWS.length);
-    const mat = flatDepth(new THREE.SpriteMaterial({ map: this.tex, alphaTest: 0.5, transparent: false }));
+    const mat = flatDepth(new THREE.SpriteMaterial({ map: this.tex, alphaTest: 0.5, transparent: false }), parts);
     this.sprite = new THREE.Sprite(mat);
     // ancla en el borde de un píxel (centro horizontal, fila de las suelas) para que encaje en la rejilla
     this.sprite.center.set(0.5, 1 / SH);
@@ -105,6 +126,13 @@ export class Billboard {
     this.shadow.position.set(x, z + 0.02, y);
   }
 
+  /** Profundidad impuesta (NDC) o null para usar la de sus pies; `arms`, la de los brazos si van por encima. */
+  setDepth(z: number | null, arms: number | null = null) {
+    const u = (this.sprite.material as THREE.SpriteMaterial).userData;
+    u.depth.value = z ?? 2;
+    u.armDepth.value = arms ?? 2;
+  }
+
   /** Tamaño exacto: un píxel de arte por píxel de la escena. */
   setTexel(u: number) {
     this.sprite.scale.set(SW * u, SH * u, 1);
@@ -123,6 +151,13 @@ export class Billboard {
 export function composeCharacter(look: Look, kit: Kit, num: number, civil: boolean) {
   return atlasTexture(composeSprites(sheetStore, look, kit, num, civil));
 }
+
+/** Para los sitios (casa, bar...): hoja, mapa de partes y la cabeza para tumbarse en una cama. */
+export function composeCharacterArt(look: Look, kit: Kit, num: number, civil: boolean) {
+  const set = composeSprites(sheetStore, look, kit, num, civil);
+  return { atlas: atlasTexture(set), parts: atlasTexture(set.parts), sleepHead: set.sleepHead };
+}
+export type CharacterArt = ReturnType<typeof composeCharacterArt>;
 
 /** Vista y volteo según hacia dónde se mueve (la cámara mira desde la banda cercana). */
 export function viewOf(p: SimPlayer, moving: boolean, last: View | undefined, lastFlip: boolean): { view: View; flip: boolean } {

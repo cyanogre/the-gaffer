@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <meta name="theme-color" content="#120d1f" />
+    <meta name="theme-color" content="#0f1828" />
     <title>The Gaffer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -45,12 +45,23 @@
       <header id="hud" class="hud">
         <button id="hudCoach" class="hud-coach" type="button" aria-label="Ficha del míster"><canvas width="48" height="48"></canvas></button>
         <div class="hud-clock"><b id="hudDay">LUN</b><small id="hudSlot">Mañana</small></div>
-        <div class="hud-meter" title="Energía"><span class="hud-ico" data-icon="energy"></span><i class="bar"><i id="hudEnergy"></i></i><small id="hudEnergyTxt">80</small></div>
+        <div class="hud-needs">
+          <div class="need" title="Energía"><span class="hud-ico" data-icon="energy"></span><i class="bar"><i id="hudEnergy"></i></i></div>
+          <div class="need" title="Comida"><span class="hud-ico" data-icon="food"></span><i class="bar"><i id="hudFood"></i></i></div>
+          <div class="need" title="Ánimo"><span class="hud-ico" data-icon="mood"></span><i class="bar"><i id="hudMood"></i></i></div>
+        </div>
         <span class="hud-spacer"></span>
         <div class="hud-chip" title="Tu cartera"><span class="hud-ico" data-icon="wallet"></span><b id="hudWallet">90 €</b></div>
         <div class="hud-chip wide" title="Caja del club"><span class="hud-ico" data-icon="stadium"></span><b id="hudMoney">120 €</b></div>
         <div class="hud-chip wide" title="Confianza de la directiva"><span class="hud-ico" data-icon="hand"></span><i class="bar"><i id="hudTrust"></i></i></div>
       </header>
+      <div id="hudStats" class="hud-stats" title="Tus estadísticas: la barra se llena al trabajarlas; al llegar arriba, +1 punto. Cada noche baja lo que no trabajes.">
+        <div class="hs" data-stat="tactica"><small>TÁCTICA</small><b>1</b><i class="bar"><i></i></i></div>
+        <div class="hs" data-stat="labia"><small>LABIA</small><b>1</b><i class="bar"><i></i></i></div>
+        <div class="hs" data-stat="ojo"><small>OJO</small><b>1</b><i class="bar"><i></i></i></div>
+        <div class="hs" data-stat="forma"><small>FORMA</small><b>1</b><i class="bar"><i></i></i></div>
+      </div>
+      <div id="hudTime" class="hud-time" hidden><i></i></div>
       <div id="placeTag" class="place-tag"><b id="placeName">Casa</b><small id="placeSub"></small></div>
       <button id="btnMatch" class="match-cta" type="button" hidden><b>¡A jugar!</b><small id="btnMatchSub"></small></button>
 

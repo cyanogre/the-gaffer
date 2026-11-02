@@ -4,7 +4,7 @@ import { slotTime, type Career } from '../../game/career';
 import { Rng } from '../../sim/rng';
 import { NPC } from '../../story/scenes';
 import { pixelText } from '../pixel/text';
-import { Location, canvas, pixTex, v3, type Walker } from './location';
+import { Location, canvas, pixTex, v3, type RoutineStep, type Spot, type Walker } from './location';
 
 /** Luces de interior según la franja: de día entra luz por la puerta; de noche, fluorescente y bombilla. */
 export class InteriorLights {
@@ -27,7 +27,7 @@ export class InteriorLights {
     this.sun.intensity = t === 'night' ? 0.15 : 0.9;
     this.sun.color.set(t === 'dusk' ? '#ffb27a' : '#ffffff');
     this.lamp.intensity = t === 'night' ? 6 : 2.5;
-    scene.background = new THREE.Color(t === 'night' ? '#0e0a1a' : '#1a1330');
+    scene.background = new THREE.Color(t === 'night' ? '#0c1426' : '#16233a');
   }
 }
 
@@ -45,8 +45,7 @@ export class BarView extends Location {
   private slotTex: THREE.Texture;
   private manolo: Walker | null = null;
   private regulars: Walker[] = [];
-  private mood: 'normal' | 'sulk' = 'normal';
-  private nextMove = 2;
+  private mood: 'normal' | 'sulk' | '' = '';
 
   constructor() {
     super();
@@ -58,7 +57,27 @@ export class BarView extends Location {
     this.tvTex = pixTex(this.tv[0]);
     this.slotTex = pixTex(this.slot[0]);
     this.build();
+    this.flattenProps();
   }
+
+  protected activities: Record<string, Spot> = {
+    parroquia: { at: v3(1.0, 0, -0.9), view: 'back', frames: ['talk', 'idle0', 'talk', 'idle1'], fps: 1.8 },
+    // sentados: el ancla del sprite sentado va bajo la cadera, así que el sitio es el centro del asiento
+    // en la silla de la mesa del fondo, mirando a la mesa: el respaldo le queda delante
+    invitar: { at: v3(0.3, 0, 1.9), view: 'side', flip: true, frames: ['table'], fps: 1, layers: { 'silla-2b': 'behind', 'mesa-2': 'front' } },
+    // en un taburete, girado hacia la barra, con el bocadillo
+    bocata: { at: v3(0.6, 0, -1.2), view: 'side', frames: ['eatSit', 'eatSit', 'sit'], fps: 1.4, layers: { 'taburete-1': 'front', barra: 'front' } },
+  };
+
+  /** Manolo detrás de la barra: limpia con el trapo (el brazo por encima de la barra), coge botellas, mira la tele. */
+  private static WORK: RoutineStep[] = [
+    { spot: { at: v3(-0.95, 0, -2.45), view: 'front', frames: ['wipe0', 'wipe1'], fps: 2.4, layers: { barra: 'arms' } }, secs: 5 },
+    { spot: { at: v3(1.75, 0, -2.5), view: 'back', frames: ['idle0'], fps: 1 }, secs: 2.5 },
+    { spot: { at: v3(1.25, 0, -2.45), view: 'front', frames: ['wipe1', 'wipe0'], fps: 2.4, layers: { barra: 'arms' } }, secs: 4 },
+    { spot: { at: v3(0.2, 0, -2.45), view: 'front', frames: ['idle0', 'idle1'], fps: 1.2 }, secs: 3 },
+  ];
+  /** Enfadado con el míster: de brazos caídos, mirando, sin moverse. */
+  private static SULK: RoutineStep[] = [{ spot: { at: v3(0.2, 0, -2.45), view: 'front', frames: ['idle0'], fps: 1 }, secs: 60 }];
 
   private build() {
     const b = this.b;
@@ -88,11 +107,9 @@ export class BarView extends Location {
     wg.fillRect(0, 30, 64, 2);
     const wt = pixTex(wc, [3, 1]);
     b.walls(8, 6, 3, new THREE.MeshLambertMaterial({ map: wt }), '#4a2a16');
-    // barra de zinc
-    b.box(4.6, 1.0, 0.65, '#6b3f22', 1.0, 0, -1.85);
-    b.box(4.8, 0.08, 0.8, '#b9bec4', 1.0, 1.0, -1.85);
-    b.box(0.65, 1.0, 1.6, '#6b3f22', 3.0, 0, -0.75);
-    b.box(0.8, 0.08, 1.75, '#b9bec4', 3.0, 1.0, -0.75);
+    // barra de zinc (lo que hay encima va con ella)
+    this.furniture('barra', b.box(4.6, 1.0, 0.65, '#6b3f22', 1.0, 0, -1.85), b.box(4.8, 0.08, 0.8, '#b9bec4', 1.0, 1.0, -1.85));
+    this.furniture('barra-esquina', b.box(0.65, 1.0, 1.6, '#6b3f22', 3.0, 0, -0.75), b.box(0.8, 0.08, 1.75, '#b9bec4', 3.0, 1.0, -0.75));
     // vitrina de tapas
     const [vc, vg] = canvas(32, 8);
     vg.fillStyle = '#f2ead8';
@@ -157,23 +174,19 @@ export class BarView extends Location {
     b.box(0.6, 1.5, 0.5, '#c8102e', -3.5, 0, 2.2);
     b.plane(0.4, 0.6, this.slotTex, -3.24, 1.0, 2.2, Math.PI / 2, true);
     // taburetes
-    for (const x of [-0.4, 0.6, 1.6]) {
-      b.cyl(0.04, 0.05, 0.7, '#3a3a40', x, 0, -1.2, 5);
-      b.cyl(0.2, 0.2, 0.08, '#c8102e', x, 0.7, -1.2, 10);
-    }
-    // mesas con sillas
-    for (const [x, z] of [
-      [-2.2, 0.2],
-      [-0.4, 1.9],
-    ]) {
-      b.cyl(0.05, 0.05, 0.72, '#3a3a40', x, 0, z, 5);
-      b.cyl(0.5, 0.5, 0.05, '#e9e4d8', x, 0.72, z, 14);
-      for (const [dx, dz] of [
-        [-0.7, 0],
-        [0.7, 0],
-      ]) {
-        b.box(0.4, 0.45, 0.4, '#8a5a3a', x + dx, 0, z + dz);
-        b.box(0.4, 0.5, 0.06, '#8a5a3a', x + dx, 0.45, z + dz - 0.18);
+    [-0.4, 0.6, 1.6].forEach((x, i) => this.furniture(`taburete-${i}`, b.cyl(0.04, 0.05, 0.7, '#3a3a40', x, 0, -1.2, 5), b.cyl(0.2, 0.2, 0.08, '#c8102e', x, 0.7, -1.2, 10)));
+    // mesas con sus dos sillas mirando a la mesa (el respaldo por fuera)
+    for (const [id, x, z] of [
+      ['dom', -2.2, 0.2],
+      ['2', -0.4, 1.9],
+    ] as const) {
+      this.furniture(`mesa-${id}`, b.cyl(0.05, 0.05, 0.72, '#3a3a40', x, 0, z, 5), b.cyl(0.5, 0.5, 0.05, '#e9e4d8', x, 0.72, z, 14));
+      for (const [side, dx] of [
+        ['a', -0.7],
+        ['b', 0.7],
+      ] as const) {
+        const back = Math.sign(dx) * 0.18;
+        this.furniture(`silla-${id}${side}`, b.box(0.4, 0.45, 0.4, '#8a5a3a', x + dx, 0, z), b.box(0.06, 0.5, 0.4, '#8a5a3a', x + dx + back, 0.45, z));
       }
     }
     // fichas de dominó
@@ -187,21 +200,25 @@ export class BarView extends Location {
 
   private people(c: Career) {
     if (!this.manolo) {
-      this.manolo = this.addWalker(NPC.manolo.look, NPC.manolo.clothes, -1, true, v3(1.2, 0, -2.45), 'front');
+      this.manolo = this.addWalker(NPC.manolo.look, NPC.manolo.clothes, -1, true, v3(0.2, 0, -2.45), 'front');
       this.manolo.speed = 1.3;
       const rng = new Rng(404);
-      for (const [x, z] of [
-        [-2.9, 0.25],
-        [-1.5, 0.25],
-      ]) {
+      // la peña del dominó, sentados a la mesa: el de la izquierda con la silla detrás y la mesa
+      // delante (los brazos encima del tablero); el de la derecha, de espaldas a su respaldo
+      const seats: Spot[] = [
+        { at: v3(-2.9, 0, 0.2), view: 'side', frames: ['table', 'table', 'play', 'table'], fps: 1.1, layers: { 'silla-doma': 'front', 'mesa-dom': 'arms' } },
+        { at: v3(-1.5, 0, 0.2), view: 'side', flip: true, frames: ['table', 'play', 'table', 'table', 'table'], fps: 0.9, layers: { 'silla-domb': 'behind', 'mesa-dom': 'front' } },
+      ];
+      for (const seat of seats) {
         const look = randomLook(rng, 'm', { hair: rng.pick(['bald', 'combover', 'short']), hairColor: '#d8d4cc', facial: rng.pick(['mustache', 'none']), accessory: 'none', body: 'belly' });
-        const w = this.addWalker(look, civ(rng.pick(['#5d6a3a', '#4a4f6a', '#7a5236']), '#3a3a44'), -1, true, v3(x, 0, z), 'side');
-        w.flip = x > -2.2;
+        const w = this.addWalker(look, civ(rng.pick(['#5d6a3a', '#4a4f6a', '#7a5236']), '#3a3a44'), -1, true, seat.at!, 'side');
+        this.setRoutine(w, [{ spot: seat, secs: 1e9 }]);
         this.regulars.push(w);
       }
     }
-    this.mood = c.flags.manoloEnfadado ? 'sulk' : 'normal';
-    this.manolo.idle = this.mood === 'sulk' ? ['idle0'] : undefined;
+    const mood = c.flags.manoloEnfadado ? 'sulk' : 'normal';
+    if (mood !== this.mood) this.setRoutine(this.manolo, mood === 'sulk' ? BarView.SULK : BarView.WORK);
+    this.mood = mood;
   }
 
   setState(c: Career) {
@@ -241,10 +258,5 @@ export class BarView extends Location {
     sg.fillRect(3, 10, 10, 7);
     pixelText(sg, '777', 8, 10, Math.floor(t * 2) % 2 ? '#c8102e' : '#1a1226', 12);
     this.slotTex.needsUpdate = true;
-    // Manolo va de un lado a otro de la barra: camina, se para a secar vasos y vuelve
-    if (this.manolo && this.mood === 'normal' && t > this.nextMove) {
-      this.nextMove = t + 3 + ((t * 7.3) % 3);
-      this.manolo.target.x = this.manolo.target.x > 1.2 ? 0.2 : 2.2;
-    }
   }
 }

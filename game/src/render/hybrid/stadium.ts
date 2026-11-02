@@ -159,11 +159,21 @@ function windowTexture(seed: number, wall: string) {
   g.fillRect(0, 0, 64, 96);
   for (let y = 6; y < 92; y += 14)
     for (let x = 5; x < 60; x += 14) {
-      g.fillStyle = '#2a2f3a';
+      // ventana con cristal, persiana a medio bajar y alguna maceta
+      g.fillStyle = '#5a7896';
       g.fillRect(x, y, 9, 9);
-      if (rng.chance(0.3)) {
-        g.fillStyle = rng.pick(['#7a4f9a', '#c24d16', '#2f86c4', '#e9e4d8']);
-        g.fillRect(x - 1, y + 9, 11, 2);
+      g.fillStyle = '#8fb4d0';
+      g.fillRect(x + 1, y + 1, 3, 3);
+      g.fillStyle = rng.pick(['#3f7a52', '#2f6f8a', '#8a5a3a', '#c8763a']);
+      g.fillRect(x, y, 9, rng.int(2, 5));
+      g.fillStyle = '#f4ecd8';
+      g.fillRect(x - 1, y + 9, 11, 1);
+      if (rng.chance(0.35)) {
+        g.fillStyle = rng.pick(['#e23b3b', '#f2c94c', '#ff7aa8', '#ffffff']);
+        g.fillRect(x + 1, y + 7, 2, 2);
+        g.fillRect(x + 5, y + 7, 2, 2);
+        g.fillStyle = '#3f8a3a';
+        g.fillRect(x, y + 8, 9, 1);
       }
     }
   const [ecv, eg] = canvas(64, 96);
@@ -288,7 +298,8 @@ export function buildStadium(level: number): Stadium {
   }
 
   // bloques de pisos alrededor: el barrio mira (o no) el partido
-  const walls = ['#c9b8a0', '#b7a48c', '#d8c7a8', '#a99a88', '#c4a98e'];
+  // fachadas de barrio con color (ocre, teja, crema, salvia, melocotón), no bloques grises
+  const walls = ['#e8c48a', '#eaa47c', '#f1e3c6', '#c9d8b8', '#f0b98f', '#b9d1e0'];
   const addBlock = (x: number, z: number, bw: number, bh: number, bd: number, i: number, rotY = 0) => {
     const { map, emissive } = windowTexture(i * 7 + 3, walls[i % walls.length]);
     map.wrapS = map.wrapT = emissive.wrapS = emissive.wrapT = THREE.RepeatWrapping;
@@ -296,7 +307,8 @@ export function buildStadium(level: number): Stadium {
     emissive.repeat.copy(map.repeat);
     const m = new THREE.MeshLambertMaterial({ map, emissiveMap: emissive, emissive: new THREE.Color('#000000') });
     windowMats.push(m);
-    const b = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), [mat('#9a8b78'), mat('#9a8b78'), mat('#6d6258'), mat('#6d6258'), m, m]);
+    const side = walls[(i + 2) % walls.length];
+    const b = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), [mat(side), mat(side), mat('#b5654a'), mat('#8a5a44'), m, m]);
     b.position.set(x, bh / 2, z);
     b.rotation.y = rotY;
     b.castShadow = true;
@@ -353,20 +365,23 @@ export function buildStadium(level: number): Stadium {
     fence(-HX - 4, -HZ - 3.5, -HX - 4, HZ + 3);
     fence(HX + 4, -HZ - 3.5, HX + 4, HZ + 3);
     for (let x = -HX + 4; x < HX - 4; x += 2.6) spots.push({ pos: v3(x + rng.range(-0.4, 0.4), 0, -HZ - 4.4), kind: 'fence' });
-    // muro con grafitis detrás de la valla
+    // mural del club pintado por los vecinos detrás de la valla
     const [wc, wg] = canvas(512, 64);
-    wg.fillStyle = '#b8ab98';
+    wg.fillStyle = '#f1e3c6';
     wg.fillRect(0, 0, 512, 64);
-    wg.font = '700 40px Bangers, Impact, sans-serif';
-    wg.fillStyle = '#e8642a';
-    wg.fillText('BARRIOBAJO', 18, 48);
-    wg.fillStyle = '#2f86c4';
-    wg.font = '700 26px Bangers, Impact, sans-serif';
-    wg.fillText('MANOLO PON OTRA', 300, 40);
-    wg.strokeStyle = '#3a2a40';
-    wg.lineWidth = 3;
-    wg.strokeText('★', 260, 30);
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(60, 2.2, 0.4), [mat('#a89a86'), mat('#a89a86'), mat('#a89a86'), mat('#a89a86'), new THREE.MeshLambertMaterial({ map: tex(wc) }), mat('#a89a86')]);
+    for (let x = 0; x < 120; x += 16) {
+      wg.fillStyle = (x / 16) % 2 ? '#1d1d22' : '#f0822a';
+      wg.fillRect(x, 0, 16, 64);
+    }
+    wg.font = '700 34px Bangers, Impact, sans-serif';
+    wg.fillStyle = '#1d1d22';
+    wg.fillText('ATLÉTICO BARRIOBAJO', 134, 40);
+    wg.font = '700 16px Bangers, Impact, sans-serif';
+    wg.fillStyle = '#c24d16';
+    wg.fillText('DESDE 1974 · EL BARRIO CONTIGO', 140, 58);
+    wg.fillStyle = '#3f8a3a';
+    wg.fillRect(0, 60, 512, 4);
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(60, 2.2, 0.4), [mat('#e8dcc0'), mat('#e8dcc0'), mat('#e8dcc0'), mat('#e8dcc0'), new THREE.MeshLambertMaterial({ map: tex(wc) }), mat('#e8dcc0')]);
     wall.position.set(18, 1.1, -HZ - 9.5);
     wall.castShadow = true;
     group.add(wall);

@@ -7,15 +7,15 @@ import type { Accessory, Body, Facial, HairStyle, KitPattern, Nose } from '../..
  * Las hojas resultantes viven en assets/sprites/ y son el arte editable del juego:
  * el motor carga esas PNG, no este código.
  *
- * Rejilla de cada hoja: columnas = FRAMES (14), filas = VIEWS (3), celda 48×48, pies en la fila 47.
+ * Rejilla de cada hoja: columnas = FRAMES, filas = VIEWS (3), celda 48×48, pies en la fila 47.
  */
 export const SW = 48;
 export const SH = 48;
 export const VIEWS = ['front', 'back', 'side'] as const;
 export type View = (typeof VIEWS)[number];
-export const FRAMES = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'kick', 'up0', 'up1', 'out', 'ear', 'slideU', 'fallU', 'diveU', 'poke', 'head', 'push', 'kneel', 'throw', 'catch'] as const;
+export const FRAMES = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'kick', 'up0', 'up1', 'out', 'ear', 'slideU', 'fallU', 'diveU', 'poke', 'head', 'push', 'kneel', 'throw', 'catch', 'sit', 'point', 'talk', 'sleepU', 'wipe0', 'wipe1', 'eat', 'table', 'play', 'eatSit'] as const;
 export type SheetFrame = (typeof FRAMES)[number];
-export type FrameId = Exclude<SheetFrame, 'slideU' | 'fallU' | 'diveU'> | 'slide' | 'fall' | 'dive';
+export type FrameId = Exclude<SheetFrame, 'slideU' | 'fallU' | 'diveU' | 'sleepU'> | 'slide' | 'fall' | 'dive' | 'sleep';
 
 /** Colores clave: rampas de 4 tonos (luz, base, sombra, oscuro) que se sustituyen al componer. */
 export const KEY = {
@@ -34,7 +34,21 @@ export const KEY = {
 type Ramp = { l: string; b: string; s: string; d: string };
 
 /** Colores fijos que NO se repintan. */
-export const FIXED = { outline: '#1a1226', eye: '#1a1226', mouth: '#5a1820', frame: '#20232a', lens: '#8fd3ff' };
+export const FIXED = {
+  outline: '#1a1226',
+  eye: '#1a1226',
+  mouth: '#5a1820',
+  frame: '#20232a',
+  lens: '#8fd3ff',
+  // lo que llevan en la mano: trapo de la barra, bocadillo y ficha de dominó
+  cloth: '#eef2f4',
+  clothShade: '#9fb4c2',
+  bread: '#e3a95c',
+  crust: '#a8642a',
+  filling: '#c8402a',
+  tile: '#f6f4ee',
+  pip: '#1a1226',
+};
 
 export type LayerId = 'arm_back' | 'hair_back' | 'legs' | 'shorts' | 'torso' | 'head' | 'facial' | 'hair_front' | 'acc' | 'arm_front';
 /** Orden de pintado (de atrás adelante). */
@@ -44,7 +58,7 @@ export const LAYER_ORDER: LayerId[] = ['arm_back', 'hair_back', 'legs', 'shorts'
 export type SpriteBody = Body | 'fslim' | 'fnormal' | 'fstocky';
 export const BODIES: SpriteBody[] = ['slim', 'normal', 'stocky', 'belly', 'fslim', 'fnormal', 'fstocky'];
 export const PATTERNS: KitPattern[] = ['plain', 'stripes', 'hoops', 'half', 'sash'];
-export const HAIRS: HairStyle[] = ['bald', 'buzz', 'short', 'afro', 'mohawk', 'long', 'ponytail', 'mullet', 'curly', 'combover', 'bun', 'braids', 'pixie', 'bob', 'pigtails'];
+export const HAIRS: HairStyle[] = ['bald', 'buzz', 'short', 'afro', 'mohawk', 'long', 'ponytail', 'mullet', 'curly', 'combover', 'bun', 'braids', 'pixie', 'bob', 'pigtails', 'fade', 'quiff'];
 export const FACIALS: Exclude<Facial, 'none'>[] = ['mustache', 'beard', 'goatee', 'stubble'];
 export const NOSES: Nose[] = ['small', 'big', 'hook'];
 export const ACCS: Exclude<Accessory, 'none' | 'socksDown'>[] = ['glasses', 'headband'];
@@ -82,14 +96,18 @@ interface VariantSet {
   accessory: Accessory;
 }
 
-type Legs = 'stand' | 'pass' | 'liftL' | 'liftR' | 'runA' | 'runB' | 'runC' | 'runD' | 'kick' | 'jump' | 'lunge' | 'brace' | 'kneel' | 'slide' | 'fall';
-type Arms = 'down' | 'mid' | 'swingL' | 'swingR' | 'up' | 'up2' | 'out' | 'ear' | 'jump' | 'shove' | 'throw' | 'catch' | 'slide' | 'kneel' | 'balance';
+type Legs = 'stand' | 'sit' | 'pass' | 'liftL' | 'liftR' | 'runA' | 'runB' | 'runC' | 'runD' | 'kick' | 'jump' | 'lunge' | 'brace' | 'kneel' | 'slide' | 'fall';
+type Arms = 'down' | 'lap' | 'point' | 'talk' | 'wipeA' | 'wipeB' | 'eat' | 'table' | 'play' | 'mid' | 'swingL' | 'swingR' | 'up' | 'up2' | 'out' | 'ear' | 'jump' | 'shove' | 'throw' | 'catch' | 'slide' | 'kneel' | 'balance';
 interface Spec {
   view: View;
   legs: Legs;
   arms: Arms;
   bob: number;
   shout: boolean;
+  /** Ojos cerrados (durmiendo). */
+  closed?: boolean;
+  /** Lo que lleva en la mano cercana (capa del brazo delantero: se tapa y destapa con él). */
+  tool?: 'cloth' | 'bread' | 'tile';
 }
 
 /** Qué pose corresponde a cada celda de la rejilla (las celdas sin pose quedan vacías). */
@@ -110,6 +128,17 @@ const SPECS: Partial<Record<View, Partial<Record<SheetFrame, Omit<Spec, 'view'>>
     kneel: { legs: 'kneel', arms: 'kneel', bob: 7, shout: false },
     throw: { legs: 'stand', arms: 'throw', bob: 0, shout: false },
     catch: { legs: 'stand', arms: 'catch', bob: 0, shout: false },
+    // actividades del míster (se ven mientras pasan, como en Punch Club o Los Sims)
+    sit: { legs: 'sit', arms: 'lap', bob: 6, shout: false },
+    point: { legs: 'stand', arms: 'point', bob: 0, shout: true },
+    talk: { legs: 'stand', arms: 'talk', bob: 0, shout: true },
+    // usando los muebles: limpiar la barra con el trapo, comer, sentado a la mesa (y jugando)
+    wipe0: { legs: 'stand', arms: 'wipeA', bob: 1, shout: false, tool: 'cloth' },
+    wipe1: { legs: 'stand', arms: 'wipeB', bob: 1, shout: false, tool: 'cloth' },
+    eat: { legs: 'stand', arms: 'eat', bob: 0, shout: false, tool: 'bread' },
+    table: { legs: 'sit', arms: 'table', bob: 6, shout: false },
+    play: { legs: 'sit', arms: 'play', bob: 6, shout: true, tool: 'tile' },
+    eatSit: { legs: 'sit', arms: 'eat', bob: 6, shout: false, tool: 'bread' },
   },
   back: {
     idle0: { legs: 'stand', arms: 'down', bob: 0, shout: false },
@@ -122,6 +151,11 @@ const SPECS: Partial<Record<View, Partial<Record<SheetFrame, Omit<Spec, 'view'>>
     head: { legs: 'jump', arms: 'jump', bob: 0, shout: false },
     kneel: { legs: 'kneel', arms: 'kneel', bob: 7, shout: false },
     throw: { legs: 'stand', arms: 'throw', bob: 0, shout: false },
+    sit: { legs: 'sit', arms: 'lap', bob: 6, shout: false },
+    point: { legs: 'stand', arms: 'point', bob: 0, shout: false },
+    talk: { legs: 'stand', arms: 'talk', bob: 0, shout: false },
+    table: { legs: 'sit', arms: 'table', bob: 6, shout: false },
+    play: { legs: 'sit', arms: 'play', bob: 6, shout: false },
   },
   side: {
     idle0: { legs: 'stand', arms: 'down', bob: 0, shout: false },
@@ -141,6 +175,17 @@ const SPECS: Partial<Record<View, Partial<Record<SheetFrame, Omit<Spec, 'view'>>
     kneel: { legs: 'kneel', arms: 'kneel', bob: 7, shout: false },
     throw: { legs: 'stand', arms: 'throw', bob: 0, shout: false },
     catch: { legs: 'stand', arms: 'catch', bob: 0, shout: false },
+    sit: { legs: 'sit', arms: 'lap', bob: 6, shout: false },
+    point: { legs: 'stand', arms: 'point', bob: 0, shout: false },
+    talk: { legs: 'stand', arms: 'talk', bob: 0, shout: true },
+    // durmiendo boca arriba: se dibuja de pie y el juego la tumba (con almohada y manta)
+    sleepU: { legs: 'stand', arms: 'down', bob: 0, shout: false, closed: true },
+    wipe0: { legs: 'stand', arms: 'wipeA', bob: 1, shout: false, tool: 'cloth' },
+    wipe1: { legs: 'stand', arms: 'wipeB', bob: 1, shout: false, tool: 'cloth' },
+    eat: { legs: 'stand', arms: 'eat', bob: 0, shout: false, tool: 'bread' },
+    table: { legs: 'sit', arms: 'table', bob: 6, shout: false },
+    play: { legs: 'sit', arms: 'play', bob: 6, shout: true, tool: 'tile' },
+    eatSit: { legs: 'sit', arms: 'eat', bob: 6, shout: false, tool: 'bread' },
   },
 };
 
@@ -296,6 +341,26 @@ function figure(v: VariantSet, s: Spec, layer?: LayerId): Px {
     // codo: sombra en la articulación (y su punta hacia fuera)
     g.set(mid.x, mid.y, lit ? K.skin.s : K.skin.d);
     if (!side) g.set(mid.x + (i === 0 ? -1 : 1) * (w > 2 ? 1 : 0), mid.y + 1, K.skin.d);
+    if (i === 1 && s.tool) drawTool(Math.round(end.x), Math.round(end.y));
+  };
+  // lo que lleva en la mano, pegado a ella (va en la capa del brazo: pasa por encima de la barra con él)
+  const drawTool = (x: number, y: number) => {
+    const F = FIXED;
+    if (s.tool === 'cloth') {
+      // trapo arrugado bajo la mano, con su sombra
+      g.rect(x - 2, y, 4, 2, F.cloth);
+      g.rect(x - 2, y + 1, 4, 1, F.clothShade);
+      g.set(x + 1, y - 1, F.cloth);
+    } else if (s.tool === 'bread') {
+      // bocadillo camino de la boca: pan, corteza y algo de relleno
+      const x0 = side ? x - 1 : x - 3;
+      g.rect(x0, y - 2, 4, 1, F.bread);
+      g.rect(x0, y - 1, 4, 1, F.filling);
+      g.rect(x0, y, 4, 1, F.crust);
+    } else if (s.tool === 'tile') {
+      g.rect(x - 1, y - 3, 2, 3, F.tile);
+      g.set(x - 1, y - 2, F.pip);
+    }
   };
   if (on('arm_back')) {
     if (side) drawArm(0, false);
@@ -505,7 +570,8 @@ function figure(v: VariantSet, s: Spec, layer?: LayerId): Px {
     } else if (side) {
       g.rect(cx, ey, 1, 2, K.skin.s);
       g.set(cx, ey + 1, K.skin.d);
-      g.set(cx + 3, ey, FIXED.eye);
+      if (s.closed) g.rect(cx + 2, ey, 2, 1, K.skin.d);
+      else g.set(cx + 3, ey, FIXED.eye);
       const nx = hx1 + 1;
       if (v.nose === 'small') g.set(nx, ey + 1, K.skin.b);
       else if (v.nose === 'big') {
@@ -625,11 +691,37 @@ function figure(v: VariantSet, s: Spec, layer?: LayerId): Px {
       case 'short':
         crown(ht + 4, true);
         break;
+      case 'fade':
+        // degradado: arriba corto con algo de volumen, los lados casi al cero
+        for (let x = hx0; x <= hx1; x++) g.set(x, ht - 2, x === hx1 ? H.s : H.l);
+        for (let x = hx0; x <= hx1; x++) g.set(x, ht - 1, x === hx1 ? H.s : H.b);
+        for (let x = hx0 + 1; x <= hx1 - (side ? 0 : 1); x++) g.set(x, ht, H.b);
+        for (let y = ht; y < ht + 3; y++) {
+          g.set(side ? hx0 : hx0 - 1, y, (y & 1) === 0 ? H.s : K.skin.s);
+          if (!side) g.set(hx1 + 1, y, (y & 1) === 0 ? H.d : K.skin.d);
+        }
+        if (side) for (let y = ht; y < ht + 4; y++) for (let x = hx0; x < cx; x++) if ((x + y) % 2 === 0) g.set(x, y, H.s);
+        break;
+      case 'quiff':
+        // tupé: volumen hacia arriba y hacia delante, lados cortos
+        for (let x = hx0; x <= hx1; x++) g.set(x, ht - 1, x === hx1 ? H.s : H.b);
+        for (let x = hx0; x <= hx1; x++) g.set(x, ht, x >= hx1 ? H.s : H.b);
+        if (side) g.rect(cx, ht - 3, hx1 - cx + 2, 2, H.l);
+        else {
+          g.rect(cx - 2, ht - 3, 5, 2, H.b);
+          g.rect(cx - 1, ht - 3, 2, 1, H.l);
+        }
+        for (let y = ht + 1; y < ht + 3; y++) {
+          g.set(side ? hx0 : hx0 - 1, y, H.s);
+          if (!side) g.set(hx1 + 1, y, H.d);
+        }
+        if (side) for (let y = ht; y < ht + 4; y++) for (let x = hx0; x < cx; x++) g.set(x, y, x === hx0 ? H.s : H.b);
+        break;
       default:
         crown(ht + 4, false);
     }
     if (back) {
-      const rowsBack: Record<string, number> = { long: 14, mullet: 11, braids: 7, ponytail: 7, bun: 7, afro: 8, curly: 7, short: 6, pixie: 6, bob: 8, pigtails: 6 };
+      const rowsBack: Record<string, number> = { long: 14, mullet: 11, braids: 7, ponytail: 7, bun: 7, afro: 8, curly: 7, short: 6, pixie: 6, bob: 8, pigtails: 6, fade: 4, quiff: 5 };
       const rb = rowsBack[v.hair];
       if (rb)
         for (let y = ht; y < ht + rb; y++)
@@ -709,7 +801,7 @@ function variantSet(layer: LayerId, variant: string): VariantSet {
   return v;
 }
 
-/** Hoja completa (14 columnas × 3 filas) de una capa y variante, en colores clave. */
+/** Hoja completa (una columna por FRAME × 3 filas) de una capa y variante, en colores clave. */
 export function bakeSheet(layer: LayerId, variant: string): Px {
   const sheet = new Px(SW * FRAMES.length, SH * VIEWS.length);
   const v = variantSet(layer, variant);

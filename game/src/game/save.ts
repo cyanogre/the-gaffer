@@ -21,11 +21,14 @@ export function loadGame(): Career | null {
     c.dayNotes ??= [];
     c.promises ??= [];
     for (const p of c.squad) {
+      if (p.look.hair === 'mohawk' || p.look.hair === 'mullet') p.look.hair = p.look.gender === 'f' ? 'ponytail' : 'quiff';
       p.morale ??= 60;
       p.moraleLog ??= [];
       p.form ??= [];
     }
     migrateStats(c);
+    c.coach.food ??= 80;
+    c.coach.mood ??= 65;
     return c;
   } catch {
     return null;

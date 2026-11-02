@@ -159,6 +159,8 @@ export function closeWeek(c: Career, o: MatchOutcome): Summary {
     else if (o.played.includes(p.id)) p.drought++;
   }
   moraleAfterMatch(c, o, result, rival.short);
+  // tu ánimo también depende del domingo
+  c.coach.mood = Math.max(0, Math.min(100, c.coach.mood + (result === 'win' ? 15 : result === 'loss' ? -12 : 2)));
   const rated = Object.entries(o.ratings ?? {}).sort((x, y) => y[1] - x[1]);
   if (rated.length) {
     const nm = (id: string) => {
