@@ -20,6 +20,8 @@ export interface ActionDef {
   where: LocationId;
   hotspot: string;
   label: string;
+  /** Nombre corto para la etiqueta en pantallas estrechas (móvil). */
+  short?: string;
   hint: string;
   energy: number;
   wallet?: number;
@@ -72,6 +74,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'casa',
     hotspot: 'board',
     label: 'Estudiar táctica',
+    short: 'Estudiar',
     hint: 'Táctica + · la formación entra mejor',
     energy: 15,
     mood: -3,
@@ -91,6 +94,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'casa',
     hotspot: 'laptop',
     label: 'Ver partidos',
+    short: 'Vídeos',
     hint: 'Ojo + · vídeos de la liga',
     energy: 10,
     mood: 2,
@@ -108,6 +112,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'casa',
     hotspot: 'sofa',
     label: 'Descansar',
+    short: 'Descansar',
     hint: 'Recupera energía',
     energy: -35,
     food: 4,
@@ -120,6 +125,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'casa',
     hotspot: 'fridge',
     label: 'Comer en casa',
+    short: 'Comer',
     hint: 'Comida + · no gasta franja',
     energy: -5,
     wallet: 3,
@@ -137,6 +143,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'casa',
     hotspot: 'bed',
     label: 'Dormir',
+    short: 'Dormir',
     hint: 'Termina el día · energía al máximo',
     energy: 0,
     food: 0,
@@ -150,6 +157,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'campo',
     hotspot: 'pitch',
     label: 'Entrenamiento',
+    short: 'Entrenar',
     hint: 'Martes y jueves por la tarde',
     energy: 28,
     mood: 4,
@@ -168,6 +176,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'campo',
     hotspot: 'track',
     label: 'Salir a correr',
+    short: 'Correr',
     hint: 'Forma + · solo por la mañana',
     energy: 22,
     mood: 3,
@@ -184,6 +193,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'campo',
     hotspot: 'fence',
     label: 'Ojear al rival',
+    short: 'Ojear',
     hint: 'Sábado · descubre cómo juega',
     energy: 15,
     mood: 0,
@@ -205,6 +215,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'bar',
     hotspot: 'barra',
     label: 'Charlar en la barra',
+    short: 'Charlar',
     hint: 'Labia + · puede traer aficionados',
     energy: 12,
     food: 2,
@@ -230,6 +241,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'bar',
     hotspot: 'mesa',
     label: 'Invitar a alguien',
+    short: 'Invitar',
     hint: 'Charla a solas · le sube la moral si sale bien',
     energy: 10,
     food: 2,
@@ -258,6 +270,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'bar',
     hotspot: 'cocina',
     label: 'Bocadillo de calamares',
+    short: 'Bocadillo',
     hint: 'Energía + · no gasta franja',
     energy: -22,
     food: -40,
@@ -274,6 +287,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'ferreteria',
     hotspot: 'mostrador',
     label: 'Echar un turno',
+    short: 'Turno',
     hint: 'Cartera + · a Don Ramón le gusta',
     energy: 30,
     food: 14,
@@ -304,6 +318,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'ferreteria',
     hotspot: 'despacho',
     label: 'Hablar con Don Ramón',
+    short: 'Don Ramón',
     hint: 'Una vez por semana · confianza',
     energy: 8,
     mood: -2,

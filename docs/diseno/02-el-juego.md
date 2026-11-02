@@ -111,6 +111,8 @@ Para añadir una interacción nueva basta con nombrar el mueble y añadir un sit
 - **Una sola barra superior**: día y franja, energía, cartera, caja, confianza; el retrato del míster abre su ficha.
 - **Un solo dock inferior**: los cuatro lugares y *Club*. No hay más menús.
 - **Las acciones viven en el escenario**: etiquetas sobre los objetos 3D (con coste de energía/dinero y si están disponibles). El míster camina hasta el objeto y la acción se resuelve con una tarjeta de resultado.
+  - Las etiquetas nunca se pisan entre ellas ni con la barra, el cartel del sitio o el dock: si su sitio está ocupado buscan el hueco más cercano y una línea discontinua las une a su objeto. Primero se colocan las de historia, luego las que se pueden usar y al final las que no.
+  - En móvil (estrecho en vertical o bajo en horizontal) son compactas, con el nombre corto («Estudiar», «Bocadillo», «Turno»), y en vertical la habitación se ve un escalón más grande (se recortan un poco sus puntas vacías).
 - **Una hoja** que en móvil sube desde abajo y en PC aparece a la derecha (Club, Míster, resultados).
 - **Partido**: marcador arriba; abajo, cuatro botones (órdenes, cambios, velocidad, pausa). En PC, panel lateral fijo con órdenes y plantilla.
 - Guardado automático en el navegador al final de cada acción.

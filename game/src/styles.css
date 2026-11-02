@@ -626,6 +626,42 @@ canvas.px,
   color: #6b4a5a;
   white-space: nowrap;
 }
+/* móvil: etiquetas compactas (nombre corto y letra más pequeña) */
+.hotspots.compact .hotspot {
+  max-width: 132px;
+  padding: 3px 6px 4px;
+  border-width: 2px;
+}
+.hotspots.compact .hotspot b {
+  font-size: 0.72rem;
+}
+.hotspots.compact .hotspot small {
+  max-width: 118px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.62rem;
+}
+.hotspots.compact .hotspot::after {
+  bottom: -6px;
+  border-width: 5px;
+}
+/* apartada de su objeto: sin piquito; la une una línea */
+.hotspot.moved::after {
+  display: none;
+}
+.hotspot-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.hotspot-lines line {
+  stroke: #1a1226;
+  stroke-width: 2;
+  stroke-dasharray: 3 2;
+}
 .hotspot[data-state='off'] {
   background: #c9c0d6;
   opacity: 0.8;

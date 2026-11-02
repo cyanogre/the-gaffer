@@ -593,9 +593,11 @@ export abstract class Location {
   /** Píxeles del dispositivo por píxel de arte que mejor le van a este sitio. */
   pixelScale(cssW: number, cssH: number) {
     if (this.camera instanceof THREE.OrthographicCamera) {
-      // interiores: la escala entera más grande con la que cabe la habitación entera
+      // interiores: la escala entera más grande con la que cabe la habitación entera; en vertical
+      // (móvil) manda el ancho y se deja recortar un poco las puntas vacías para ganar un escalón
       const d = dpr();
-      return Math.max(1, Math.floor(Math.min((cssW * d) / (this.fit.w / ROOM_UPP), (cssH * d) / (this.fit.h / ROOM_UPP))));
+      const slack = cssW < cssH ? 1.09 : 1;
+      return Math.max(1, Math.floor(Math.min(((cssW * d) / (this.fit.w / ROOM_UPP)) * slack, (cssH * d) / (this.fit.h / ROOM_UPP))));
     }
     return defaultScale(cssW, cssH);
   }

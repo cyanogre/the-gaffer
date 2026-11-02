@@ -62,6 +62,8 @@ function resize() {
   const hh = Math.max(1, Math.round(r.height));
   world.resize(w, hh);
   match?.resize(w, hh);
+  // al girar el móvil o estrechar la ventana, las etiquetas pasan a compactas (o al revés)
+  if (career && $('hotspots').classList.contains('compact') !== compactLabels()) renderHotspots();
 }
 new ResizeObserver(resize).observe(stage);
 
@@ -105,6 +107,11 @@ const VIEWS: Record<LocationId, () => Location> = {
 };
 let loc: Location | null = null;
 const hotspotEls = new Map<string, HTMLButtonElement>();
+/** Líneas que unen cada etiqueta apartada con su objeto. */
+const SVG = 'http://www.w3.org/2000/svg';
+const labelLines = document.createElementNS(SVG, 'svg');
+labelLines.setAttribute('class', 'hotspot-lines');
+const stemEls = new Map<string, SVGLineElement>();
 
 function enterWorld(where: LocationId) {
   if (!career) return;
@@ -304,6 +311,9 @@ interface HotspotUse {
   sub: string;
   state: 'on' | 'off' | 'story';
 }
+/** Móvil (estrecho en vertical o bajo en horizontal): etiquetas compactas y con el nombre corto. */
+const compactLabels = () => stage.clientWidth < 600 || stage.clientHeight < 500;
+
 function hotspotInfo(id: string): HotspotUse {
   const c = career!;
   const scene = hotspotScene(c, c.location, id);
@@ -317,13 +327,16 @@ function hotspotInfo(id: string): HotspotUse {
   const a = acts[0];
   const why = blocked(c, a);
   const cost = [a.energy > 0 ? `⚡${a.energy}` : a.energy < 0 ? `⚡+${-a.energy}` : '', a.wallet ? `${a.wallet} €` : '', a.trains ? `${STATS[a.trains].label}+` : ''].filter(Boolean).join(' · ');
-  return { label: a.label, sub: why ?? cost, state: why ? 'off' : 'on' };
+  return { label: (compactLabels() && a.short) || a.label, sub: why ?? cost, state: why ? 'off' : 'on' };
 }
 
 function renderHotspots() {
   const host = $('hotspots');
-  host.replaceChildren();
+  labelLines.replaceChildren();
+  host.replaceChildren(labelLines);
   hotspotEls.clear();
+  stemEls.clear();
+  host.classList.toggle('compact', compactLabels());
   if (!loc) return;
   for (const hs of loc.hotspots) {
     const info = hotspotInfo(hs.id);
@@ -495,31 +508,84 @@ async function finishMatch(o: MatchOutcome) {
   await playAuto();
 }
 
-/** Coloca las etiquetas sobre sus objetos; si dos se pisan, la de abajo baja hasta dejar de pisarla. */
+interface Box {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+const overlap = (a: Box, b: Box) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+
+/**
+ * Coloca las etiquetas sobre sus objetos sin que se pisen entre ellas ni con la barra de arriba, el
+ * cartel del sitio, el botón del partido o el dock. Cada una prueba primero su sitio (justo encima
+ * del objeto) y, si choca, los huecos de alrededor, de más cerca a más lejos; si acaba apartada, una
+ * línea la une con su objeto. Primero se colocan las de historia, luego las que se pueden usar y al
+ * final las que no. Mismo resultado cada fotograma: no bailan.
+ */
 function placeLabels(l: Location) {
-  const placed: { x: number; y: number; w: number; h: number }[] = [];
+  const W = stage.clientWidth;
+  const H = stage.clientHeight;
+  const sr = stage.getBoundingClientRect();
+  const blocks: Box[] = [];
+  for (const id of ['hud', 'hudStats', 'hudTime', 'placeTag', 'btnMatch', 'dock']) {
+    const e = document.getElementById(id);
+    if (!e || e.hidden || !e.offsetParent) continue;
+    const r = e.getBoundingClientRect();
+    if (r.width && r.height) blocks.push({ x0: r.left - sr.left - 3, y0: r.top - sr.top - 3, x1: r.right - sr.left + 3, y1: r.bottom - sr.top + 3 });
+  }
+  const rank = (el: HTMLElement) => ({ story: 0, on: 1, off: 2 })[el.dataset.state as 'story' | 'on' | 'off'] ?? 1;
   const items = l.hotspots
-    .map((hs) => ({ el: hotspotEls.get(hs.id), p: l.project(hs.anchor) }))
-    .filter((i): i is { el: HTMLButtonElement; p: { x: number; y: number; visible: boolean } } => !!i.el)
-    .sort((a, b) => a.p.y - b.p.y);
-  for (const { el, p } of items) {
+    .map((hs) => ({ id: hs.id, el: hotspotEls.get(hs.id), p: l.project(hs.anchor) }))
+    .filter((i): i is { id: string; el: HTMLButtonElement; p: { x: number; y: number; visible: boolean } } => !!i.el)
+    .sort((a, b) => rank(a.el) - rank(b.el) || a.p.y - b.p.y);
+  const placed: Box[] = [];
+  const tip = 8; // el piquito de debajo de la etiqueta
+  for (const { id, el, p } of items) {
     el.hidden = !p.visible;
     const w = el.offsetWidth;
-    const hh = el.offsetHeight + 6;
-    let y = p.y;
-    for (let k = 0; k < 8; k++) {
-      // la etiqueta ocupa [y - alto, y]
-      const hit = placed.find((r) => Math.abs(r.x - p.x) < (r.w + w) / 2 + 2 && y - hh < r.y && y > r.y - r.h);
+    const h = el.offsetHeight;
+    // la etiqueta pegada a su objeto (dentro de la pantalla)
+    const ax = Math.max(w / 2 + 4, Math.min(W - w / 2 - 4, p.x));
+    const ay = Math.max(h + 4, Math.min(H - tip - 4, p.y));
+    let best = { x: ax, y: ay, cost: Infinity };
+    const sy = h + 6;
+    const sx = w / 2 + 6;
+    const cands: [number, number][] = [];
+    for (const dy of [0, -1, 1, -2, 2, -3, 3, -4, 4]) for (const dx of [0, -1, 1, -2, 2]) cands.push([dx * sx, dy * sy]);
+    // de más cerca a más lejos (moverse en vertical se nota menos que en horizontal)
+    cands.sort((a, b) => Math.hypot(a[0] * 1.3, a[1]) - Math.hypot(b[0] * 1.3, b[1]));
+    for (const [dx, dy] of cands) {
+      const x = ax + dx;
+      const y = ay + dy;
+      const box = { x0: x - w / 2 - 2, y0: y - h - 2, x1: x + w / 2 + 2, y1: y + 2 };
+      if (box.x0 < 2 || box.x1 > W - 2 || box.y0 < 2 || box.y1 > H - 2) continue;
+      let hit = 0;
+      for (const r of placed) hit += overlap(box, r);
+      for (const r of blocks) hit += overlap(box, r);
+      const cost = hit * 50 + Math.hypot(dx, dy);
+      if (cost < best.cost) best = { x, y, cost };
       if (!hit) break;
-      y = hit.y + hh;
     }
-    placed.push({ x: p.x, y, w, h: hh });
-    // que no se salga de la pantalla
-    const W = stage.clientWidth;
-    const H = stage.clientHeight;
-    const x = Math.max(w / 2 + 4, Math.min(W - w / 2 - 4, p.x));
-    y = Math.max(hh + 60, Math.min(H - 110, y));
-    el.style.transform = `translate(${x.toFixed(0)}px, ${y.toFixed(0)}px)`;
+    placed.push({ x0: best.x - w / 2 - 2, y0: best.y - h - 2, x1: best.x + w / 2 + 2, y1: best.y + tip });
+    el.style.transform = `translate(${best.x.toFixed(0)}px, ${best.y.toFixed(0)}px)`;
+    // apartada de su objeto: sin piquito y con una línea hasta él
+    const moved = Math.hypot(best.x - p.x, best.y - p.y) > 10 && p.visible;
+    el.classList.toggle('moved', moved);
+    let line = stemEls.get(id);
+    if (moved) {
+      if (!line) {
+        line = document.createElementNS(SVG, 'line');
+        labelLines.append(line);
+        stemEls.set(id, line);
+      }
+      const below = best.y - h / 2 > p.y;
+      line.setAttribute('x1', best.x.toFixed(0));
+      line.setAttribute('y1', (below ? best.y - h : best.y).toFixed(0));
+      line.setAttribute('x2', p.x.toFixed(0));
+      line.setAttribute('y2', p.y.toFixed(0));
+      line.style.display = el.hidden ? 'none' : '';
+    } else if (line) line.style.display = 'none';
   }
 }
 
