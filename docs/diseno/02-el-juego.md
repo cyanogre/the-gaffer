@@ -47,6 +47,7 @@ Cuatro estadísticas con un valor de 0 a 100 (nivel = 1 + una decena por nivel).
 - 15 jugadores: los 11 del brief (masculino o femenino) y 4 suplentes generados. Son **críos de 14 a 16 años**:
   más bajitos, con proporciones de crío, aprenden más rápido al entrenar y **crecen cada temporada** (altura,
   velocidad, resistencia). Juegan contra adultos «con permiso federativo» (lo firmó el cuñado del presidente).
+- **Nombres de su quinta**: los críos y las crías del Barriobajo van al instituto, así que llevan nombres de chavales nacidos hacia 2010 (Lucía, Martina, Valeria, Hugo, Izan, Thiago...); los rivales son adultos de 19 a 33 años con nombres de su generación. Nada de apodos de chiste: como mucho el diminutivo con el que se llaman entre ellos («Dani», «Valen», «Adri») o uno que se han ganado («Pádel», «Profe»). En un mismo equipo no se repiten nombres.
 - **Atributos con decimales**: el entrenamiento los sube poco a poco (y menos cuanto más altos). El motor los usa tal cual.
 - **Carga**: entrenar cansa. Lo que no se recupera antes del domingo sale al campo como cansancio inicial. Un entreno físico el sábado se paga el domingo.
 - **Familiaridad** con cada formación (0–1): a más familiaridad, menos desorden posicional en el motor (las líneas se mantienen mejor). No es una bonificación: cambia dónde se colocan.

@@ -198,7 +198,7 @@ export function clubTabs(ctx: PanelCtx, state: { slot: number; focus: string | n
               },
               h('span', { class: 'slot', 'data-bad': String(!!bad), text: at >= 0 ? slots[at].label : '—' }),
               portrait(p.look, p.role === 'POR' ? c.club.gkKit : c.club.kit, p.traits, p.num, 40),
-              h('span', {}, h('b', { text: `#${p.num} ${p.nick ?? p.name}` }), h('small', { text: `${ROLE_ES[p.role]} · ${p.age ?? ''} años${c.absent[p.id] ? ' · falta al entreno' : ''} · moral ${moraleLabel(p.morale).toLowerCase()}` })),
+              h('span', {}, h('b', { text: `#${p.num} ${nameOf(p)}` }), h('small', { text: `${ROLE_ES[p.role]} · ${p.age ?? ''} años${c.absent[p.id] ? ' · falta al entreno' : ''} · moral ${moraleLabel(p.morale).toLowerCase()}` })),
               h('span', { class: 'tags' }, p.load > 0.2 ? h('span', { class: 'pill warn', text: 'cargado' }) : null, h('span', { class: 'ovr', title: pick ? `En ${ROLE_LONG[pick]}` : 'En su puesto', text: String(pick ? roleScore(p, pick) : ovr(p)) })),
             ),
           );

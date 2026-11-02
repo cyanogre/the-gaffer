@@ -54,31 +54,31 @@ const ROLES = {
 } satisfies Record<string, Partial<Attributes>>;
 
 const BARRIO_M: Seed[] = [
-  { name: 'Paco Gordillo', nick: 'El Muro', num: 1, role: 'POR', traits: [], quirk: 'Lleva en el club desde los cuatro años. Dice que la barriga le da inercia en las estiradas.', look: { body: 'belly', hair: 'short', hairColor: '#3b2a1e', nose: 'big', celebration: 'arms' }, attrs: ROLES.gk },
-  { name: 'Iker Sanz', nick: 'Bocadillo', num: 2, role: 'DEF', traits: ['pulmon'], quirk: 'Sube y baja la banda 40 veces por partido. Centra bien unas tres.', look: { body: 'slim', hair: 'buzz', accessory: 'socksDown' }, attrs: ROLES.rb },
-  { name: 'Rufo Barrios', nick: 'Hormigonera', num: 4, role: 'DEF', traits: ['lenero'], quirk: 'Lleva una tarjeta amarilla dibujada con boli en el brazo. Dice que es de la suerte.', look: { body: 'stocky', hair: 'buzz', brows: 'uni', nose: 'hook', celebration: 'ear' }, attrs: ROLES.cb1 },
-  { name: 'Jacinto Ferrer', num: 5, role: 'DEF', traits: [], quirk: 'Juega con gafas deportivas. Las otras se le rompieron en un córner el curso pasado.', look: { accessory: 'glasses', hair: 'short', body: 'normal' }, attrs: ROLES.cb2 },
-  { name: 'Toni Cano', nick: 'Turbo', num: 3, role: 'DEF', traits: [], quirk: 'El más rápido del barrio. Frena peor de lo que acelera.', look: { hair: 'afro', body: 'slim', celebration: 'dance' }, attrs: ROLES.lb },
-  { name: 'Blas Medina', nick: 'El Profesor', num: 6, role: 'MED', traits: ['artista'], quirk: 'Ve pases que no existen. A veces, por desgracia, los intenta.', look: { hair: 'long', accessory: 'headband', accColor: '#ffffff', celebration: 'plane' }, attrs: ROLES.cm1 },
-  { name: 'Quique Rodríguez', nick: 'Pádel', num: 8, role: 'MED', traits: ['padel'], quirk: 'Se compró dos palas de carbono con el dinero de la comunión. Al entrenamiento llega con muñequeras.', look: { hair: 'fade', celebration: 'dance' }, attrs: ROLES.dm },
-  { name: 'Dani Ortega', num: 10, role: 'MED', traits: ['nervioso'], quirk: 'En los entrenamientos es Zidane. Con público, un flan con botas.', look: { hair: 'curly', body: 'slim', brows: 'thin' }, attrs: ROLES.cm2 },
-  { name: 'Yeray Mendoza', nick: 'Firuletas', num: 7, role: 'DEL', traits: ['egoista'], quirk: 'Tiene 40.000 seguidores. Ninguno le ha visto dar un pase.', look: { hair: 'bun', hairColor: '#d8b25c', boots: '#ff4fa3', celebration: 'ear' }, attrs: ROLES.rw },
-  { name: 'Rubén Peralta', nick: 'Goleador Nato', num: 9, role: 'DEL', traits: ['goleadorNato'], drought: 14, quirk: 'Asegura ser un goleador nato. Lleva 14 partidos sin marcar.', look: { hair: 'quiff', hairColor: '#8a2f1c', facial: 'none', body: 'stocky', celebration: 'knees', boots: '#ffb000' }, attrs: ROLES.st },
-  { name: 'Manu Castillo', num: 11, role: 'DEL', traits: ['piscinero'], quirk: 'Va a clases de teatro los jueves. Se nota en cada contacto.', look: { hair: 'short', hairColor: '#1f1a17', celebration: 'plane' }, attrs: ROLES.lw },
+  { name: 'Hugo Gordillo', num: 1, role: 'POR', traits: [], quirk: 'Lleva en el club desde los cuatro años. Dice que la barriga le da inercia en las estiradas.', look: { body: 'belly', hair: 'short', hairColor: '#3b2a1e', nose: 'big', celebration: 'arms' }, attrs: ROLES.gk },
+  { name: 'Iker Sanz', num: 2, role: 'DEF', traits: ['pulmon'], quirk: 'Sube y baja la banda 40 veces por partido. Centra bien unas tres.', look: { body: 'slim', hair: 'buzz', accessory: 'socksDown' }, attrs: ROLES.rb },
+  { name: 'Álvaro Barrios', num: 4, role: 'DEF', traits: ['lenero'], quirk: 'Lleva una tarjeta amarilla dibujada con boli en el brazo. Dice que es de la suerte.', look: { body: 'stocky', hair: 'buzz', brows: 'uni', nose: 'hook', celebration: 'ear' }, attrs: ROLES.cb1 },
+  { name: 'Marcos Ferrer', num: 5, role: 'DEF', traits: [], quirk: 'Juega con gafas deportivas. Las otras se le rompieron en un córner el curso pasado.', look: { accessory: 'glasses', hair: 'short', body: 'normal' }, attrs: ROLES.cb2 },
+  { name: 'Izan Cano', num: 3, role: 'DEF', traits: [], quirk: 'El más rápido del barrio. Frena peor de lo que acelera.', look: { hair: 'afro', body: 'slim', celebration: 'dance' }, attrs: ROLES.lb },
+  { name: 'Bruno Medina', nick: 'Profe', num: 6, role: 'MED', traits: ['artista'], quirk: 'Ve pases que no existen. A veces, por desgracia, los intenta.', look: { hair: 'long', accessory: 'headband', accColor: '#ffffff', celebration: 'plane' }, attrs: ROLES.cm1 },
+  { name: 'Nico Rodríguez', nick: 'Pádel', num: 8, role: 'MED', traits: ['padel'], quirk: 'Se compró dos palas de carbono con el dinero de la comunión. Al entrenamiento llega con muñequeras.', look: { hair: 'fade', celebration: 'dance' }, attrs: ROLES.dm },
+  { name: 'Daniel Ortega', nick: 'Dani', num: 10, role: 'MED', traits: ['nervioso'], quirk: 'En los entrenamientos es Zidane. Con público, un flan con botas.', look: { hair: 'curly', body: 'slim', brows: 'thin' }, attrs: ROLES.cm2 },
+  { name: 'Thiago Mendoza', num: 7, role: 'DEL', traits: ['egoista'], quirk: 'Tiene 40.000 seguidores. Ninguno le ha visto dar un pase.', look: { hair: 'bun', hairColor: '#d8b25c', boots: '#ff4fa3', celebration: 'ear' }, attrs: ROLES.rw },
+  { name: 'Adrián Peralta', nick: 'Adri', num: 9, role: 'DEL', traits: ['goleadorNato'], drought: 14, quirk: 'Asegura ser un goleador nato. Lleva 14 partidos sin marcar.', look: { hair: 'quiff', hairColor: '#8a2f1c', facial: 'none', body: 'stocky', celebration: 'knees', boots: '#ffb000' }, attrs: ROLES.st },
+  { name: 'Mario Castillo', num: 11, role: 'DEL', traits: ['piscinero'], quirk: 'Va a clases de teatro los jueves. Se nota en cada contacto.', look: { hair: 'short', hairColor: '#1f1a17', celebration: 'plane' }, attrs: ROLES.lw },
 ];
 
 const BARRIO_F: Seed[] = [
-  { name: 'Maribel Gordillo', nick: 'La Muralla', num: 1, role: 'POR', traits: [], quirk: 'Lleva en el club desde los cuatro años. Su método: gritar más fuerte que la delantera rival.', look: { body: 'stocky', hair: 'bun', hairColor: '#3b2a1e', nose: 'big', brows: 'thick', celebration: 'arms' }, attrs: ROLES.gk },
-  { name: 'Ainhoa Sanz', nick: 'Bocadillo', num: 2, role: 'DEF', traits: ['pulmon'], quirk: 'Sube y baja la banda 40 veces por partido. Centra bien unas tres.', look: { body: 'slim', hair: 'ponytail', hairColor: '#3b2a1e', accessory: 'socksDown' }, attrs: ROLES.rb },
-  { name: 'Rocío Barrios', nick: 'Hormigonera', num: 4, role: 'DEF', traits: ['lenero'], quirk: 'Lleva una tarjeta amarilla dibujada con boli en el brazo. Dice que es de la suerte.', look: { body: 'stocky', hair: 'pixie', hairColor: '#1f1a17', brows: 'uni', nose: 'hook', celebration: 'ear' }, attrs: ROLES.cb1 },
+  { name: 'Lucía Gordillo', num: 1, role: 'POR', traits: [], quirk: 'Lleva en el club desde los cuatro años. Su método: gritar más fuerte que la delantera rival.', look: { body: 'stocky', hair: 'bun', hairColor: '#3b2a1e', nose: 'big', brows: 'thick', celebration: 'arms' }, attrs: ROLES.gk },
+  { name: 'Ainhoa Sanz', num: 2, role: 'DEF', traits: ['pulmon'], quirk: 'Sube y baja la banda 40 veces por partido. Centra bien unas tres.', look: { body: 'slim', hair: 'ponytail', hairColor: '#3b2a1e', accessory: 'socksDown' }, attrs: ROLES.rb },
+  { name: 'Carla Barrios', num: 4, role: 'DEF', traits: ['lenero'], quirk: 'Lleva una tarjeta amarilla dibujada con boli en el brazo. Dice que es de la suerte.', look: { body: 'stocky', hair: 'pixie', hairColor: '#1f1a17', brows: 'uni', nose: 'hook', celebration: 'ear' }, attrs: ROLES.cb1 },
   { name: 'Celia Ferrer', num: 5, role: 'DEF', traits: [], quirk: 'Juega con gafas deportivas. Las otras acabaron en el córner el curso pasado.', look: { accessory: 'glasses', hair: 'braids', hairColor: '#6b4428', body: 'normal' }, attrs: ROLES.cb2 },
-  { name: 'Antonia Cano', nick: 'Turbo', num: 3, role: 'DEF', traits: [], quirk: 'La más rápida del barrio. Frena peor de lo que acelera.', look: { hair: 'afro', body: 'slim', celebration: 'dance' }, attrs: ROLES.lb },
-  { name: 'Blanca Medina', nick: 'La Profesora', num: 6, role: 'MED', traits: ['artista'], quirk: 'Ve pases que no existen. A veces, por desgracia, los intenta.', look: { hair: 'long', hairColor: '#a8743c', accessory: 'headband', accColor: '#ffffff', celebration: 'plane' }, attrs: ROLES.cm1 },
-  { name: 'Quica Rodríguez', nick: 'Pádel', num: 8, role: 'MED', traits: ['padel'], quirk: 'Se ha apuntado a tres ligas de pádel con el dinero de la comunión. Al entrenamiento llega con la pala.', look: { hair: 'pigtails', hairColor: '#d8b25c', accessory: 'headband', accColor: '#25a55f', celebration: 'dance' }, attrs: ROLES.dm },
-  { name: 'Daniela Ortega', num: 10, role: 'MED', traits: ['nervioso'], quirk: 'En los entrenamientos es una estrella. Con público, un flan con botas.', look: { hair: 'curly', hairColor: '#1f1a17', body: 'slim' }, attrs: ROLES.cm2 },
-  { name: 'Yaiza Mendoza', nick: 'Firuletas', num: 7, role: 'DEL', traits: ['egoista'], quirk: 'Tiene 40.000 seguidoras. Ninguna le ha visto dar un pase.', look: { hair: 'long', hairColor: '#ece4cf', boots: '#ff4fa3', celebration: 'ear' }, attrs: ROLES.rw },
-  { name: 'Vanesa Peralta', nick: 'Goleadora Nata', num: 9, role: 'DEL', traits: ['goleadorNato'], drought: 14, quirk: 'Asegura ser una goleadora nata. Lleva 14 partidos sin marcar.', look: { hair: 'ponytail', hairColor: '#8a2f1c', body: 'stocky', celebration: 'knees', boots: '#ffb000' }, attrs: ROLES.st },
-  { name: 'Manuela Castillo', num: 11, role: 'DEL', traits: ['piscinero'], quirk: 'Va a clases de teatro los jueves. Se nota en cada contacto.', look: { hair: 'bob', hairColor: '#3b2a1e', celebration: 'plane' }, attrs: ROLES.lw },
+  { name: 'Noa Cano', num: 3, role: 'DEF', traits: [], quirk: 'La más rápida del barrio. Frena peor de lo que acelera.', look: { hair: 'afro', body: 'slim', celebration: 'dance' }, attrs: ROLES.lb },
+  { name: 'Martina Medina', nick: 'Profe', num: 6, role: 'MED', traits: ['artista'], quirk: 'Ve pases que no existen. A veces, por desgracia, los intenta.', look: { hair: 'long', hairColor: '#a8743c', accessory: 'headband', accColor: '#ffffff', celebration: 'plane' }, attrs: ROLES.cm1 },
+  { name: 'Vega Rodríguez', nick: 'Pádel', num: 8, role: 'MED', traits: ['padel'], quirk: 'Se gastó el dinero de la comunión en una pala de carbono. Al entrenamiento llega con la mochila del pádel.', look: { hair: 'pigtails', hairColor: '#d8b25c', accessory: 'headband', accColor: '#25a55f', celebration: 'dance' }, attrs: ROLES.dm },
+  { name: 'Daniela Ortega', nick: 'Dani', num: 10, role: 'MED', traits: ['nervioso'], quirk: 'En los entrenamientos es una estrella. Con público, un flan con botas.', look: { hair: 'curly', hairColor: '#1f1a17', body: 'slim' }, attrs: ROLES.cm2 },
+  { name: 'Aitana Mendoza', num: 7, role: 'DEL', traits: ['egoista'], quirk: 'Tiene 40.000 seguidoras. Ninguna le ha visto dar un pase.', look: { hair: 'long', hairColor: '#ece4cf', boots: '#ff4fa3', celebration: 'ear' }, attrs: ROLES.rw },
+  { name: 'Valeria Peralta', nick: 'Valen', num: 9, role: 'DEL', traits: ['goleadorNato'], drought: 14, quirk: 'Asegura ser una goleadora nata. Lleva 14 partidos sin marcar.', look: { hair: 'ponytail', hairColor: '#8a2f1c', body: 'stocky', celebration: 'knees', boots: '#ffb000' }, attrs: ROLES.st },
+  { name: 'Jimena Castillo', num: 11, role: 'DEL', traits: ['piscinero'], quirk: 'Va a clases de teatro los jueves. Se nota en cada contacto.', look: { hair: 'bob', hairColor: '#3b2a1e', celebration: 'plane' }, attrs: ROLES.lw },
 ];
 
 const BARRIO_KIT: Kit = { shirt: '#f0822a', shirt2: '#1d1d22', pattern: 'stripes', shorts: '#1d1d22', socks: '#f0822a', trim: '#1d1d22' };
@@ -86,14 +86,33 @@ const BARRIO_GK: Kit = { shirt: '#7d55d9', shirt2: '#5a3aa8', pattern: 'plain', 
 const POLI_KIT: Kit = { shirt: '#5bb7e8', shirt2: '#ffffff', pattern: 'sash', shorts: '#ffffff', socks: '#5bb7e8', trim: '#ffffff' };
 const POLI_GK: Kit = { shirt: '#e9d23c', shirt2: '#c9a91a', pattern: 'plain', shorts: '#1d1d22', socks: '#e9d23c', trim: '#1d1d22' };
 
-const FIRST_M = ['Álex', 'Borja', 'Chema', 'Dani', 'Edu', 'Fermín', 'Gonzalo', 'Héctor', 'Isma', 'Jonás', 'Kike', 'Lolo', 'Mario', 'Nacho', 'Óscar', 'Pablo', 'Raúl', 'Sergio', 'Txema', 'Vicente', 'Wilson', 'Xabi'];
-const FIRST_F = ['Alba', 'Bea', 'Carla', 'Desirée', 'Elena', 'Fátima', 'Gema', 'Irene', 'Jessica', 'Lucía', 'Mar', 'Nerea', 'Olga', 'Paula', 'Raquel', 'Sandra', 'Tania', 'Uxue', 'Vero', 'Yolanda', 'Zaira', 'Noemí'];
+/**
+ * Nombres: los del Barriobajo son críos de instituto (nacidos hacia 2010); los rivales, adultos de
+ * 19 a 33 años (nacidos entre los noventa y los dos mil). Cada uno con los nombres de su quinta.
+ */
+const FIRST: Record<Gender, { young: string[]; adult: string[] }> = {
+  m: {
+    young: ['Hugo', 'Martín', 'Lucas', 'Mateo', 'Leo', 'Pablo', 'Álvaro', 'Adrián', 'Mario', 'Enzo', 'Diego', 'Marcos', 'Izan', 'Bruno', 'Thiago', 'Gonzalo', 'Unai', 'Eric', 'Aitor', 'Rodrigo', 'Jorge', 'Alejandro', 'Nicolás', 'Daniel'],
+    adult: ['David', 'Javier', 'Daniel', 'Carlos', 'Alejandro', 'Sergio', 'Pablo', 'Adrián', 'Álvaro', 'Jorge', 'Rubén', 'Iván', 'Raúl', 'Víctor', 'Alberto', 'Marcos', 'Miguel', 'Diego', 'Mario', 'Samuel', 'Christian', 'Aitor', 'Óscar', 'Héctor'],
+  },
+  f: {
+    young: ['Lucía', 'Sofía', 'Martina', 'Julia', 'Paula', 'Valeria', 'Emma', 'Daniela', 'Carla', 'Alba', 'Noa', 'Sara', 'Vega', 'Claudia', 'Jimena', 'Abril', 'Irene', 'Aitana', 'Nerea', 'Laia', 'Candela', 'Elena', 'Marina', 'Ariadna'],
+    adult: ['Laura', 'María', 'Andrea', 'Marta', 'Sara', 'Paula', 'Cristina', 'Lucía', 'Alba', 'Elena', 'Irene', 'Nerea', 'Raquel', 'Patricia', 'Sandra', 'Claudia', 'Natalia', 'Carmen', 'Noelia', 'Miriam', 'Lorena', 'Ainhoa', 'Rocío', 'Tamara'],
+  },
+};
 const LAST = ['Alcántara', 'Bermejo', 'Cifuentes', 'Domínguez', 'Escudero', 'Fuentes', 'Garrido', 'Herrero', 'Iglesias', 'Jurado', 'Lozano', 'Montero', 'Navarro', 'Pastor', 'Quintana', 'Robles', 'Salcedo', 'Toledo', 'Urrutia', 'Vidal'];
-const NICKS_M = ['El Grúa', 'Tractor', 'Chispas', 'Bombilla', 'Lavadora', 'El Notario', 'Pirata', 'Cuchara', 'Pelusa', 'Turrón', 'El Fontanero'];
-const NICKS_F = ['La Grúa', 'Tractora', 'Chispas', 'Bombilla', 'Lavadora', 'La Notaria', 'Pirata', 'Cuchara', 'Pelusa', 'Turrón', 'La Fontanera'];
-const QUIRKS: Record<Gender, Record<TraitId | 'none', string[]>> = {
+/** Apodos de verdad: el diminutivo del nombre (como se llaman entre ellos)... */
+const SHORT: Record<string, string> = {
+  Alejandro: 'Álex', Daniel: 'Dani', Nicolás: 'Nico', Gonzalo: 'Gonzo', Rodrigo: 'Rodri', Adrián: 'Adri', Javier: 'Javi', Miguel: 'Migue', Alberto: 'Berto', Christian: 'Chris', Samuel: 'Samu', Sergio: 'Sergi',
+  Valeria: 'Valen', Daniela: 'Dani', Martina: 'Martu', Candela: 'Cande', Ariadna: 'Ari', Cristina: 'Cris', Patricia: 'Patri', Natalia: 'Nati', Noelia: 'Noe', Miriam: 'Miri', Lorena: 'Lore', Sofía: 'Sofi', Claudia: 'Clau',
+};
+/** ...o alguno de toda la vida en el fútbol de barrio (de adultos). */
+const NICKS: Record<Gender, string[]> = { m: ['Rubio', 'Pecas', 'Flaco', 'Rizos', 'Peque'], f: ['Rubia', 'Pecas', 'Flaca', 'Rizos', 'Peque'] };
+/** Manías. Las de `young` son de críos de instituto (nada de trabajar en el polígono). */
+const QUIRKS: Record<Gender, Record<TraitId | 'none' | 'noneYoung', string[]>> = {
   m: {
     none: ['Trabaja de lunes a viernes en el polígono. El domingo, también.', 'Su madre viene a todos los partidos con una pancarta.', 'Nadie recuerda cuándo fichó. Él tampoco.'],
+    noneYoung: ['Hace los deberes en el autobús, de camino al campo.', 'Su madre viene a todos los partidos con una pancarta.', 'Se apuntó porque se apuntó su primo. El primo lo dejó; él no.'],
     goleadorNato: ['Se autoproclama "killer del área". El área no opina lo mismo.'],
     egoista: ['Celebra los goles de sus compañeros mirando el móvil.'],
     lenero: ['El árbitro ya le saluda por su nombre.'],
@@ -105,6 +124,7 @@ const QUIRKS: Record<Gender, Record<TraitId | 'none', string[]>> = {
   },
   f: {
     none: ['Trabaja de lunes a viernes en el polígono. El domingo, también.', 'Su abuela viene a todos los partidos con una pancarta.', 'Nadie recuerda cuándo fichó. Ella tampoco.'],
+    noneYoung: ['Hace los deberes en el autobús, de camino al campo.', 'Su abuela viene a todos los partidos con una pancarta.', 'Se apuntó porque se apuntó su prima. La prima lo dejó; ella no.'],
     goleadorNato: ['Se autoproclama "killer del área". El área no opina lo mismo.'],
     egoista: ['Celebra los goles de sus compañeras mirando el móvil.'],
     lenero: ['La árbitra ya la saluda por su nombre.'],
@@ -119,19 +139,27 @@ const QUIRKS: Record<Gender, Record<TraitId | 'none', string[]>> = {
 const TRAIT_POOL: TraitId[] = ['goleadorNato', 'egoista', 'lenero', 'padel', 'pulmon', 'artista', 'piscinero', 'nervioso'];
 
 /** Jugador inventado con el mismo sistema que poblará las ligas. */
-function generated(rng: Rng, gender: Gender, id: string, num: number, role: Role, level: number, traitChance = 0.4): PlayerProfile {
-  const first = gender === 'f' ? FIRST_F : FIRST_M;
-  const nicks = gender === 'f' ? NICKS_F : NICKS_M;
+function generated(rng: Rng, gender: Gender, id: string, num: number, role: Role, level: number, traitChance = 0.4, young = false, used = new Set<string>()): PlayerProfile {
+  // en un mismo equipo no se repite el nombre de pila (ni el apellido, si se puede)
+  const pool = FIRST[gender][young ? 'young' : 'adult'];
+  const free = pool.filter((n) => !used.has(n));
+  const first = rng.pick(free.length ? free : pool);
+  used.add(first);
+  const lastFree = LAST.filter((n) => !used.has(n));
+  const last = rng.pick(lastFree.length ? lastFree : LAST);
+  used.add(last);
   const traits: TraitId[] = role !== 'POR' && rng.chance(traitChance) ? [rng.pick(TRAIT_POOL)] : [];
   const over: Partial<Attributes> = role === 'POR' ? { keeping: rng.int(level, level + 4), pace: rng.int(5, 9) } : {};
+  // apodo: casi siempre el diminutivo (si lo tiene); de adultos, a veces uno de toda la vida
+  const nick = SHORT[first] && rng.chance(0.5) ? SHORT[first] : !young && rng.chance(0.15) ? rng.pick(NICKS[gender]) : undefined;
   return {
     id,
-    name: `${rng.pick(first)} ${rng.pick(LAST)}`,
-    nick: rng.chance(0.45) ? rng.pick(nicks) : undefined,
+    name: `${first} ${last}`,
+    nick,
     num,
     role,
     traits,
-    quirk: rng.pick(QUIRKS[gender][traits[0] ?? 'none']),
+    quirk: rng.pick(QUIRKS[gender][traits[0] ?? (young ? 'noneYoung' : 'none')]),
     look: randomLook(rng, gender),
     attrs: attrs(level, rng, over),
     age: 19 + Math.floor(rng.next() * 15),
@@ -147,7 +175,8 @@ export function rivalSquad(seed: number, gender: Gender, rival: RivalDef): Playe
   for (const ch of rival.id) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
   const rng = new Rng(h);
   const roles: Role[] = ['POR', 'DEF', 'DEF', 'DEF', 'DEF', 'MED', 'MED', 'MED', 'DEL', 'DEL', 'MED'];
-  return roles.map((role, i) => generated(rng, gender, `${rival.id}-${gender}-${i}`, i + 1, role, rival.level));
+  const used = new Set<string>();
+  return roles.map((role, i) => generated(rng, gender, `${rival.id}-${gender}-${i}`, i + 1, role, rival.level, 0.4, false, used));
 }
 
 /** Los once del brief y cuatro suplentes. Índices 0–10 = los escritos a mano (ver SQUAD_INDEX). */
@@ -178,8 +207,9 @@ export function barrioSquad(seed: number, gender: Gender): PlayerProfile[] {
     ['MED', 15, 14],
     ['DEL', 16, 15],
   ];
+  const used = new Set(main.flatMap((p) => p.name.split(' ')));
   for (const [role, num, age] of bench) {
-    const p = generated(rng, gender, `barrio-${gender}-${num}`, num, role, 9, 0.6);
+    const p = generated(rng, gender, `barrio-${gender}-${num}`, num, role, 9, 0.6, true, used);
     p.age = age;
     p.look = { ...p.look, facial: 'none', hairColor: youngHair(p.look.hairColor), accessory: p.look.accessory === 'glasses' ? 'glasses' : 'none', ...youthLook(age) };
     main.push(p);
@@ -240,7 +270,8 @@ export function clubSquad(seed: number, gender: Gender, def: TeamDef, size = 20)
   for (const ch of def.id) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
   const rng = new Rng(h);
   const roles: Role[] = ['POR', 'DEF', 'DEF', 'DEF', 'DEF', 'MED', 'MED', 'MED', 'DEL', 'DEL', 'MED', 'POR', 'DEF', 'DEF', 'MED', 'MED', 'DEL', 'DEL', 'DEF', 'MED', 'DEL', 'DEF'];
-  return roles.slice(0, size).map((role, i) => generated(rng, gender, `${def.id}-${gender}-${i}`, i + 1, role, def.level - (i >= 11 ? 1 : 0)));
+  const used = new Set<string>();
+  return roles.slice(0, size).map((role, i) => generated(rng, gender, `${def.id}-${gender}-${i}`, i + 1, role, def.level - (i >= 11 ? 1 : 0), 0.4, false, used));
 }
 
 export function rivalProfile(seed: number, gender: Gender, rival: RivalDef): TeamProfile {
