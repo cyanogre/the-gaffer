@@ -1,7 +1,7 @@
 import { DIVISIONS } from '../content/divisions';
 import { traitLabel, TRAITS } from '../sim/traits';
 import { FORMATIONS, FORMATION_NAMES } from '../sim/formations';
-import type { Attributes, Block, Formation, PassStyle } from '../sim/types';
+import type { Attributes, Block, Formation, PassStyle, Role } from '../sim/types';
 import {
   MATERIAL_LEVELS,
   STADIUM_LEVELS,
@@ -21,8 +21,9 @@ import {
 import { standings, teamOf } from '../game/league';
 import { attrLabel, bestEleven, fitFor, swapLineup } from '../game/squad';
 import { scoutReport } from '../game/actions';
-import { TALK_OPTIONS, moraleLabel, moraleMods, type Talk } from '../game/morale';
+import { moraleLabel, moraleMods } from '../game/morale';
 import { coachCharacter } from '../story/scenes';
+import type { GuideEvent } from './guide';
 import { drawCrest } from './pixelart';
 import { h, portrait, tier, type Tab } from './dom';
 
@@ -33,13 +34,26 @@ import { h, portrait, tier, type Tab } from './dom';
 export interface PanelCtx {
   career: () => Career;
   changed: () => void;
-  /** Charla con un jugador desde su ficha. */
-  talk?: (p: SquadPlayer, t: Talk) => void;
+  /** Hablar con un jugador desde su ficha (una vez por semana). */
+  talk?: (p: SquadPlayer) => void;
+  /** Avisa a la guía (ha tocado un puesto, ha cambiado el once...). */
+  notify?: (e: GuideEvent) => void;
 }
 
 const ROLE_ES: Record<string, string> = { POR: 'POR', DEF: 'DEF', MED: 'MED', DEL: 'DEL' };
 const nameOf = (p: SquadPlayer) => (p.nick ? `${p.name.split(' ')[0]} «${p.nick}»` : p.name);
-export const ovr = (p: SquadPlayer) => Math.round(fitFor(p, p.role) / (p.role === 'POR' ? 2.8 : p.role === 'DEF' ? 2.8 : p.role === 'MED' ? 3.1 : 3.7));
+const ROLE_DIV: Record<Role, number> = { POR: 2.8, DEF: 2.8, MED: 3.1, DEL: 3.7 };
+/** Lo bien que haría un puesto (misma escala para todos: sale de los atributos que cuentan ahí). */
+export const roleScore = (p: SquadPlayer, role: Role) => Math.round(fitFor(p, role) / ROLE_DIV[role]);
+export const ovr = (p: SquadPlayer) => roleScore(p, p.role);
+/** Lo que cuenta en cada puesto (lo mismo que usa `fitFor`). */
+export const KEY_ATTRS: Record<Role, (keyof Attributes)[]> = {
+  POR: ['keeping', 'positioning', 'composure'],
+  DEF: ['tackling', 'positioning', 'pace', 'aggression'],
+  MED: ['passing', 'vision', 'stamina', 'dribbling', 'workRate'],
+  DEL: ['shooting', 'dribbling', 'pace', 'composure'],
+};
+const ROLE_LONG: Record<Role, string> = { POR: 'portería', DEF: 'defensa', MED: 'medio', DEL: 'delantera' };
 
 function crest(kit: Parameters<typeof drawCrest>[1], letter: string) {
   const c = h('canvas', { width: 24, height: 28, class: 'crest' });
@@ -50,8 +64,9 @@ function crest(kit: Parameters<typeof drawCrest>[1], letter: string) {
 /** Las manías de cada uno se conocen al presentarte a la plantilla (en el Barriobajo). */
 const known = (c: Career) => c.club.id !== 'barrio' || !!c.flags.metSquad;
 
-export function playerCard(c: Career, p: SquadPlayer, onTalk?: (t: Talk) => void) {
+export function playerCard(c: Career, p: SquadPlayer, onTalk?: () => void, forRole: Role = p.role) {
   const A = p.attrs;
+  const key = KEY_ATTRS[forRole];
   const m = moraleMods(p.morale);
   const keys: (keyof Attributes)[] = p.role === 'POR' ? ['keeping', 'positioning', 'passing', 'pace', 'composure', 'stamina'] : ['pace', 'stamina', 'passing', 'shooting', 'dribbling', 'tackling', 'vision', 'positioning', 'composure', 'workRate', 'aggression'];
   const short: Partial<Record<keyof Attributes, string>> = { workRate: 'trabajo', aggression: 'agresiv.', positioning: 'colocac.', composure: 'sangre fría' };
@@ -81,16 +96,17 @@ export function playerCard(c: Career, p: SquadPlayer, onTalk?: (t: Talk) => void
       ...keys.map((k) => {
         const v = Math.floor(A[k]);
         const mod = m[k];
-        return h('div', {}, h('dt', { text: short[k] ?? attrLabel(k) }), h('dd', { 'data-tier': tier(v), 'data-mod': mod ? `${mod > 0 ? '+' : ''}${mod}` : undefined, text: String(v) }));
+        return h('div', { 'data-key': String(key.includes(k)) }, h('dt', { text: short[k] ?? attrLabel(k) }), h('dd', { 'data-tier': tier(v), 'data-mod': mod ? `${mod > 0 ? '+' : ''}${mod}` : undefined, text: String(v) }));
       }),
     ),
+    h('p', { class: 'note', text: `Resaltado, lo que cuenta en ${ROLE_LONG[forRole]}: ${roleScore(p, forRole)} en ese puesto.` }),
     h('p', { class: 'quirk', text: known(c) ? p.quirk : 'Pasa por El Barrizal a conocer a la plantilla.' }),
     moraleBox(c, p, onTalk),
   );
 }
 
 /** Moral: nivel, por qué, cómo le afecta en el campo y las charlas (una por semana). */
-function moraleBox(c: Career, p: SquadPlayer, onTalk?: (t: Talk) => void) {
+function moraleBox(c: Career, p: SquadPlayer, onTalk?: () => void) {
   const m = moraleMods(p.morale);
   const eff = Object.entries(m)
     .filter(([, v]) => v)
@@ -114,7 +130,7 @@ function moraleBox(c: Career, p: SquadPlayer, onTalk?: (t: Talk) => void) {
     onTalk
       ? talked
         ? h('p', { class: 'note', text: 'Ya habéis hablado esta semana.' })
-        : h('div', { class: 'seg' }, ...(Object.keys(TALK_OPTIONS) as Talk[]).map((t) => h('button', { type: 'button', onclick: () => onTalk(t) }, TALK_OPTIONS[t].label)))
+        : h('button', { type: 'button', class: 'btn', onclick: () => onTalk() }, `Hablar con ${p.nick ?? p.name.split(' ')[0]}`)
       : null,
   );
 }
@@ -137,12 +153,15 @@ export function clubTabs(ctx: PanelCtx, state: { slot: number; focus: string | n
             {
               type: 'button',
               'aria-pressed': String(state.slot === i),
+              // fuera de su puesto: en amarillo
+              'data-weak': String(p.role !== s.role),
               style: `left:${8 + s.v * 84}%;top:${92 - s.u * 100}%`,
               title: `${s.label}: ${p.name}`,
               onclick: () => {
                 state.slot = state.slot === i ? -1 : i;
                 state.focus = p.id;
                 ctx.changed();
+                ctx.notify?.({ kind: 'slot' });
               },
             },
             portrait(p.look, p.role === 'POR' ? c.club.gkKit : c.club.kit, p.traits, p.num, 34),
@@ -150,7 +169,9 @@ export function clubTabs(ctx: PanelCtx, state: { slot: number; focus: string | n
           );
           map.append(b);
         });
-        const rows = c.squad.map((p) => {
+        const pick = state.slot >= 0 ? slots[state.slot].role : null;
+        const order = pick ? [...c.squad].sort((a, b) => roleScore(b, pick) - roleScore(a, pick)) : c.squad;
+        const row = (p: SquadPlayer) => {
           const at = c.lineup.indexOf(p.id);
           const role = at >= 0 ? slots[at].role : null;
           const bad = role && role !== p.role && (role === 'POR' || p.role === 'POR');
@@ -164,29 +185,43 @@ export function clubTabs(ctx: PanelCtx, state: { slot: number; focus: string | n
                 class: 'prow',
                 'aria-pressed': String(state.focus === p.id),
                 onclick: () => {
+                  let swapped = false;
                   if (state.slot >= 0 && c.lineup[state.slot] !== p.id) {
                     swapLineup(c, state.slot, p.id);
                     state.slot = -1;
+                    swapped = true;
                   }
                   state.focus = p.id;
                   ctx.changed();
+                  if (swapped) ctx.notify?.({ kind: 'lineup' });
                 },
               },
               h('span', { class: 'slot', 'data-bad': String(!!bad), text: at >= 0 ? slots[at].label : '—' }),
               portrait(p.look, p.role === 'POR' ? c.club.gkKit : c.club.kit, p.traits, p.num, 40),
               h('span', {}, h('b', { text: `#${p.num} ${p.nick ?? p.name}` }), h('small', { text: `${ROLE_ES[p.role]} · ${p.age ?? ''} años${c.absent[p.id] ? ' · falta al entreno' : ''} · moral ${moraleLabel(p.morale).toLowerCase()}` })),
-              h('span', { class: 'tags' }, p.load > 0.2 ? h('span', { class: 'pill warn', text: 'cargado' }) : null, h('span', { class: 'ovr', text: String(ovr(p)) })),
+              h('span', { class: 'tags' }, p.load > 0.2 ? h('span', { class: 'pill warn', text: 'cargado' }) : null, h('span', { class: 'ovr', title: pick ? `En ${ROLE_LONG[pick]}` : 'En su puesto', text: String(pick ? roleScore(p, pick) : ovr(p)) })),
             ),
           );
-        });
+        };
+        const rows = pick ? [] : order.map(row);
+        // eligiendo un puesto: primero el banquillo (lo normal es meter a alguien), luego los que ya juegan (se intercambian)
+        const benchRows = pick ? order.filter((p) => !c.lineup.includes(p.id)).map(row) : [];
+        const onRows = pick ? order.filter((p) => c.lineup.includes(p.id) && p.id !== c.lineup[state.slot]).map(row) : [];
         const focus = c.squad.find((p) => p.id === state.focus);
         return [
-          h('p', { class: 'note', text: state.slot >= 0 ? `Elige quién juega de ${slots[state.slot].label}.` : 'Toca un puesto del campo y luego a quien quieras poner.' }),
+          h('p', { class: 'note', text: pick ? `Elige quién juega de ${slots[state.slot].label}: cada lista va de mejor a peor en ${ROLE_LONG[pick]} (el número de la derecha).` : 'Toca un puesto del campo y luego a quien quieras poner. En amarillo, alguien fuera de su puesto.' }),
           map,
-          h('div', { class: 'row' }, h('button', { type: 'button', class: 'btn', text: 'Once de gala', onclick: () => ((c.lineup = bestEleven(c)), ctx.changed()) }), h('span', { class: 'note grow', text: 'Elige a los mejores para cada puesto (y deja descansar a los cargados).' })),
-          focus ? playerCard(c, focus, ctx.talk ? (t) => ctx.talk!(focus, t) : undefined) : null,
-          h('h3', { text: `Plantilla · ${c.squad.length}` }),
-          h('ul', { class: 'plist' }, ...rows),
+          h('div', { class: 'row' }, h('button', { type: 'button', class: 'btn', id: 'btnGala', text: 'Once de gala', onclick: () => ((c.lineup = bestEleven(c)), ctx.changed(), ctx.notify?.({ kind: 'lineup' })) }), h('span', { class: 'note grow', text: 'Pone a los mejores en cada puesto (y deja descansar a los cargados).' })),
+          // con un puesto elegido, la lista (ordenada para ese puesto) va justo debajo del campo
+          ...(pick
+            ? [
+                h('h3', { text: `Banquillo · para ${slots[state.slot].label}` }),
+                h('ul', { class: 'plist' }, ...benchRows),
+                h('h3', { text: 'En el once (os cambiáis el puesto)' }),
+                h('ul', { class: 'plist' }, ...onRows),
+                focus ? playerCard(c, focus, ctx.talk ? () => ctx.talk!(focus) : undefined, pick) : null,
+              ]
+            : [focus ? playerCard(c, focus, ctx.talk ? () => ctx.talk!(focus) : undefined, focus.role) : null, h('h3', { text: `Plantilla · ${c.squad.length}` }), h('ul', { class: 'plist' }, ...rows)]),
         ];
       },
     },

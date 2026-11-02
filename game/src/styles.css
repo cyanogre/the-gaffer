@@ -958,6 +958,17 @@ canvas.px,
 .attrs dd[data-tier='lo'] {
   color: var(--bad);
 }
+/* lo que cuenta en el puesto: resaltado */
+.attrs div[data-key='true'] {
+  margin: 0 -4px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgba(242, 201, 76, 0.16);
+  box-shadow: inset 2px 0 0 var(--gold);
+}
+.attrs div[data-key='true'] dt {
+  color: #f2e6c4;
+}
 .attrs dd[data-mod]::after {
   content: attr(data-mod);
   margin-left: 2px;
@@ -1015,6 +1026,15 @@ canvas.px,
 .pitchmap button[aria-pressed='true'] canvas {
   border-color: var(--gold);
   box-shadow: 0 0 0 3px var(--gold);
+}
+/* alguien fuera de su puesto */
+.pitchmap button[data-weak='true'] canvas {
+  border-color: #ffb000;
+  box-shadow: 0 0 0 2px #ffb000;
+}
+.pitchmap button[data-weak='true'] span {
+  background: #ffb000;
+  color: #1a1226;
 }
 .pitchmap span {
   max-width: 58px;
@@ -1648,4 +1668,47 @@ canvas.px,
   font: 600 0.85rem/1 var(--cond);
   text-decoration: underline;
   padding: 4px 0;
+}
+
+/* ── minijuego: copiar llaves en la ferretería */
+.minigame {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 14, 26, 0.72);
+  touch-action: manipulation;
+}
+.mg-box {
+  display: grid;
+  gap: 8px;
+  width: min(520px, calc(100% - 24px));
+  padding: 14px 16px;
+  background: var(--paper);
+  color: #1a1226;
+  border: 3px solid #1a1226;
+  box-shadow: 5px 5px 0 #1a1226;
+}
+.mg-box h3 {
+  margin: 0;
+  font: 400 1.2rem/1.1 var(--display);
+  color: #c8325f;
+}
+.mg-canvas {
+  width: 100%;
+  aspect-ratio: 160 / 76;
+  image-rendering: pixelated;
+  border: 2px solid #1a1226;
+  cursor: pointer;
+}
+.mg-say {
+  margin: 0;
+  min-height: 1.4em;
+  font: 700 0.95rem/1.3 var(--body);
+}
+.mg-cut {
+  justify-self: stretch;
+  padding: 12px;
+  font-size: 1.1rem;
 }

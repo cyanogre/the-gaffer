@@ -18,6 +18,8 @@ export function loadGame(): Career | null {
     const c = JSON.parse(raw) as Career;
     if (!c || c.v !== 2) return null;
     c.guide ??= -1;
+    // la guía cambió (ahora empieza por el partido): a mitad de la antigua, se da por vista
+    if (c.guide >= 0 && !c.flags.guiaMister) c.guide = -1;
     c.dayNotes ??= [];
     c.promises ??= [];
     for (const p of c.squad) {

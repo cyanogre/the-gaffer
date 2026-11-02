@@ -2,7 +2,8 @@ import './styles.css';
 import type { Gender } from './content/look';
 import { ACTIONS, actionsAt, blocked, dayLabel, perform, scoutReport, type ActionDef } from './game/actions';
 import { DAYS_SHORT, LOCATIONS, MATCH_DAY, SLOTS, STATS, dailyDecay, leagueName, levelOf, type StatId, maxEnergy, newCareer, rivalOf, todayWeather, weatherOf, type Career, type LocationId, type SquadPlayer } from './game/career';
-import { talkTo, type Talk as PlayerTalk } from './game/morale';
+import { talkTopic } from './game/morale';
+import { playKeys } from './ui/llaves';
 import { loadGame, saveGame, clearGame } from './game/save';
 import { FOCUS, isTrainingSlot, type Focus } from './game/squad';
 import { TALKS, closeWeek, seasonEnd, teamTalk, type MatchOutcome, type Talk } from './game/week';
@@ -153,12 +154,16 @@ async function playScene(s: VNScene) {
   c.seen.push(s.id);
   await vn.play(s.lines(c), c, s.choices);
   busy = false;
-  if (c.status === 'playing' && s.id === 'prologo') toast(`${leagueName(c)}: empieza tu historia.`);
   // la plantilla puede haber cambiado (el prólogo elige liga)
   loc?.setState(c);
   refresh();
   save();
   guide.notify({ kind: 'scene', id: s.id });
+  if (c.status === 'playing' && s.id === 'prologo') {
+    toast(`${leagueName(c)}: empieza tu historia.`);
+    // la temporada arranca el domingo de la jornada 1: al campo, que el estreno es hoy
+    await goTo(c.location);
+  }
 }
 
 function refresh() {
@@ -386,6 +391,11 @@ async function useHotspot(id: string) {
   }
   busy = true;
   loc.walkTo(id, async () => {
+    // turno en la ferretería: el sueldo sale del minijuego de copiar llaves
+    if (a.needs === 'llaves') {
+      const k = await playKeys(app);
+      arg = `${k.perfect},${k.good},${k.ruined}`;
+    }
     const from = snapshot(c);
     const out = perform(c, a, arg);
     const to = snapshot(c);
@@ -427,13 +437,26 @@ $('hudCoach').onclick = () => {
   sheet.open('coach', 'Míster', () => coachPanel(career!));
 };
 function openClub(tab?: string) {
-  const talk = async (p: SquadPlayer, t: PlayerTalk) => {
-    const r = talkTo(career!, p, t);
+  // hablar con un jugador: te cuenta lo que le pasa y eliges qué contestar (escena con su retrato)
+  const talk = async (p: SquadPlayer) => {
+    const c = career!;
+    const idx = c.squad.indexOf(p);
+    const t = talkTopic(c, p);
+    sheet.close();
+    busy = true;
+    const replies = t.replies.map((r) => ({
+      text: r.text,
+      pick: (cc: typeof c) => {
+        const a = r.pick(cc);
+        return [{ who: 'jugador' as const, idx, expr: a.expr, text: a.text }];
+      },
+    }));
+    await vn.play([{ who: 'jugador', idx, expr: t.expr, text: t.opener }], c, replies);
+    busy = false;
     save();
-    sheet.refresh();
-    await card(`Charla con ${p.nick ?? p.name.split(' ')[0]}`, r.lines, { tone: r.tone });
+    openClub('plantilla');
   };
-  sheet.open('club', career!.club.name, clubTabs({ career: () => career!, changed: () => (sheet.refresh(), save(), refresh()), talk }, panelState), tab);
+  sheet.open('club', career!.club.name, clubTabs({ career: () => career!, changed: () => (sheet.refresh(), save(), refresh()), talk, notify: (e) => guide.notify(e) }, panelState), tab);
   sheet.onClose = () => renderDock();
   renderDock();
   guide.notify({ kind: 'sheet', id: 'club' });
@@ -466,6 +489,7 @@ function startMatch() {
   match = new MatchScreen(c, stage, sheet, () => vn.open || !$('result').hidden);
   match.onFinish = (o) => finishMatch(o);
   resize();
+  guide.notify({ kind: 'match' });
   if (!c.flags.hintMatch) {
     c.flags.hintMatch = true;
     guide.showHint('El partido se juega solo, pero tú mandas: «Órdenes» cambia la táctica en vivo y «Cambios» mete a los del banquillo. Toca a un jugador para ver su ficha.', '#btnOrders');
@@ -505,6 +529,7 @@ async function finishMatch(o: MatchOutcome) {
   }
   refresh();
   save();
+  guide.notify({ kind: 'matchEnd' });
   await playAuto();
 }
 

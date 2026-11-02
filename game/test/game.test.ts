@@ -74,7 +74,16 @@ describe('semana del míster', () => {
     expect(pendingScenes(c, 'casa').map((s) => s.id)).toEqual(['prologo']);
     setLeagueGender(c, 'f');
     expect(c.squad[0].look.gender).toBe('f');
-    expect(pendingScenes(c, 'casa').map((s) => s.id)).toContain('intro');
+    // el estreno es el domingo de la jornada 1, en el campo: Ramón y la presentación de la plantilla
+    expect(c.day).toBe(6);
+    expect(c.location).toBe('campo');
+    expect(pendingScenes(c, 'campo').map((s) => s.id)).toEqual(['intro', 'presentacion']);
+    // el once que dejó el míster anterior tiene a un delantero de defensa (lo arregla la guía)
+    expect(c.lineup.map((id) => c.squad.find((p) => p.id === id)!.role)).toContain('DEL');
+    expect(c.squad.find((p) => p.id === c.lineup[1])!.role).toBe('DEL');
+    // la primera semana entera es la de la jornada 2
+    c.week = 2;
+    c.day = 0;
     expect(pendingScenes(c, 'casa').map((s) => s.id)).not.toContain('visita-padel');
     c.day = 2;
     expect(pendingScenes(c, 'casa').map((s) => s.id)).toContain('visita-padel');
@@ -116,6 +125,7 @@ describe('estadísticas del míster (tipo Punch Club)', () => {
   it('lo que no se trabaja baja cada día; lo que se trabaja, sube (cada vez menos)', () => {
     const c = newCareer('m', 'm', '', 31);
     setLeagueGender(c, 'm');
+    c.day = 0; // lunes (el estreno es en domingo)
     c.coach.stats.ojo.value = 31; // nivel 4 (30–39)
     c.coach.stats.forma.value = 35;
     for (let d = 0; d < 5; d++) {

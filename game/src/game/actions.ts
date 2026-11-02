@@ -33,7 +33,8 @@ export interface ActionDef {
   days?: number[];
   usesSlot?: boolean;
   once?: 'day' | 'week';
-  needs?: 'focus' | 'player';
+  /** Lo que pide antes de hacerse: foco del entreno, a quién invitar o el minijuego de las llaves. */
+  needs?: 'focus' | 'player' | 'llaves';
   /** Estadística que entrena (para la etiqueta). */
   trains?: StatId;
   check?: (c: Career) => string | null;
@@ -294,20 +295,30 @@ export const ACTIONS: ActionDef[] = [
     mood: -10,
     slots: [0, 1],
     trains: 'labia',
-    run: (c) => {
-      let pay = 22 + 4 * lvl(c, 'labia');
+    needs: 'llaves',
+    run: (c, arg) => {
+      // el minijuego dice cuántas llaves salieron perfectas, buenas y estropeadas («p,b,e»)
+      const [perfect, good, ruined] = (arg ?? '0,2,1').split(',').map((n) => Math.max(0, parseInt(n, 10) || 0));
+      const base = 8 + 4 * lvl(c, 'labia');
+      let pay = Math.max(0, base + perfect * 7 + good * 5 - ruined * 4);
       const owed = c.flags.adelanto ? Math.min(30, pay) : 0;
       if (owed) {
         pay -= owed;
         delete c.flags.adelanto;
       }
       c.coach.wallet += pay;
-      c.boardTrust = Math.min(100, c.boardTrust + 1);
+      // a Don Ramón le gusta verte trabajar; si le estropeas bombines, menos
+      const trust = ruined >= 2 ? 0 : 1;
+      c.boardTrust = Math.min(100, c.boardTrust + trust);
       const rng = rngFor(c, 'turno');
       const r: ActionResult = {
         title: 'Turno en la ferretería',
-        lines: [rng.pick(['Vendes 200 tornillos de uno en uno. Una señora pide «el de siempre». No sabes cuál es.', 'Un cliente quiere devolver un martillo «porque no clava solo».', 'Don Ramón te enseña a hacer copias de llaves. Te equivocas con la del bar.']), `+${pay} € en tu cartera${owed ? ` (te descuenta ${owed} € del adelanto)` : ''} · Don Ramón, contento (+1 confianza).`],
-        tone: 'good',
+        lines: [
+          `Llaves: ${perfect} perfecta${perfect === 1 ? '' : 's'}, ${good} buena${good === 1 ? '' : 's'}, ${ruined} estropeada${ruined === 1 ? '' : 's'}.`,
+          ruined >= 2 ? 'Don Ramón cuenta los bombines a la basura en voz alta. Uno. Dos...' : rng.pick(['Una señora pide «la de siempre». Resulta que es la del bar.', 'Un cliente quiere devolver un martillo «porque no clava solo».', 'Don Ramón te mira cortar y asiente. Lo más parecido a un abrazo.']),
+          `+${pay} € en tu cartera (${base} € de sueldo${perfect + good ? ` y ${perfect * 7 + good * 5} € por las copias` : ''}${ruined ? `, −${ruined * 4} € de bombines` : ''})${owed ? `; te descuenta ${owed} € del adelanto` : ''}.${trust ? ' Don Ramón, contento (+1 confianza).' : ''}`,
+        ],
+        tone: ruined >= 2 ? 'bad' : 'good',
       };
       xp(c, r, 'labia', 1);
       return r;

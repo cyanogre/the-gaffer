@@ -3,6 +3,7 @@ import { DIVISIONS } from '../content/divisions';
 import type { Gender } from '../content/look';
 import { BARRIO, RIVALS, barrioSquad } from '../content/teams';
 import type { TimeOfDay, Weather } from '../sim/conditions';
+import { FORMATIONS } from '../sim/formations';
 import { Rng } from '../sim/rng';
 import type { Formation, PlayerProfile, Tactics } from '../sim/types';
 import { newLeague, type LeagueState } from './league';
@@ -251,7 +252,7 @@ export function newCareer(gender: Gender, coachGender: Gender = 'm', coachName =
     familiarity: { '4-3-3': 0.55, '4-4-2': 0.45, '5-3-2': 0.25 },
     promises: [],
     absent: {},
-    flags: {},
+    flags: { guiaMister: true },
     seen: [],
     weekDone: {},
     dayDone: {},
@@ -272,7 +273,17 @@ export function setLeagueGender(c: Career, gender: Gender) {
   c.gender = gender;
   c.squad = barrioSquad(c.seed, gender).map(toSquad);
   c.lineup = c.squad.slice(0, 11).map((p) => p.id);
+  // el once que dejó el míster anterior tiene su manía: el sobrino (delantero) juega de defensa.
+  // Es lo primero que se arregla en la guía, mirando los números de cada uno en ese puesto.
+  const slots = FORMATIONS[c.planned.formation];
+  const def = slots.findIndex((s) => s.role === 'DEF');
+  const nephew = c.squad.find((p) => p.role === 'DEL' && !c.lineup.includes(p.id));
+  if (def >= 0 && nephew) c.lineup[def] = nephew.id;
   c.status = 'playing';
+  // la temporada arranca el domingo de la jornada 1, en el campo: el estreno es hoy
+  c.day = MATCH_DAY;
+  c.slot = 0;
+  c.location = 'campo';
 }
 
 export const division = (c: Career) => DIVISIONS[c.division];

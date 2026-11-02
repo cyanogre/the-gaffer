@@ -100,6 +100,8 @@ export interface VNScene {
   badge?: string;
   /** Semana (0 = cualquiera, si se cumple la condición). */
   week: number;
+  /** Puede saltar el domingo antes del partido (el estreno del míster). */
+  sunday?: boolean;
   /** A partir de qué día de la semana. */
   day?: number;
   cond?: (c: Career) => boolean;
@@ -153,17 +155,18 @@ export const SCENES: VNScene[] = [
   },
   {
     id: 'intro',
-    where: 'casa',
+    where: 'campo',
     week: 1,
+    sunday: true,
     cond: barrio,
-    title: 'Primer día',
+    title: 'Hoy hay partido',
     lines: (c) => [
-      { who: 'narrador', text: 'Un piso de 40 metros encima de una ferretería. Una pizarra, un portátil con una pegatina del Barriobajo y una nevera que hace ruido de tractor.' },
+      { who: 'narrador', text: 'A la mañana siguiente te despierta el teléfono. «¿Míster? ¿No ha leído la letra pequeña del cartel? ¡El primer partido es HOY!» Diez minutos después estás en El Barrizal.' },
       { who: 'presidente', expr: 'happy', text: `¡Bienvenid${gx(c.coach.gender, 'o', 'a')}, míster! Ramón, de la ferretería. Y presidente. Este es el club más grande del barrio. Bueno, el único.` },
-      { who: 'presidente', expr: 'neutral', text: `Le explico: jugamos en ${leagueName(c)}, la última categoría. Seis equipos, diez jornadas. Entrenamos martes y jueves por la tarde en El Barrizal; los domingos, partido.` },
+      { who: 'presidente', expr: 'neutral', text: `Jugamos en ${leagueName(c)}, la última categoría. Seis equipos, diez jornadas. Entrenamos martes y jueves por la tarde; los domingos, partido. Como hoy.` },
       { who: 'presidente', expr: 'smug', text: `Son ${gx(c.gender, 'críos', 'crías')}, sí: ${gx(c.gender, 'el mayor', 'la mayor')} tiene dieciséis años. Juegan contra adultos con permiso federativo. El permiso lo firmó mi cuñado.` },
-      { who: 'presidente', expr: 'smug', text: 'La directiva, o sea, mi cuñado y yo, queremos ser campeones. Suben los dos primeros, pero el campeón sale en el periódico del barrio. En portada.' },
-      { who: 'presidente', expr: 'dreamy', text: 'Y si le faltan perras para el alquiler, abajo en la ferretería siempre hay turnos. Se cobra poco, pero se aprende mucho de tornillos.' },
+      { who: 'presidente', expr: 'angry', text: `El míster de antes dejó el once hecho y se fue a vivir a Benidorm. Revíselo, que tenía sus manías: puso a su ${gx(c.gender, 'sobrino', 'sobrina')} de defensa, y ${gx(c.gender, 'el chaval es delantero', 'la chavala es delantera')}.` },
+      { who: 'presidente', expr: 'dreamy', text: 'Ah, y le dejo el piso de encima de la ferretería. Si le faltan perras para el alquiler, abajo siempre hay turnos. Se cobra poco, pero se aprende mucho de llaves.' },
     ],
     choices: [
       {
@@ -186,6 +189,7 @@ export const SCENES: VNScene[] = [
     id: 'presentacion',
     where: 'campo',
     week: 1,
+    sunday: true,
     cond: (c) => barrio(c) && !c.flags.metSquad,
     title: 'Tus chavales',
     lines: (c) => {
@@ -193,7 +197,7 @@ export const SCENES: VNScene[] = [
       const nm = (k: keyof typeof SQUAD_INDEX) => nick(c, k);
       const f = c.gender === 'f';
       return [
-        { who: 'narrador', text: `En El Barrizal te esperan quince ${gx(c.gender, 'críos', 'crías')} con petos de colores distintos. ${gx(c.gender, 'El mayor', 'La mayor')} tiene dieciséis años; ${gx(c.gender, 'el más bajito', 'la más bajita')}, catorce y una gorra dos tallas más grande.` },
+        { who: 'narrador', text: `En la banda te esperan quince ${gx(c.gender, 'críos', 'crías')} con petos de colores distintos y el partido a punto de empezar. ${gx(c.gender, 'El mayor', 'La mayor')} tiene dieciséis años; ${gx(c.gender, 'el más bajito', 'la más bajita')}, catorce y una gorra dos tallas más grande.` },
         { who: 'jugador', idx: I.portero, expr: 'happy', text: `Soy ${nm('portero')}, ${gx(c.gender, 'el portero', 'la portera')}. Llevo en el club desde los cuatro años. Si me la tiran alta, avisad antes.` },
         { who: 'jugador', idx: I.goleador, expr: 'smug', text: `${nm('goleador')}. ${f ? 'Goleadora nata' : 'Goleador nato'}: lo pone en mi Instagram. Llevo ${c.squad[I.goleador].drought} partidos sin marcar, pero eso es estadística.` },
         { who: 'jugador', idx: I.firuletas, expr: 'smug', text: '¿Puedes salir menos en mis vídeos, míster? Me tapas el regate.' },
@@ -242,7 +246,7 @@ export const SCENES: VNScene[] = [
     where: 'casa',
     hotspot: 'phone',
     badge: '¡Suena!',
-    week: 1,
+    week: 2,
     day: 1,
     title: 'Llamada de Don Ramón',
     lines: (c) => [
@@ -279,7 +283,7 @@ export const SCENES: VNScene[] = [
     where: 'casa',
     hotspot: 'door',
     badge: '¡Llaman!',
-    week: 1,
+    week: 2,
     day: 2,
     title: 'Llaman a la puerta',
     lines: (c) => [
@@ -303,13 +307,12 @@ export const SCENES: VNScene[] = [
         },
       },
       {
-        text: 'Te dejo si consigues que Pádel Cristal nos anuncie.',
+        text: 'Ve, pero el miércoles te quedas una hora más a recuperar.',
         req: { stat: 'labia', lv: 2 },
         pick: (c) => {
-          c.absent[pid(c, 'padel')] = true;
-          morale(c, pid(c, 'padel'), 6, 'Trato cerrado con Pádel Cristal');
-          c.fans += 3;
-          return [{ who: 'padel', expr: 'smug', text: 'Hecho. Os ponen en la pizarra de la entrada. Al lado de las clases de zumba.' }];
+          // no se pierde el entreno: lo recupera el miércoles
+          morale(c, pid(c, 'padel'), 7, 'Le dejaste ir al torneo a cambio de recuperar el entreno');
+          return [{ who: 'padel', expr: 'happy', text: '¡Trato! El miércoles me quedo. Y traigo los conos, que sé dónde los guarda el utillero.' }];
         },
       },
     ],
@@ -320,7 +323,7 @@ export const SCENES: VNScene[] = [
     where: 'casa',
     hotspot: 'laptop',
     badge: '1 correo',
-    week: 1,
+    week: 2,
     title: 'Correo: «PROPUESTA (IMPORTANTE)»',
     lines: () => [
       { who: 'narrador', text: 'Un correo nuevo. Asunto: «PROPUESTA (IMPORTANTE) (LEER)». Remitente: manolo.bar.manolo.1987.' },
@@ -362,7 +365,7 @@ export const SCENES: VNScene[] = [
     where: 'casa',
     hotspot: 'door',
     badge: '¡Llaman!',
-    week: 2,
+    week: 3,
     day: 1,
     title: 'Visita inesperada',
     lines: (c) => [
@@ -392,7 +395,7 @@ export const SCENES: VNScene[] = [
   {
     id: 'bar-goleador',
     where: 'bar',
-    week: 3,
+    week: 4,
     cond: (c) => barrio(c) && (c.squad[SQUAD_INDEX.goleador].drought ?? 0) >= 3,
     title: 'Penas en la barra',
     lines: (c) => [
@@ -430,7 +433,7 @@ export const SCENES: VNScene[] = [
     id: 'abuela-pancarta',
     cond: barrio,
     where: 'campo',
-    week: 4,
+    week: 5,
     title: 'Un proyecto textil',
     lines: () => [
       { who: 'narrador', text: 'Junto a la valla, la abuela Mari despliega una sábana enorme. Pone «BARRIOBAJO» con una B al revés.' },
@@ -531,7 +534,7 @@ export function pendingScenes(c: Career, where?: LocationId) {
       (where === undefined || s.where === where) &&
       (s.week === 0 || s.week === c.week) &&
       (s.day ?? 0) <= c.day &&
-      c.day < 6 &&
+      (c.day < 6 || !!s.sunday) &&
       !c.seen.includes(s.id) &&
       (s.cond?.(c) ?? true),
   );

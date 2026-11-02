@@ -2,44 +2,87 @@ import type { Career, LocationId } from '../game/career';
 import { h } from './dom';
 
 /**
- * Guía de la primera semana: lleva al jugador «sobre raíles». Un halo marca el único botón que
+ * Guía del estreno (el partido) y de la primera semana: lleva al jugador «sobre raíles». Un halo marca el único botón que
  * se puede pulsar, el resto de la pantalla queda bloqueado y una nota explica por qué. Cada paso
  * avanza cuando pasa lo que pide (ir a un sitio, hacer una acción, abrir una hoja...).
  * Siempre se puede saltar.
  */
-export type GuideEvent = { kind: 'location'; id: LocationId } | { kind: 'action'; id: string } | { kind: 'scene'; id: string } | { kind: 'sheet'; id: string } | { kind: 'tab'; id: string } | { kind: 'close' };
+export type GuideEvent =
+  | { kind: 'location'; id: LocationId }
+  | { kind: 'action'; id: string }
+  | { kind: 'scene'; id: string }
+  | { kind: 'sheet'; id: string }
+  | { kind: 'tab'; id: string }
+  | { kind: 'close' }
+  /** Ha tocado un puesto del once / ha cambiado a alguien del once. */
+  | { kind: 'slot' }
+  | { kind: 'lineup' }
+  /** Empieza / termina (con el periódico del lunes) el partido. */
+  | { kind: 'match' }
+  | { kind: 'matchEnd' };
 
 type Target = { dom: string } | { hotspot: string; orDock?: LocationId } | null;
 interface Step {
-  text: string;
+  /** Texto de la nota (o función, si depende de la partida: «su sobrino» o «su sobrina»). */
+  text: string | ((c: Career) => string);
   target: Target;
   /** 'tap': se avanza con «Siguiente». Si no, con el evento que coincida. */
   until: 'tap' | ((e: GuideEvent) => boolean);
+  /** Paso de espera sin nota (mientras se juega el partido). */
+  silent?: boolean;
 }
 
 const dock = (id: string) => `#dock button[data-loc=${id}]`;
 const is = (kind: GuideEvent['kind'], id?: string) => (e: GuideEvent) => e.kind === kind && (id === undefined || ('id' in e && e.id === id));
 
+/**
+ * Primero el mánager (el estreno es un domingo: preparar el once según los números de cada uno en
+ * cada puesto, la pizarra, la arenga y el partido) y después la semana tipo Punch Club.
+ */
 export const STEPS: Step[] = [
-  { text: 'Tu primera semana como míster. Te enseño cómo funciona en un momento (puedes saltarlo cuando quieras).', target: null, until: 'tap' },
+  // ── domingo, jornada 1: el partido
+  { text: 'Tu primer partido es hoy. Antes, te enseño a preparar el equipo (puedes saltar la guía cuando quieras).', target: null, until: 'tap' },
+  { text: 'Pulsa «Club»: ahí están tu plantilla, la pizarra y la liga. El papeleo no gasta tiempo.', target: { dom: dock('club') }, until: is('sheet', 'club') },
+  {
+    text: 'Tu once, colocado en el campo. Cada puesto pide cosas distintas: portería, paradas y colocación; defensa, entradas y colocación; medio, pase y visión; arriba, tiro, regate y velocidad.',
+    target: { dom: '.pitchmap' },
+    until: 'tap',
+  },
+  {
+    text: (c) => (c.gender === 'f' ? 'Este puesto está en amarillo: el míster de antes puso a su sobrina, que es delantera, de lateral. Tócalo.' : 'Este puesto está en amarillo: el míster de antes puso a su sobrino, que es delantero, de lateral. Tócalo.'),
+    target: { dom: '.pitchmap button[data-weak=true]' },
+    until: is('slot'),
+  },
+  {
+    text: 'Arriba, los del banquillo, ordenados por lo bien que harían ESE puesto (el número de la derecha). Toca al primero: alguien que defienda de verdad.',
+    target: { dom: '.plist' },
+    until: is('lineup'),
+  },
+  {
+    text: 'En su ficha, resaltado, lo que cuenta para su puesto. La moral y la carga también pesan: hundido o cansado, rinde menos.',
+    target: { dom: '.attrs' },
+    until: 'tap',
+  },
+  { text: '«Once de gala» pone solo a los mejores en cada puesto y deja descansar a los cargados. Úsalo de punto de partida: la última palabra es tuya.', target: { dom: '#btnGala' }, until: 'tap' },
+  { text: 'En «Pizarra» eliges formación, altura del bloque y estilo de pase. El porcentaje es cuánto la conocen: si es bajo, se desordenan.', target: { dom: '#sheetTabs button:nth-child(2)' }, until: is('tab', 'pizarra') },
+  { text: 'Cierra la hoja: siempre la tienes en «Club».', target: { dom: '#sheetClose' }, until: is('close') },
+  { text: '¡A jugar! Primero, la arenga en el vestuario: cada carácter reacciona a su manera y tu labia decide cuánto les llega.', target: { dom: '#btnMatch' }, until: is('match') },
+  { text: '', target: null, until: is('matchEnd'), silent: true },
+  // ── lunes: la semana
+  { text: 'Lunes. Entre partido y partido, la semana es tuya: entrenas al equipo, trabajas y te ganas al barrio. Te enseño lo básico.', target: null, until: 'tap' },
   { text: 'El reloj. Cada día tiene tres franjas: mañana, tarde y noche. Todo lo que haces gasta una. El domingo, partido.', target: { dom: '.hud-clock' }, until: 'tap' },
   { text: 'Tus necesidades: energía (dormir la recupera), comida (come en casa o en el bar: con hambre no puedes entrenar ni trabajar) y ánimo (de bajón, lo que entrenas rinde la mitad).', target: { dom: '.hud-needs' }, until: 'tap' },
   { text: 'Tus estadísticas. Cada vez que trabajas una, su barra se llena; al llegar arriba, ganas un punto. Cada noche baja lo que no hayas trabajado: hay que mantenerlas.', target: { dom: '#hudStats' }, until: 'tap' },
   { text: 'Tu cartera. El club no te paga: cada lunes pagas 50 € de alquiler. Abajo, en la ferretería, hay turnos.', target: { dom: '#hudWallet' }, until: 'tap' },
-  { text: 'Lo primero es conocer a tus chavales. Te esperan en El Barrizal: pulsa «Campo».', target: { dom: dock('campo') }, until: is('scene', 'presentacion') },
-  { text: 'Ahora tú: sal a correr. Mira arriba cómo se llena la barra de Forma mientras das vueltas. Cada etiqueta dice lo que cuesta (⚡) y qué estadística mejora.', target: { hotspot: 'track', orDock: 'campo' }, until: is('action', 'correr') },
-  { text: 'El papeleo no gasta tiempo. Pulsa «Club».', target: { dom: dock('club') }, until: is('sheet', 'club') },
-  { text: 'Tu once. Toca un puesto del campo y luego a quien quieras poner. En la lista ves su edad, su nota y si va cargado.', target: { dom: '.pitchmap' }, until: 'tap' },
-  { text: 'En «Pizarra» eliges formación, bloque y estilo. El porcentaje es lo que la conocen: si es bajo, se desordenan.', target: { dom: '#sheetTabs button:nth-child(2)' }, until: is('tab', 'pizarra') },
-  { text: 'Cierra la hoja cuando quieras: siempre está en «Club».', target: { dom: '#sheetClose' }, until: is('close') },
+  { text: 'Sal a correr al campo. Mira arriba cómo se llena la barra de Forma mientras das vueltas. Cada etiqueta dice lo que cuesta (⚡) y qué estadística mejora.', target: { hotspot: 'track', orDock: 'campo' }, until: is('action', 'correr') },
   { text: 'Ya es por la tarde. Vamos al Bar Manolo: ahí se gana labia y, con suerte, aficionados.', target: { dom: dock('bar') }, until: is('location', 'bar') },
   { text: 'Charla en la barra (4 € de tu cartera). La labia te servirá en las conversaciones y en la arenga del domingo.', target: { hotspot: 'barra', orDock: 'bar' }, until: is('action', 'parroquia') },
   { text: 'Es de noche. A casa.', target: { dom: dock('casa') }, until: is('location', 'casa') },
   { text: 'Duerme: el día termina y recuperas toda la energía. Si pasas la noche fuera, solo recuperas una parte.', target: { hotspot: 'bed', orDock: 'casa' }, until: is('action', 'dormir') },
-  { text: 'Martes por la mañana. Echa un turno en la ferretería: dinero para ti y Don Ramón te verá trabajar.', target: { hotspot: 'mostrador', orDock: 'ferreteria' }, until: is('action', 'turno') },
+  { text: 'Martes por la mañana. Echa un turno en la ferretería copiando llaves: cuanto mejor cortes, más cobras.', target: { hotspot: 'mostrador', orDock: 'ferreteria' }, until: is('action', 'turno') },
   { text: 'Martes por la tarde: ¡entrenamiento! Elige en qué trabajáis. Los críos aprenden rápido y tu Táctica lo multiplica.', target: { hotspot: 'pitch', orDock: 'campo' }, until: is('action', 'entrenar') },
   {
-    text: 'Ya sabes lo básico. Se entrena martes y jueves, el sábado puedes ojear al rival y el domingo se juega. El resto de la semana es tuya. ¡Suerte, míster!',
+    text: 'Ya sabes lo básico. Se entrena martes y jueves, el sábado puedes ojear al rival y el domingo se juega. Habla con tus jugadores desde su ficha cuando algo les ronde. ¡Suerte, míster!',
     target: null,
     until: 'tap',
   },
@@ -60,9 +103,11 @@ export class Guide {
   private text = h('p');
   private nextBtn = h('button', { type: 'button', class: 'btn gold', text: 'Siguiente' });
   private skipBtn = h('button', { type: 'button', class: 'g-skip', id: 'guideSkip', text: 'Saltar guía' });
-  /** Pista suelta (fuera de la guía): domingo, primer partido. */
+  /** Pista suelta (fuera de la guía): las órdenes en el primer partido. */
   private hint: { text: string; sel: string } | null = null;
   onChange: (() => void) | null = null;
+  /** Paso para el que ya se ha llevado el objetivo a la vista. */
+  private scrolledFor = '';
   /** Al cerrar una pista suelta (por ejemplo, para reanudar el partido). */
   onHintDone: (() => void) | null = null;
 
@@ -131,6 +176,12 @@ export class Guide {
       else el = this.hotspot(sel.hotspot);
     }
     if (!el || (el as HTMLElement).hidden) return null;
+    const key = `${this.career()?.guide}:${this.hint?.sel ?? ''}`;
+    if (this.scrolledFor !== key) {
+      this.scrolledFor = key;
+      const b = el.getBoundingClientRect();
+      if (b.top < 120 || b.bottom > window.innerHeight - 90) el.scrollIntoView({ block: 'center' });
+    }
     const r = el.getBoundingClientRect();
     if (r.width === 0 && r.height === 0) return null;
     return { x: r.left - 6, y: r.top - 6, w: r.width + 12, h: r.height + 12 };
@@ -138,7 +189,7 @@ export class Guide {
 
   /** Cada fotograma: coloca halo, bloqueos y nota. `paused` cuando hay escena o tarjeta encima. */
   frame(paused: boolean) {
-    const s = this.step;
+    const s = this.step?.silent ? null : this.step;
     const show = (!!s || !!this.hint) && !paused;
     this.root.hidden = !show;
     if (!show) return;
@@ -146,9 +197,10 @@ export class Guide {
     const H = window.innerHeight;
     const r = this.targetRect();
     const tap = this.hint ? true : s!.until === 'tap';
-    this.text.textContent = this.hint ? this.hint.text : s!.text;
+    const c = this.career();
+    this.text.textContent = this.hint ? this.hint.text : typeof s!.text === 'function' ? (c ? s!.text(c) : '') : s!.text;
     this.nextBtn.hidden = !tap;
-    this.nextBtn.textContent = this.hint ? 'Entendido' : this.career()?.guide === STEPS.length - 1 ? '¡A jugar!' : 'Siguiente';
+    this.nextBtn.textContent = this.hint ? 'Entendido' : this.career()?.guide === STEPS.length - 1 ? '¡Vamos!' : 'Siguiente';
     this.skipBtn.hidden = !!this.hint;
     // bloqueo: cuatro rectángulos alrededor del hueco (en pasos de «Siguiente» se bloquea todo)
     const hole = r && !tap ? r : { x: W / 2, y: H / 2, w: 0, h: 0 };

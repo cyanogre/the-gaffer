@@ -34,7 +34,7 @@ Cierre: taquilla, patrocinio, alquiler, liga, confianza → nueva semana
 Cuatro estadísticas con un valor de 0 a 100 (nivel = 1 + una decena por nivel). **Cuestan de subir**: cada sesión rinde menos cuanto más alta está. **Cuestan de mantener**: cada día que no se trabajan bajan (0,3 + 1,8 % de su valor), así que mantenerlas arriba exige constancia. La ficha del míster dice para qué sirve cada una, qué desbloquea el siguiente nivel y cuánto bajará esta noche; el retrato avisa si alguna está a punto de perder nivel.
 
 - **Táctica** (pizarra, vídeos, entrenos): cuánto aprenden en cada entreno (+8 % por nivel) y lo rápido que asimilan la formación. Nivel 2: señales en el partido. Nivel 3: libertad individual.
-- **Labia** (bar, charlas, ferretería): cuánto les llega la arenga y las charlas, sueldo en la ferretería (+4 € por turno y nivel) y respuestas especiales en la historia.
+- **Labia** (bar, charlas, ferretería): cuánto les llega la arenga y las charlas, sueldo base en la ferretería (+4 € por turno y nivel) y respuestas especiales en la historia.
 - **Ojo** (vídeos, ojear al rival): formación del rival (1), su jugador peligroso (2), su punto débil (3).
 - **Forma** (correr): energía máxima (+10 por nivel).
 
@@ -59,7 +59,7 @@ Cada jugador tiene moral (0–100) con sus motivos a la vista («No jugó», «L
 - **Resultados y notas**: cada partido se puntúa a cada jugador (1–10) con lo que ha hecho (goles, tiros a puerta, pases, entradas, paradas, faltas, tarjetas, goles encajados el portero).
 - **Minutos**: a los habituales y a los que se creen imprescindibles no jugar les sienta mal.
 - **Promesas**: prometer minutos alegra ahora; si el domingo no juega, se paga caro.
-- **Charlas desde su ficha** (una por semana): elogiar su forma (funciona si de verdad jugó bien), pedirle más (a algunos les pica para bien, a otros les hunde), prometer minutos o preguntarle cómo está. Un café en el bar también ayuda.
+- **Hablar con él o con ella desde su ficha** (una vez por semana): no hay un menú de frases sueltas. Te cuenta lo que de verdad le pasa (no juega, jugó muy bien, jugó mal, está de bajón por algo concreto, o nada en especial) y eliges entre dos respuestas que encajan con eso (por ejemplo, «Te lo has ganado: el domingo juegas» —una promesa que se paga si no se cumple— o «Gánatelo en los entrenos»). El efecto depende de su carácter (a los competitivos les pica para bien que les aprieten; a los nerviosos les hunde) y de tu labia, y no se anuncia: se ve en su moral, con el motivo. Un café en el bar también ayuda.
 - **Arenga** del domingo: cada carácter reacciona a su manera; al que llega hundido le va bien la calma.
 - **Historia**: las decisiones cambian la moral con su motivo o algo concreto (entrenos, penaltis, contratos), nunca atributos a capricho.
 
@@ -71,6 +71,7 @@ Efecto en el campo (fórmula única, en `game/morale.ts`): sangre fría + (moral
 - **El Barrizal** (el campo, el mismo que se juega el domingo y que evoluciona con las obras): entrenar (martes y jueves por la tarde), correr (por la mañana), ojear al rival (sábado).
 - **Bar Manolo**: charlar con la parroquia (labia, aficionados), invitar a un jugador (interacción), bocadillo (energía).
 - **Ferretería Ramón**: echar un turno (cartera, confianza del presidente), hablar con Don Ramón.
+  - **El turno es un minijuego**: copiar tres llaves en la máquina. La fresa recorre la llave en bruto y hay que cortar justo cuando pasa por cada diente de la llave del cliente (cada llave, algo más deprisa). Cada llave sale perfecta, buena o estropeada. Sueldo: 8 € + 4 € por nivel de labia, +7 € por llave perfecta, +5 € por buena y −4 € por bombín estropeado. Con dos o más estropeadas, Don Ramón no suma confianza.
 
 ### Muebles, sitios y poses (cómo se usa el escenario)
 
@@ -117,12 +118,16 @@ Para añadir una interacción nueva basta con nombrar el mueble y añadir un sit
 - **Partido**: marcador arriba; abajo, cuatro botones (órdenes, cambios, velocidad, pausa). En PC, panel lateral fijo con órdenes y plantilla.
 - Guardado automático en el navegador al final de cada acción.
 
-## 8. Primera semana guiada
+## 8. Estreno y primera semana guiada
 
-La primera semana va «sobre raíles»: un halo marca el único botón que se puede pulsar, el resto de la pantalla queda bloqueado y una nota explica el porqué (reloj y franjas, energía, cartera, ir al campo, correr, el papeleo del Club, el bar, dormir, el turno en la ferretería y el primer entreno). Se puede saltar en cualquier momento.
+La partida empieza **el domingo de la jornada 1**: tras el prólogo y elegir el cartel (equipo de chicos o de chicas), Don Ramón te llama porque el partido es ese mismo día. En El Barrizal conoces a la plantilla (cada uno con su manía; hasta entonces sus rasgos no salen en la ficha) y preparas tu primer partido.
 
-- **Conocer a la plantilla**: al llegar al Barrizal por primera vez, los chavales se presentan uno a uno (cada uno con su manía) y eliges tus primeras palabras. Hasta entonces sus rasgos no salen en la ficha.
-- Pistas sueltas el primer domingo («¡A jugar!») y en el primer partido («Órdenes» y «Cambios»).
+Todo va «sobre raíles»: un halo marca el único botón que se puede pulsar, el resto queda bloqueado y una nota explica el porqué. Se puede saltar en cualquier momento.
+
+1. **El mánager, antes del partido**: abrir «Club»; qué pide cada puesto (portería: paradas y colocación; defensa: entradas y colocación; medio: pase y visión; arriba: tiro, regate y velocidad); arreglar el once que dejó el míster anterior (su sobrino, delantero, de lateral: el puesto sale en amarillo); al tocar un puesto, la lista se ordena por lo bien que haría cada uno ese puesto, y la ficha resalta los atributos que cuentan ahí; «Once de gala»; la pizarra; la arenga; el partido (pista de «Órdenes» y «Cambios»).
+2. **La semana, desde el lunes**: reloj y franjas, necesidades, estadísticas, cartera y alquiler, correr, el bar, dormir, el turno en la ferretería (minijuego de las llaves) y el primer entreno.
+
+Las escenas de la primera semana de entre semana (la llamada del presidente, la visita de Pádel, el correo de Manolo...) pasan a la jornada 2, que es la primera semana completa.
 
 ## 9. Fútbol de contacto
 
