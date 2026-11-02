@@ -335,16 +335,16 @@ export class HybridRenderer implements MatchRenderer {
       const i = p.idx;
       const bb = this.players[i];
       // sin parpadeos: la vista (frente, espalda, perfil) y el volteo solo cambian si duran un poco
-      const want = viewOf(p, A.speed[i], this.views[i], this.flips[i]);
+      const want = viewOf(p, A.moving[i], this.views[i], this.flips[i]);
       const forced = p.action !== 'none';
-      if (forced || this.views[i] === undefined || A.time - (this.viewAt[i] ?? -9) > 0.22) {
+      if (forced || this.views[i] === undefined || A.time - (this.viewAt[i] ?? -9) > 0.35) {
         if (want.view !== this.views[i] || want.flip !== this.flips[i]) this.viewAt[i] = A.time;
         this.views[i] = want.view;
         this.flips[i] = want.flip;
       }
       const view = this.views[i];
       const flip = this.flips[i];
-      bb.setFrame(view === 'side' ? 'side' : view, frameOf(p, A.speed[i], A.phase[i], A.time, sim), view === 'side' && flip);
+      bb.setFrame(view === 'side' ? 'side' : view, frameOf(p, A.moving[i], A.phase[i], A.time, sim), view === 'side' && flip);
       let lift = 0;
       if (p.action === 'celebrate' && (p.profile.look.celebration === 'arms' || p.profile.look.celebration === 'dance')) lift = Math.abs(Math.sin(A.time * 7)) * 0.35;
       // salto de cabeza: sube y baja durante la acción (la sombra se queda en el suelo)
@@ -405,6 +405,11 @@ export class HybridRenderer implements MatchRenderer {
     g.imageSmoothingEnabled = false;
     g.drawImage(base, 0, 0, size, size);
     return out;
+  }
+
+  /** Fotograma actual de cada jugador (pruebas de animación). */
+  debugFrames() {
+    return this.players.map((b) => b.shown);
   }
 
   perf(): PerfInfo {

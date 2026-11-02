@@ -39,5 +39,9 @@ Decisiones tomadas por el autor durante el diseño. Mandan sobre cualquier docum
 - El entrenador tiene **su casa**, donde planifica (táctica, correo, llamadas, visitas).
 - Hay una parte de **novela visual**: escenas con personajes, diálogo y decisiones con
   consecuencias.
+- **Gestión tipo Football Manager**: nada de parámetros que suben y bajan sin fundamento dentro de la novela
+  visual. Las decisiones tienen consecuencias concretas y la moral de los jugadores sale de lo que pasa.
+- **Estadísticas propias del míster** tipo Punch Club: cuesta subirlas y mantenerlas, y cada una tiene una
+  finalidad tangible, fácil de entender, que da ganas de subirla.
 - **Sin tropecientos menús**. Secciones de historia pura (tipo Punch Club), de gestión, de interacción y de
   progresión del míster (estadísticas y dinero).

@@ -110,6 +110,7 @@ export class CampoView extends Location {
     this.drillT = seconds;
   }
   private drillT = 0;
+  private nextWalk = 1;
 
   protected tintAt(p: THREE.Vector3, out: THREE.Color) {
     return this.weather.lightAt(p.x, p.z, out);
@@ -130,9 +131,11 @@ export class CampoView extends Location {
         w.target.set(GROUP.x + Math.cos(a) * 5.5, 0, GROUP.z - Math.sin(a) * 3.2);
       }
     });
+    // el vecino pasea por la banda de punta a punta, con una pausa en cada extremo
     const walker = this.locals[1];
-    if (walker) {
-      walker.target.x = -40 + Math.sin(this.time * 0.08) * 18;
+    if (walker && this.time > this.nextWalk) {
+      this.nextWalk = this.time + 22;
+      walker.target.x = walker.target.x > -40 ? -56 : -24;
       walker.face = 'side';
     }
   }

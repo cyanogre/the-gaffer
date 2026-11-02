@@ -26,11 +26,23 @@ export interface Walker {
   target: THREE.Vector3;
   speed: number;
   phase: number;
-  /** Mirando hacia dónde cuando está quieto. */
+  /** Mirando hacia dónde cuando lleva un rato quieto. */
   face: View;
   flip: boolean;
   /** Animación en bucle cuando está quieto (por ejemplo, levantar los brazos). */
   idle?: FrameId[];
+  // ── locomoción (la animación sale de lo que se mueve de verdad, con margen para no parpadear)
+  vel: number;
+  stride: number;
+  moving: boolean;
+  dirX: number;
+  dirZ: number;
+  view: View;
+  curFlip: boolean;
+  viewT: number;
+  idleT: number;
+  /** Metros por fotograma de carrera (zancada). */
+  strideLen: number;
 }
 
 export const v3 = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
@@ -134,7 +146,25 @@ export abstract class Location {
   addWalker(look: Look, kit: Kit, num: number, civil: boolean, pos: THREE.Vector3, face: View = 'front', scale = 0.66): Walker {
     const bb = new Billboard(composeCharacter(look, kit, num, civil), this.shadow.geo, this.shadow.mat, scale * look.height);
     this.scene.add(bb.sprite, bb.shadow);
-    const w: Walker = { bb, pos: pos.clone(), target: pos.clone(), speed: 2.2, phase: Math.random() * 3, face, flip: false };
+    const w: Walker = {
+      bb,
+      pos: pos.clone(),
+      target: pos.clone(),
+      speed: 2.2,
+      phase: Math.random() * 3,
+      face,
+      flip: false,
+      vel: 0,
+      stride: 0,
+      moving: false,
+      dirX: 0,
+      dirZ: 1,
+      view: face,
+      curFlip: false,
+      viewT: 0,
+      idleT: 9,
+      strideLen: 0.45 * scale,
+    };
     this.walkers.push(w);
     return w;
   }
@@ -219,27 +249,55 @@ export abstract class Location {
     for (const w of this.walkers) w.bb.setTexel(u);
     const tint = new THREE.Color();
     for (const w of this.walkers) {
-      const d = w.target.clone().sub(w.pos);
-      d.y = 0;
-      const dist = d.length();
-      const moving = dist > 0.05;
-      if (moving) w.pos.addScaledVector(d.normalize(), Math.min(dist, w.speed * dt));
-      else if (w === this.coach && this.onArrive) {
+      const dx = w.target.x - w.pos.x;
+      const dz = w.target.z - w.pos.z;
+      const dist = Math.hypot(dx, dz);
+      let step = 0;
+      if (dist > 0.01) {
+        step = Math.min(dist, w.speed * dt);
+        w.pos.x += (dx / dist) * step;
+        w.pos.z += (dz / dist) * step;
+        const k = Math.min(1, dt * 12);
+        w.dirX += (dx / dist - w.dirX) * k;
+        w.dirZ += (dz / dist - w.dirZ) * k;
+      } else if (w === this.coach && this.onArrive) {
         const cb = this.onArrive;
         this.onArrive = null;
         cb();
       }
-      let view: View = w.face;
-      let flip = w.flip;
-      if (moving) {
-        view = Math.abs(d.z) > Math.abs(d.x) ? (d.z > 0 ? 'front' : 'back') : 'side';
-        flip = view === 'side' && d.x < 0;
+      // velocidad real suavizada; para empezar a correr hace falta más que para seguir corriendo
+      const v = dt > 0 ? step / dt : 0;
+      w.vel += (v - w.vel) * Math.min(1, dt * 6);
+      w.moving = w.moving ? w.vel > 0.12 : w.vel > 0.3;
+      w.stride += step;
+      w.idleT = w.moving ? 0 : w.idleT + dt;
+      // vista: de la dirección al moverse; quieto, la última (y al rato, hacia donde suele mirar)
+      let wantView: View = w.view;
+      let wantFlip = w.curFlip;
+      if (w.moving) {
+        const ax = Math.abs(w.dirX);
+        const az = Math.abs(w.dirZ);
+        if (az > ax * 1.3) wantView = w.dirZ > 0 ? 'front' : 'back';
+        else if (ax > az * 1.1) wantView = 'side';
+        if (w.dirX < -0.2) wantFlip = true;
+        else if (w.dirX > 0.2) wantFlip = false;
+      } else if (w.idleT > 0.8) {
+        wantView = w.face;
+        wantFlip = w.flip;
       }
+      if (wantView !== w.view || wantFlip !== w.curFlip) {
+        w.viewT += dt;
+        if (w.viewT > 0.25) {
+          w.view = wantView;
+          w.curFlip = wantFlip;
+          w.viewT = 0;
+        }
+      } else w.viewT = 0;
       let fr: FrameId;
-      if (moving) fr = (['run0', 'run1', 'run2', 'run3'] as const)[Math.floor(this.time * 8) % 4];
+      if (w.moving) fr = (['run0', 'run1', 'run2', 'run3'] as const)[Math.floor(w.stride / w.strideLen) & 3];
       else if (w.idle) fr = w.idle[Math.floor(this.time * 2 + w.phase) % w.idle.length];
       else fr = Math.floor(this.time * 1.3 + w.phase) % 2 ? 'idle0' : 'idle1';
-      w.bb.setFrame(view, fr, flip);
+      w.bb.setFrame(w.view, fr, w.view === 'side' && w.curFlip);
       w.bb.place(w.pos.x, w.pos.z, w.pos.y);
       w.bb.tint(this.tintAt(w.pos, tint));
     }

@@ -88,7 +88,10 @@ export class Billboard {
     this.shadow.scale.setScalar(scale);
   }
 
+  /** Último fotograma puesto (para depurar y para las pruebas). */
+  shown = '';
   setFrame(view: View, frame: FrameId, flip: boolean) {
+    this.shown = `${view}:${frame}:${flip ? 'f' : ''}`;
     const c = COLS.indexOf(frame);
     const r = ROWS.indexOf(view);
     const cw = 1 / COLS.length;
@@ -122,8 +125,7 @@ export function composeCharacter(look: Look, kit: Kit, num: number, civil: boole
 }
 
 /** Vista y volteo según hacia dónde se mueve (la cámara mira desde la banda cercana). */
-export function viewOf(p: SimPlayer, speed: number, last: View | undefined, lastFlip: boolean): { view: View; flip: boolean } {
-  const moving = speed > 0.7;
+export function viewOf(p: SimPlayer, moving: boolean, last: View | undefined, lastFlip: boolean): { view: View; flip: boolean } {
   const dx = moving ? p.vx : Math.cos(p.facing);
   const dy = moving ? p.vy : Math.sin(p.facing);
   let view: View = last ?? 'side';
@@ -139,7 +141,7 @@ export function viewOf(p: SimPlayer, speed: number, last: View | undefined, last
 }
 
 /** Lo que el motor dice que pasa, en un fotograma. `sim` aporta el contexto (saques, balón en las manos). */
-export function frameOf(p: SimPlayer, speed: number, phase: number, time: number, sim?: MatchSim): FrameId {
+export function frameOf(p: SimPlayer, moving: boolean, phase: number, time: number, sim?: MatchSim): FrameId {
   if (sim) {
     const r = sim.restart;
     if (sim.phase === 'restart' && r && r.kind === 'throw' && r.taker === p.idx) return 'throw';
@@ -168,8 +170,8 @@ export function frameOf(p: SimPlayer, speed: number, phase: number, time: number
     }
   }
   // tras caer o chocar, se levanta: de rodillas mientras dura el aturdimiento
-  if (p.stunT > 0.15 && speed < 1) return 'kneel';
-  if (speed > 0.7) return (['run0', 'run1', 'run2', 'run3'] as const)[Math.floor(phase / (Math.PI / 2)) & 3];
+  if (p.stunT > 0.15 && !moving) return 'kneel';
+  if (moving) return (['run0', 'run1', 'run2', 'run3'] as const)[Math.floor(phase / (Math.PI / 2)) & 3];
   return Math.floor(time * 1.4 + p.idx * 0.37) % 2 ? 'idle0' : 'idle1';
 }
 

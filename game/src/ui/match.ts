@@ -1,6 +1,7 @@
 import { Banter, type Line } from '../content/banter';
 import { shortName } from '../content/names';
 import { attendance, type Career } from '../game/career';
+import { emptyStats, rating, type PlayerMatchStats } from '../game/morale';
 import { matchSetup, withMods } from '../game/squad';
 import type { MatchOutcome } from '../game/week';
 import { HybridRenderer } from '../render/hybrid/hybrid';
@@ -35,6 +36,8 @@ export class MatchScreen {
   private scorers: string[] = [];
   private counts: [Partial<Record<MatchEventKind, number>>, Partial<Record<MatchEventKind, number>>] = [{}, {}];
   private ownGoals: [number, number] = [0, 0];
+  /** Lo que hace cada uno de los tuyos (para su nota). */
+  private pstats = new Map<string, PlayerMatchStats>();
   private slowAt = 0;
   onFinish: ((o: MatchOutcome) => void) | null = null;
 
@@ -287,23 +290,61 @@ export class MatchScreen {
     }
   }
 
+  /** Pruebas: fotograma que enseña cada jugador. */
+  debugFrames() {
+    return this.renderer.debugFrames();
+  }
+
+  /** Cuenta un evento del motor: totales por equipo, goleadores y lo de cada jugador. */
+  private track(e: import('../sim/types').MatchEvent) {
+    const sim = this.sim;
+    if (e.team !== undefined) this.counts[e.team][e.kind] = (this.counts[e.team][e.kind] ?? 0) + 1;
+    const pl = e.a !== undefined && e.a >= 0 ? sim.players[e.a] : null;
+    if (e.kind === 'goal' && pl) {
+      if (e.detail === 'og') this.ownGoals[pl.team]++;
+      else if (e.team === 0) this.scorers.push(pl.profile.id);
+      if (e.team === 1) {
+        const gk = sim.keeper(0);
+        this.stat(gk.profile.id).conceded++;
+      }
+    }
+    if (!pl || pl.team !== 0) return;
+    const st = this.stat(pl.profile.id);
+    if (e.kind === 'goal' && e.detail !== 'og') st.goals++;
+    if (e.kind === 'shot') {
+      st.shots++;
+      if (e.detail === 'on' || e.detail === 'header-on') st.onTarget++;
+    }
+    if (e.kind === 'pass_ok') st.passes++;
+    if (e.kind === 'tackle' || e.kind === 'intercept' || (e.kind === 'push' && e.value === 0 && e.detail !== 'bounce')) st.tackles++;
+    if (e.kind === 'save') st.saves++;
+    if (e.kind === 'foul') st.fouls++;
+    if (e.kind === 'yellow') st.yellows++;
+    if (e.kind === 'red') st.red = true;
+  }
+  private stat(id: string) {
+    let s = this.pstats.get(id);
+    if (!s) this.pstats.set(id, (s = emptyStats()));
+    return s;
+  }
+
   /** Pruebas: juega lo que queda del partido sin dibujar. */
   fastForward() {
     for (let i = 0; i < 40000 && this.sim.phase !== 'fulltime'; i++) {
       this.sim.step();
-      for (const e of this.sim.drainEvents()) {
-        if (e.team !== undefined) this.counts[e.team][e.kind] = (this.counts[e.team][e.kind] ?? 0) + 1;
-        if (e.kind === 'goal' && e.a !== undefined) {
-          const sc = this.sim.players[e.a];
-          if (e.detail === 'og') this.ownGoals[sc.team]++;
-          else if (e.team === 0) this.scorers.push(sc.profile.id);
-        }
-      }
+      for (const e of this.sim.drainEvents()) this.track(e);
     }
   }
 
   private outcome(): MatchOutcome {
-    return { score: [this.sim.score[0], this.sim.score[1]], scorers: this.scorers, played: [...this.played], counts: this.counts, ownGoals: this.ownGoals };
+    const [g, a] = this.sim.score;
+    const result = g > a ? 'win' : g === a ? 'draw' : 'loss';
+    const ratings: Record<string, number> = {};
+    for (const id of this.played) {
+      const p = this.c.squad.find((x) => x.id === id);
+      ratings[id] = rating(this.pstats.get(id) ?? emptyStats(), p?.role === 'POR', result);
+    }
+    return { score: [g, a], scorers: this.scorers, played: [...this.played], counts: this.counts, ownGoals: this.ownGoals, ratings };
   }
 
   frame(dt: number) {
@@ -318,11 +359,9 @@ export class MatchScreen {
     }
     if (steps === 12) this.acc = 0;
     for (const e of sim.drainEvents()) {
-      if (e.team !== undefined) this.counts[e.team][e.kind] = (this.counts[e.team][e.kind] ?? 0) + 1;
+      this.track(e);
       if (e.kind === 'goal' && e.a !== undefined) {
         const scorer = sim.players[e.a];
-        if (e.detail === 'og') this.ownGoals[scorer.team]++;
-        else if (e.team === 0) this.scorers.push(scorer.profile.id);
         const banner = $('banner');
         banner.hidden = false;
         banner.dataset.team = String(e.team);

@@ -2,10 +2,11 @@ import { generateClub, type TeamDef } from '../content/clubs';
 import { DIVISIONS, divisionIndex } from '../content/divisions';
 import { SQUAD_INDEX, clubSquad, youthLook } from '../content/teams';
 import { Rng } from '../sim/rng';
-import type { Attributes, MatchEventKind } from '../sim/types';
-import { attendance, division, maxEnergy, rivalOf, seasonWeeks, type Career } from './career';
+import type { MatchEventKind, TraitId } from '../sim/types';
+import { attendance, division, maxEnergy, rivalOf, seasonWeeks, toSquad, type Career } from './career';
 import { newLeague, playRound, positionOf } from './league';
-import { attrLabel, bestEleven } from './squad';
+import { changeMorale } from './morale';
+import { bestEleven } from './squad';
 
 /**
  * Domingo y cierre de semana: arenga, taquilla, liga, periódico del lunes, alquiler y despido.
@@ -13,36 +14,39 @@ import { attrLabel, bestEleven } from './squad';
 
 // ───────────────────────── arenga ─────────────────────────
 export type Talk = 'calma' | 'piel' | 'exigir';
-export const TALKS: Record<Talk, { label: string; line: string; base: Partial<Attributes>; likes: string[]; hates: string[] }> = {
-  calma: { label: 'Tranquilidad: a disfrutar', line: '«Hoy no hay presión. Jugad como en el patio del colegio.»', base: { composure: 2, aggression: -1 }, likes: ['nervioso', 'artista'], hates: ['pulmon'] },
-  piel: { label: '¡Hoy nos dejamos la piel!', line: '«¡El barrio nos mira! ¡Cada balón es el último!»', base: { workRate: 2, aggression: 1, composure: -1 }, likes: ['pulmon', 'lenero', 'padel'], hates: ['nervioso'] },
-  exigir: { label: 'El que no corra, al banquillo', line: '«El que se esconda, el domingo que viene lo ve desde el bar.»', base: { workRate: 2, composure: -1 }, likes: ['goleadorNato'], hates: ['egoista', 'artista'] },
+export const TALKS: Record<Talk, { label: string; line: string; likes: TraitId[]; hates: TraitId[] }> = {
+  calma: { label: 'Tranquilidad: a disfrutar', line: '«Hoy no hay presión. Jugad como en el patio del colegio.»', likes: ['nervioso', 'artista'], hates: ['pulmon'] },
+  piel: { label: '¡Hoy nos dejamos la piel!', line: '«¡El barrio nos mira! ¡Cada balón es el último!»', likes: ['pulmon', 'lenero', 'padel'], hates: ['nervioso'] },
+  exigir: { label: 'El que no corra, al banquillo', line: '«El que se esconda, el domingo que viene lo ve desde el bar.»', likes: ['goleadorNato', 'lenero'], hates: ['egoista', 'artista', 'nervioso'] },
 };
 
-/** Aplica la arenga al once: la fuerza depende de tu labia y cada carácter reacciona a su manera. */
+/**
+ * Arenga del vestuario. Cambia la moral de cada titular según su carácter y cómo llega:
+ * al que está hundido le sienta bien la calma y mal la exigencia; tu labia decide cuánto les llega.
+ */
 export function teamTalk(c: Career, kind: Talk): string[] {
   const t = TALKS[kind];
-  const k = 0.6 + 0.15 * c.coach.stats.labia.lv;
+  const k = 0.7 + 0.1 * c.coach.stats.labia.lv;
   const lines = [t.line];
-  const loved: string[] = [];
-  const hated: string[] = [];
+  const up: string[] = [];
+  const down: string[] = [];
   for (const id of c.lineup) {
     const p = c.squad.find((x) => x.id === id)!;
-    const m = (c.mods[id] ??= {});
-    let f = k;
-    if (p.traits.some((x) => t.likes.includes(x))) {
-      f *= 1.6;
-      loved.push(p.nick ?? p.name.split(' ')[0]);
-    } else if (p.traits.some((x) => t.hates.includes(x))) {
-      f *= -0.6;
-      hated.push(p.nick ?? p.name.split(' ')[0]);
-    }
-    for (const [a, v] of Object.entries(t.base) as [keyof Attributes, number][]) m[a] = Math.round(((m[a] ?? 0) + v * f) * 10) / 10;
+    let d = 2;
+    if (p.traits.some((x) => t.likes.includes(x))) d = 6;
+    else if (p.traits.some((x) => t.hates.includes(x))) d = -5;
+    if (p.morale < 40) d += kind === 'calma' ? 3 : kind === 'exigir' ? -4 : 0;
+    if (p.morale > 75 && kind === 'calma') d -= 2;
+    d = Math.round(d * k);
+    changeMorale(c, p.id, d, `Arenga: «${t.label}»`);
+    const n = p.nick ?? p.name.split(' ')[0];
+    if (d >= 5) up.push(n);
+    else if (d < 0) down.push(n);
   }
-  const eff = Object.entries(t.base).map(([a, v]) => `${attrLabel(a as keyof Attributes)} ${v > 0 ? '+' : '−'}${Math.abs(v * k).toFixed(1)}`).join(', ');
-  lines.push(`Al once: ${eff}.`);
-  if (loved.length) lines.push(`Les llega al alma: ${loved.join(', ')}.`);
-  if (hated.length) lines.push(`Les sienta fatal: ${hated.join(', ')}.`);
+  if (up.length) lines.push(`Les llega al alma: ${up.join(', ')}.`);
+  if (down.length) lines.push(`Les sienta mal: ${down.join(', ')}.`);
+  if (!up.length && !down.length) lines.push('Asienten. Nadie se emociona demasiado.');
+  lines.push('La moral de cada uno cambia según su carácter y cómo llegaba: lo verás en su ficha.');
   c.talkDone = true;
   return lines;
 }
@@ -58,6 +62,8 @@ export interface MatchOutcome {
   /** Recuento de eventos por equipo. */
   counts: [Partial<Record<MatchEventKind, number>>, Partial<Record<MatchEventKind, number>>];
   ownGoals: [number, number];
+  /** Nota de cada uno de los tuyos que ha jugado (id → nota). */
+  ratings?: Record<string, number>;
 }
 
 export interface Summary {
@@ -152,6 +158,17 @@ export function closeWeek(c: Career, o: MatchOutcome): Summary {
     if (o.scorers.includes(p.id)) p.drought = 0;
     else if (o.played.includes(p.id)) p.drought++;
   }
+  moraleAfterMatch(c, o, result, rival.short);
+  const rated = Object.entries(o.ratings ?? {}).sort((x, y) => y[1] - x[1]);
+  if (rated.length) {
+    const nm = (id: string) => {
+      const p = c.squad.find((x) => x.id === id)!;
+      return p.nick ?? p.name.split(' ').slice(-1)[0];
+    };
+    const [bestId, best] = rated[0];
+    const [worstId, worst] = rated[rated.length - 1];
+    lines.push(`Notas: el mejor, ${nm(bestId)} (${best.toFixed(1)}); el peor, ${nm(worstId)} (${worst.toFixed(1)}). La moral de cada uno, en su ficha.`);
+  }
   // liga (de momento todos tus partidos se juegan en tu campo: eres siempre el de casa)
   const round = c.week - 1;
   const pair = c.league.rounds[round].find((m) => m.includes(c.club.id))!;
@@ -166,8 +183,6 @@ export function closeWeek(c: Career, o: MatchOutcome): Summary {
   c.slot = 0;
   c.location = 'casa';
   c.promise = null;
-  c.mods = {};
-  c.modNotes = {};
   c.absent = {};
   c.weekDone = {};
   c.dayDone = {};
@@ -186,6 +201,40 @@ export function closeWeek(c: Career, o: MatchOutcome): Summary {
   if (c.boardTrust < 10) c.status = 'fired';
   else if (c.week > seasonWeeks(c)) c.status = 'seasonEnd';
   return { lines, fansDelta: fans, moneyDelta: money, trustDelta: trust, result, position, headline: paper.headline, sub: paper.sub };
+}
+
+/** Moral tras el partido: resultado, nota, goles, minutos y promesas. Cada cambio, con su motivo. */
+function moraleAfterMatch(c: Career, o: MatchOutcome, result: 'win' | 'draw' | 'loss', rival: string) {
+  const ratings = o.ratings ?? {};
+  const weeks = Math.max(1, c.week - 1);
+  for (const p of c.squad) {
+    const played = o.played.includes(p.id);
+    const r = ratings[p.id];
+    if (r !== undefined) {
+      p.form.unshift(r);
+      if (p.form.length > 5) p.form.length = 5;
+    }
+    if (played) {
+      if (result === 'win') changeMorale(c, p.id, 4, `Victoria contra ${rival}`);
+      else if (result === 'loss') changeMorale(c, p.id, -4, `Derrota contra ${rival}`);
+      if (r !== undefined && r >= 7.5) changeMorale(c, p.id, 4, `Gran partido (${r.toFixed(1)})`);
+      else if (r !== undefined && r <= 5.2) changeMorale(c, p.id, -4, `Mal partido (${r.toFixed(1)})`);
+      const goals = o.scorers.filter((x) => x === p.id).length;
+      if (goals) changeMorale(c, p.id, 4 + 2 * goals, goals > 1 ? `Marcó ${goals} goles` : 'Marcó');
+    } else {
+      // se enfadan los que esperan jugar: los habituales y los que se creen imprescindibles
+      const regular = p.apps >= weeks * 0.6 && weeks > 1;
+      const ego = p.traits.includes('egoista') || p.traits.includes('goleadorNato');
+      if (regular || ego) changeMorale(c, p.id, ego ? -8 : -5, 'No jugó');
+    }
+  }
+  for (const pr of c.promises) {
+    if (o.played.includes(pr.id)) changeMorale(c, pr.id, 3, 'Cumpliste tu promesa de darle minutos');
+    else changeMorale(c, pr.id, -12, 'Le prometiste minutos y no jugó');
+  }
+  c.promises = [];
+  // con los días, todo se calma: la moral vuelve poco a poco hacia lo normal
+  for (const p of c.squad) p.morale = Math.round(p.morale + (58 - p.morale) * 0.15);
 }
 
 // ───────────────────────── fin de temporada ─────────────────────────
@@ -253,7 +302,7 @@ export function nextSeason(c: Career, se: SeasonEnd, accept: boolean) {
   if (accept && se.offer) {
     c.club = se.offer;
     c.division = SEGUNDA_FED;
-    c.squad = clubSquad(c.seed, c.gender, se.offer, 20).map((p) => ({ ...p, load: 0, goals: 0, apps: 0 }));
+    c.squad = clubSquad(c.seed, c.gender, se.offer, 20).map(toSquad);
     c.planned = { formation: se.offer.formation, block: 1, style: 'mixed' };
     c.familiarity = { '4-3-3': 0.5, '4-4-2': 0.5, '5-3-2': 0.5, [se.offer.formation]: 0.7 } as Career['familiarity'];
     c.lineup = [];

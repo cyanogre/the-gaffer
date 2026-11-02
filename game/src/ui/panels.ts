@@ -13,7 +13,7 @@ import {
   maxEnergy,
   rivalOf,
   upgradeStadium,
-  xpToNext,
+  dailyDecay,
   type Career,
   type SquadPlayer,
   type StatId,
@@ -21,6 +21,7 @@ import {
 import { standings, teamOf } from '../game/league';
 import { attrLabel, bestEleven, fitFor, swapLineup } from '../game/squad';
 import { scoutReport } from '../game/actions';
+import { TALK_OPTIONS, moraleLabel, moraleMods, type Talk } from '../game/morale';
 import { coachCharacter } from '../story/scenes';
 import { drawCrest } from './pixelart';
 import { h, portrait, tier, type Tab } from './dom';
@@ -32,6 +33,8 @@ import { h, portrait, tier, type Tab } from './dom';
 export interface PanelCtx {
   career: () => Career;
   changed: () => void;
+  /** Charla con un jugador desde su ficha. */
+  talk?: (p: SquadPlayer, t: Talk) => void;
 }
 
 const ROLE_ES: Record<string, string> = { POR: 'POR', DEF: 'DEF', MED: 'MED', DEL: 'DEL' };
@@ -47,9 +50,9 @@ function crest(kit: Parameters<typeof drawCrest>[1], letter: string) {
 /** Las manías de cada uno se conocen al presentarte a la plantilla (en el Barriobajo). */
 const known = (c: Career) => c.club.id !== 'barrio' || !!c.flags.metSquad;
 
-export function playerCard(c: Career, p: SquadPlayer) {
+export function playerCard(c: Career, p: SquadPlayer, onTalk?: (t: Talk) => void) {
   const A = p.attrs;
-  const m = c.mods[p.id] ?? {};
+  const m = moraleMods(p.morale);
   const keys: (keyof Attributes)[] = p.role === 'POR' ? ['keeping', 'positioning', 'passing', 'pace', 'composure', 'stamina'] : ['pace', 'stamina', 'passing', 'shooting', 'dribbling', 'tackling', 'vision', 'positioning', 'composure', 'workRate', 'aggression'];
   const short: Partial<Record<keyof Attributes, string>> = { workRate: 'trabajo', aggression: 'agresiv.', positioning: 'colocac.', composure: 'sangre fría' };
   return h(
@@ -82,7 +85,37 @@ export function playerCard(c: Career, p: SquadPlayer) {
       }),
     ),
     h('p', { class: 'quirk', text: known(c) ? p.quirk : 'Pasa por El Barrizal a conocer a la plantilla.' }),
-    c.modNotes[p.id] ? h('p', { class: 'note', text: `Esta semana: ${c.modNotes[p.id]}` }) : null,
+    moraleBox(c, p, onTalk),
+  );
+}
+
+/** Moral: nivel, por qué, cómo le afecta en el campo y las charlas (una por semana). */
+function moraleBox(c: Career, p: SquadPlayer, onTalk?: (t: Talk) => void) {
+  const m = moraleMods(p.morale);
+  const eff = Object.entries(m)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `${attrLabel(k as keyof Attributes)} ${v! > 0 ? '+' : ''}${v}`)
+    .join(', ');
+  const talked = !!c.weekDone[`charla:${p.id}`];
+  const promised = c.promises.some((x) => x.id === p.id);
+  return h(
+    'div',
+    { class: 'morale' },
+    h(
+      'div',
+      { class: 'row' },
+      h('b', { class: 'grow', text: `Moral: ${moraleLabel(p.morale)}` }),
+      h('i', { class: 'bar load', style: 'width:90px;flex:none' }, h('i', { style: `width:${p.morale}%`, 'data-tier': p.morale >= 60 ? 'hi' : p.morale >= 40 ? 'mid' : 'lo' })),
+    ),
+    h('p', { class: 'note', text: eff ? `En el campo: ${eff}.` : 'En el campo: ni le sube ni le baja.' }),
+    p.form.length ? h('p', { class: 'note', text: `Últimas notas: ${p.form.map((r) => r.toFixed(1)).join(' · ')}` }) : null,
+    ...p.moraleLog.slice(0, 3).map((e) => h('p', { class: 'note', text: `${e.delta > 0 ? '▲' : '▼'} ${e.reason} (J${e.week})` })),
+    promised ? h('p', { class: 'note', text: 'Le has prometido minutos para el domingo.' }) : null,
+    onTalk
+      ? talked
+        ? h('p', { class: 'note', text: 'Ya habéis hablado esta semana.' })
+        : h('div', { class: 'seg' }, ...(Object.keys(TALK_OPTIONS) as Talk[]).map((t) => h('button', { type: 'button', title: TALK_OPTIONS[t].hint, onclick: () => onTalk(t) }, TALK_OPTIONS[t].label, h('small', { text: TALK_OPTIONS[t].hint }))))
+      : null,
   );
 }
 
@@ -141,7 +174,7 @@ export function clubTabs(ctx: PanelCtx, state: { slot: number; focus: string | n
               },
               h('span', { class: 'slot', 'data-bad': String(!!bad), text: at >= 0 ? slots[at].label : '—' }),
               portrait(p.look, p.role === 'POR' ? c.club.gkKit : c.club.kit, p.traits, p.num, 40),
-              h('span', {}, h('b', { text: `#${p.num} ${p.nick ?? p.name}` }), h('small', { text: `${ROLE_ES[p.role]} · ${p.age ?? ''} años${c.absent[p.id] ? ' · falta al entreno' : ''}${c.mods[p.id] ? ' · tocado por la semana' : ''}` })),
+              h('span', {}, h('b', { text: `#${p.num} ${p.nick ?? p.name}` }), h('small', { text: `${ROLE_ES[p.role]} · ${p.age ?? ''} años${c.absent[p.id] ? ' · falta al entreno' : ''} · moral ${moraleLabel(p.morale).toLowerCase()}` })),
               h('span', { class: 'tags' }, p.load > 0.2 ? h('span', { class: 'pill warn', text: 'cargado' }) : null, h('span', { class: 'ovr', text: String(ovr(p)) })),
             ),
           );
@@ -151,7 +184,7 @@ export function clubTabs(ctx: PanelCtx, state: { slot: number; focus: string | n
           h('p', { class: 'note', text: state.slot >= 0 ? `Elige quién juega de ${slots[state.slot].label}.` : 'Toca un puesto del campo y luego a quien quieras poner.' }),
           map,
           h('div', { class: 'row' }, h('button', { type: 'button', class: 'btn', text: 'Once de gala', onclick: () => ((c.lineup = bestEleven(c)), ctx.changed()) }), h('span', { class: 'note grow', text: 'Elige a los mejores para cada puesto (y deja descansar a los cargados).' })),
-          focus ? playerCard(c, focus) : null,
+          focus ? playerCard(c, focus, ctx.talk ? (t) => ctx.talk!(focus, t) : undefined) : null,
           h('h3', { text: `Plantilla · ${c.squad.length}` }),
           h('ul', { class: 'plist' }, ...rows),
         ];
@@ -277,13 +310,18 @@ export function coachPanel(c: Career) {
   const me = coachCharacter(c.coach.gender, c.coach.name);
   const stat = (id: StatId) => {
     const s = c.coach.stats[id];
-    const need = xpToNext(s.lv);
+    const S = STATS[id];
+    const inLevel = s.value - (s.lv - 1) * 10;
+    const trained = !!c.dayDone[`trained:${id}`];
+    const risk = !trained && s.lv > 1 && inLevel < dailyDecay(s.value) + 0.01;
     return h(
       'div',
       { class: 'box stat' },
-      h('div', { class: 'row' }, h('b', { class: 'grow', text: STATS[id].label }), h('span', { class: 'lv', text: `NV ${s.lv}` })),
-      h('i', { class: 'bar' }, h('i', { style: `width:${Math.round((s.xp / need) * 100)}%` })),
-      h('small', { class: 'note', text: `${s.xp}/${need} de experiencia · ${STATS[id].desc}` }),
+      h('div', { class: 'row' }, h('b', { class: 'grow', text: S.label }), h('span', { class: 'lv', text: `NV ${s.lv}` })),
+      h('i', { class: 'bar' }, h('i', { style: `width:${Math.round(inLevel * 10)}%`, 'data-tier': risk ? 'lo' : 'hi' })),
+      h('p', { class: 'note', text: S.desc }),
+      h('p', { class: 'note', text: `Próximo: ${S.next(s.lv)}` }),
+      h('p', { class: 'note', text: `${S.how} ${trained ? 'Hoy ya la has trabajado: no baja.' : `Si hoy no la trabajas, baja ${dailyDecay(s.value).toFixed(1)}.`}${risk ? ' ¡Esta noche pierdes un nivel!' : ''}` }),
     );
   };
   return [

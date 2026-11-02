@@ -84,15 +84,54 @@ describe('semana del míster', () => {
     for (const s of SCENES) expect(s.choices.some((ch) => !ch.req)).toBe(true);
   });
 
-  it('la arenga cambia los atributos del once (y cada carácter reacciona a su manera)', () => {
+  it('la arenga cambia la moral del once según el carácter, y la moral cambia cómo juegan', () => {
     const c = newCareer('m', 'm', '', 12);
-    teamTalk(c, 'calma');
+    setLeagueGender(c, 'm');
     const nervioso = c.squad.find((p) => p.traits.includes('nervioso'))!;
     const neutral = c.squad.find((p) => c.lineup.includes(p.id) && !p.traits.length && p.role !== 'POR')!;
-    expect(c.mods[nervioso.id].composure!).toBeGreaterThan(c.mods[neutral.id].composure!);
+    const before = [nervioso.morale, neutral.morale];
+    teamTalk(c, 'calma');
+    expect(nervioso.morale - before[0]).toBeGreaterThan(neutral.morale - before[1]);
+    expect(nervioso.moraleLog[0].reason).toContain('Arenga');
+    nervioso.morale = 90;
     const setup = matchSetup(c);
     const inMatch = setup.teams[0].players.find((p) => p.id === nervioso.id)!;
     expect(inMatch.attrs.composure).toBeGreaterThan(nervioso.attrs.composure);
+  });
+
+  it('no jugar baja la moral a los que esperan jugar; las promesas incumplidas, más', () => {
+    const c = newCareer('m', 'm', '', 21);
+    setLeagueGender(c, 'm');
+    const sub = c.squad.find((p) => !c.lineup.includes(p.id))!;
+    c.promises.push({ id: sub.id, kind: 'minutes', week: 1 });
+    const m0 = sub.morale;
+    c.day = 6;
+    closeWeek(c, outcome(1, 0, c));
+    expect(sub.morale).toBeLessThan(m0);
+    expect(sub.moraleLog.some((e) => e.reason.includes('prometiste'))).toBe(true);
+  });
+});
+
+describe('estadísticas del míster (tipo Punch Club)', () => {
+  it('lo que no se trabaja baja cada día; lo que se trabaja, sube (cada vez menos)', () => {
+    const c = newCareer('m', 'm', '', 31);
+    setLeagueGender(c, 'm');
+    c.coach.stats.ojo.value = 31; // nivel 4 (30–39)
+    c.coach.stats.forma.value = 35;
+    for (let d = 0; d < 5; d++) {
+      perform(c, act('correr')); // forma, por la mañana
+      perform(c, act('dormir'));
+    }
+    expect(c.coach.stats.ojo.value).toBeLessThan(28);
+    expect(c.coach.stats.ojo.lv).toBe(3); // ha perdido un nivel por no trabajarla
+    expect(c.coach.stats.forma.value).toBeGreaterThan(40);
+    // cuanto más alta, menos rinde cada sesión
+    const low = newCareer('m', 'm', '', 32);
+    const high = newCareer('m', 'm', '', 33);
+    high.coach.stats.tactica.value = 80;
+    perform(low, act('estudiar'));
+    perform(high, act('estudiar'));
+    expect(low.coach.stats.tactica.value - 4).toBeGreaterThan(high.coach.stats.tactica.value - 80);
   });
 });
 

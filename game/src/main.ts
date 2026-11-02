@@ -1,7 +1,8 @@
 import './styles.css';
 import type { Gender } from './content/look';
 import { ACTIONS, actionsAt, blocked, dayLabel, perform, scoutReport, type ActionDef } from './game/actions';
-import { DAYS_SHORT, LOCATIONS, MATCH_DAY, SLOTS, STATS, leagueName, maxEnergy, newCareer, rivalOf, todayWeather, weatherOf, type Career, type LocationId } from './game/career';
+import { DAYS_SHORT, LOCATIONS, MATCH_DAY, SLOTS, STATS, dailyDecay, leagueName, maxEnergy, newCareer, rivalOf, todayWeather, weatherOf, type Career, type LocationId, type SquadPlayer } from './game/career';
+import { talkTo, type Talk as PlayerTalk } from './game/morale';
 import { loadGame, saveGame, clearGame } from './game/save';
 import { FOCUS, isTrainingSlot, type Focus } from './game/squad';
 import { TALKS, closeWeek, seasonEnd, teamTalk, type MatchOutcome, type Talk } from './game/week';
@@ -190,6 +191,13 @@ function renderHud() {
   const t = $('hudTrust');
   t.style.width = `${c.boardTrust}%`;
   t.dataset.tier = c.boardTrust >= 55 ? 'hi' : c.boardTrust >= 30 ? 'mid' : 'lo';
+  // aviso en el retrato: alguna estadística pierde nivel esta noche si no la trabajas
+  const atRisk = (Object.keys(c.coach.stats) as (keyof typeof c.coach.stats)[]).some((id) => {
+    const s = c.coach.stats[id];
+    return s.lv > 1 && !c.dayDone[`trained:${id}`] && s.value - (s.lv - 1) * 10 < dailyDecay(s.value) + 0.01;
+  });
+  $('hudCoach').dataset.warn = String(atRisk && c.day < MATCH_DAY);
+  $('hudCoach').title = atRisk ? 'Ficha del míster · ¡una estadística pierde nivel esta noche!' : 'Ficha del míster';
   const me = coachCharacter(c.coach.gender, c.coach.name);
   const cv = $('hudCoach').querySelector('canvas')!;
   const g = cv.getContext('2d')!;
@@ -302,6 +310,7 @@ async function newDay() {
   if (c.location !== 'casa') {
     await goTo('casa');
   } else refresh();
+  if (c.dayNotes.length) await card('Al despertarte', c.dayNotes, { tone: 'bad' });
   if (c.day >= MATCH_DAY) toast('¡Domingo de partido! Revisa el once en «Club» y dale a «¡A jugar!».', 4200);
   else toast(`Nuevo día: ${dayLabel(c)}${isTrainingSlot({ ...c, slot: 1 }) ? ' · hoy toca entreno por la tarde' : ''}.`, 3200);
   await playAuto();
@@ -322,7 +331,13 @@ $('hudCoach').onclick = () => {
   sheet.open('coach', 'Míster', () => coachPanel(career!));
 };
 function openClub(tab?: string) {
-  sheet.open('club', career!.club.name, clubTabs({ career: () => career!, changed: () => (sheet.refresh(), save(), refresh()) }, panelState), tab);
+  const talk = async (p: SquadPlayer, t: PlayerTalk) => {
+    const r = talkTo(career!, p, t);
+    save();
+    sheet.refresh();
+    await card(`Charla con ${p.nick ?? p.name.split(' ')[0]}`, r.lines, { tone: r.tone });
+  };
+  sheet.open('club', career!.club.name, clubTabs({ career: () => career!, changed: () => (sheet.refresh(), save(), refresh()), talk }, panelState), tab);
   sheet.onClose = () => renderDock();
   renderDock();
   guide.notify({ kind: 'sheet', id: 'club' });
@@ -459,4 +474,6 @@ sheetStore.load().then(() => {
   get match() {
     return match;
   },
+  /** Fotograma actual de cada personaje del sitio (pruebas de animación). */
+  walkers: () => ((loc as unknown as { walkers?: { bb: { shown: string } }[] })?.walkers ?? []).map((w) => w.bb.shown),
 };

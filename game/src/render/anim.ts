@@ -8,6 +8,8 @@ import type { SimPlayer } from '../sim/types';
 export class AnimTracker {
   phase: number[] = [];
   speed: number[] = [];
+  /** Corriendo o quieto, con margen: para arrancar hace falta más velocidad que para seguir. */
+  moving: boolean[] = [];
   x: number[] = [];
   y: number[] = [];
   bx = 0;
@@ -21,11 +23,13 @@ export class AnimTracker {
       const i = p.idx;
       this.x[i] = p.px + (p.x - p.px) * alpha;
       this.y[i] = p.py + (p.y - p.py) * alpha;
-      const s = Math.hypot(p.vx, p.vy);
-      this.speed[i] = (this.speed[i] ?? 0) + (s - (this.speed[i] ?? 0)) * Math.min(1, dt * 10);
-      // el ciclo de carrera nunca va a cámara lenta: si se mueve, al menos un trote
-      const sp = this.speed[i] > 0.7 ? Math.max(this.speed[i], 3) : this.speed[i];
-      this.phase[i] = (this.phase[i] ?? i * 0.7) + sp * dt * 1.55;
+      // velocidad real (lo que se ha desplazado), no la intención: contra la banda no «corre en el sitio»;
+      // los saltos de colocación en los saques no cuentan
+      const s = Math.min(10, Math.hypot(p.x - p.px, p.y - p.py) / sim.dt);
+      this.speed[i] = (this.speed[i] ?? 0) + (s - (this.speed[i] ?? 0)) * Math.min(1, dt * 8);
+      this.moving[i] = this.moving[i] ? this.speed[i] > 0.4 : this.speed[i] > 1;
+      // el ciclo de carrera avanza con lo recorrido y nunca va a cámara lenta
+      if (this.moving[i]) this.phase[i] = (this.phase[i] ?? i * 0.7) + Math.max(this.speed[i], 3) * dt * 1.55;
     }
     const b = sim.ball;
     this.bx = b.px + (b.x - b.px) * alpha;

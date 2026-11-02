@@ -3,6 +3,7 @@ import { DIVISIONS } from '../content/divisions';
 import { SQUAD_INDEX } from '../content/teams';
 import { STADIUM_LEVELS, division, leagueName, rivalOf, setLeagueGender, type Career, type LocationId, type StatId } from '../game/career';
 import { standings, teamOf } from '../game/league';
+import { changeMorale } from '../game/morale';
 import { nextSeason, type SeasonEnd, type Summary } from '../game/week';
 
 /**
@@ -114,11 +115,8 @@ const nick = (c: Career, k: keyof typeof SQUAD_INDEX) => {
   const p = c.squad[SQUAD_INDEX[k]];
   return p.nick ?? p.name.split(' ')[0];
 };
-const addMods = (c: Career, id: string, m: Record<string, number>, note: string) => {
-  const cur = (c.mods[id] ??= {}) as Record<string, number>;
-  for (const [k, v] of Object.entries(m)) cur[k] = (cur[k] ?? 0) + v;
-  c.modNotes[id] = note;
-};
+/** Las decisiones no tocan atributos: cambian la moral (con su motivo) o algo concreto del club. */
+const morale = (c: Career, id: string, delta: number, reason: string) => changeMorale(c, id, delta, reason);
 
 const barrio = (c: Career) => c.club.id === 'barrio' && c.status === 'playing';
 
@@ -173,18 +171,17 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Cuente conmigo, presidente.',
-        effect: '+3 de confianza de la directiva.',
-        pick: (c) => {
-          c.boardTrust += 3;
+        effect: 'Empiezas con buen pie con Don Ramón.',
+        pick: () => {
           return [{ who: 'presidente', expr: 'happy', text: '¡Así me gusta! Le dejo, que tengo una señora esperando con un grifo.' }];
         },
       },
       {
         text: '¿Y no habría un adelanto? Por lo del alquiler...',
-        effect: '+30 € en tu cartera, −2 de confianza.',
+        effect: '+30 € en tu cartera. Te los descontará de tu primer turno en la ferretería.',
         pick: (c) => {
           c.coach.wallet += 30;
-          c.boardTrust -= 2;
+          c.flags.adelanto = true;
           return [{ who: 'presidente', expr: 'angry', text: 'Un adelanto... Tome, treinta euros. Me los descuenta en tornillos.' }];
         },
       },
@@ -216,26 +213,29 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: '«Aquí se viene a disfrutar. Y a aprender.»',
-        effect: 'Esta semana, todos +1 de sangre fría.',
+        effect: 'Moral de la plantilla: sube (les quitas presión). A los más nerviosos, aún más.',
         pick: (c) => {
           c.flags.metSquad = true;
-          for (const p of c.squad) addMods(c, p.id, { composure: 1 }, 'Primer día: el míster les quitó presión.');
+          for (const p of c.squad) morale(c, p.id, p.traits.includes('nervioso') ? 8 : 4, 'Primer día: el míster les quitó presión');
           return [{ who: 'jugador', idx: SQUAD_INDEX.goleador, expr: 'happy', text: '¡Disfrutar marcando! Bueno, primero disfrutar.' }];
         },
       },
       {
         text: '«Vamos a ganar la liga. Empieza hoy.»',
-        effect: 'Esta semana, todos +1 de trabajo. Don Ramón se entera: +2 de confianza.',
+        effect: 'Moral: los ambiciosos se vienen arriba; a los nerviosos les pesa.',
         pick: (c) => {
           c.flags.metSquad = true;
-          for (const p of c.squad) addMods(c, p.id, { workRate: 1 }, 'Primer día: el míster habló de ganar la liga.');
-          c.boardTrust = Math.min(100, c.boardTrust + 2);
+          for (const p of c.squad) {
+            const amb = p.traits.some((t) => t === 'goleadorNato' || t === 'egoista' || t === 'pulmon' || t === 'lenero');
+            if (p.traits.includes('nervioso')) morale(c, p.id, -5, 'Primer día: el míster habló de ganar la liga (presión)');
+            else morale(c, p.id, amb ? 7 : 2, 'Primer día: el míster habló de ganar la liga');
+          }
           return [{ who: 'jugador', idx: SQUAD_INDEX.portero, expr: 'happy', text: '¡La liga! Mi madre va a flipar.' }];
         },
       },
       {
         text: '«¿Quién ha traído los balones?»',
-        effect: 'Nadie. Pero aparece la abuela Mari con una red llena: +1 aficionada.',
+        effect: 'Nadie. Pero aparece la abuela Mari con una red llena (y se queda como aficionada).',
         pick: (c) => {
           c.flags.metSquad = true;
           c.fans += 1;
@@ -260,16 +260,15 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Vamos a ganar, presidente. Palabra.',
-        effect: 'Promesa: ganar. Si ganas, la confianza sube mucho; si no, se hunde.',
+        effect: 'Prometes ganar. La directiva lo juzgará el domingo: si ganas, mucha confianza; si no, la pierdes.',
         pick: (c) => {
           c.promise = 'win';
-          c.boardTrust = Math.min(100, c.boardTrust + 3);
           return [{ who: 'presidente', expr: 'happy', text: '¡Así me gusta! Se lo digo a mi cuñado. Bueno, se lo grito, que está sordo.' }];
         },
       },
       {
         text: 'Le prometo espectáculo. Goles, en una portería o en la otra.',
-        effect: 'Promesa: espectáculo. Si hay 3 goles o más, ganas aficionados y confianza.',
+        effect: 'Prometes espectáculo. Si el domingo hay 3 goles o más, la directiva y la afición lo agradecerán.',
         pick: (c) => {
           c.promise = 'fun';
           return [{ who: 'presidente', expr: 'dreamy', text: 'Espectáculo... Eso vende. Como las bisagras de oferta.' }];
@@ -277,10 +276,9 @@ export const SCENES: VNScene[] = [
       },
       {
         text: 'Con este campo, bastante es que no se nos rompa nadie un tobillo.',
-        effect: 'Sinceridad: −4 de confianza ahora, pero sin promesas que cumplir.',
+        effect: 'Sin promesas: el domingo solo cuenta el resultado.',
         pick: (c) => {
           c.promise = 'realist';
-          c.boardTrust = Math.max(0, c.boardTrust - 4);
           return [{ who: 'presidente', expr: 'angry', text: 'Ese campo lo allanó mi padre con una carretilla, míster. Con cariño.' }];
         },
       },
@@ -302,28 +300,28 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Vale, pero el domingo lo das todo.',
-        effect: 'Falta al entreno del jueves. El domingo, +5 de trabajo y −2 de resistencia.',
+        effect: 'Se pierde el entreno del jueves (no mejora ese día). Su moral sube: le dejaste ir.',
         pick: (c) => {
           c.absent[pid(c, 'padel')] = true;
-          addMods(c, pid(c, 'padel'), { workRate: 5, stamina: -2 }, 'Agradecimiento del torneo de pádel: presiona más, aguanta menos.');
+          morale(c, pid(c, 'padel'), 9, 'Le dejaste ir al torneo de pádel');
           return [{ who: 'padel', expr: 'happy', text: '¡Gracias! El domingo corro como si hubiera bola de partido.' }];
         },
       },
       {
         text: 'Ni hablar. Primero el fútbol.',
-        effect: 'Viene a entrenar, pero de morros: −3 de trabajo y −2 de sangre fría el domingo.',
+        effect: 'Viene a entrenar (y mejora), pero de morros: su moral baja.',
         pick: (c) => {
-          addMods(c, pid(c, 'padel'), { workRate: -3, composure: -2 }, 'Enfadado por no ir al torneo: presiona menos y se precipita.');
+          morale(c, pid(c, 'padel'), -9, 'No le dejaste ir al torneo de pádel');
           return [{ who: 'padel', expr: 'angry', text: 'Vale. Pues nada. Ya ganaremos el torneo el año que viene. O nunca.' }];
         },
       },
       {
         text: 'Te dejo si consigues que Pádel Cristal nos anuncie.',
-        effect: 'Falta al entreno; +2 de trabajo el domingo y +3 aficionados.',
+        effect: 'Se pierde el entreno del jueves; su moral sube y el club sale anunciado en Pádel Cristal (más gente os conoce).',
         req: { stat: 'labia', lv: 2 },
         pick: (c) => {
           c.absent[pid(c, 'padel')] = true;
-          addMods(c, pid(c, 'padel'), { workRate: 2 }, 'Trato cerrado con Pádel Cristal.');
+          morale(c, pid(c, 'padel'), 6, 'Trato cerrado con Pádel Cristal');
           c.fans += 3;
           return [{ who: 'padel', expr: 'smug', text: 'Hecho. Os ponen en la pizarra de la entrada. Al lado de las clases de zumba.' }];
         },
@@ -391,19 +389,20 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Son tuyos. Confío en ti.',
-        effect: 'Penaltis para el 9. Su sangre fría sube +3 esta semana.',
+        effect: 'Los penaltis los tira el 9 (lo puedes cambiar en la pizarra). Su moral sube.',
         pick: (c) => {
           c.penaltyTaker = pid(c, 'goleador');
-          addMods(c, pid(c, 'goleador'), { composure: 3 }, 'Tira los penaltis y está crecido.');
+          morale(c, pid(c, 'goleador'), 8, 'Le diste los penaltis');
           return [{ who: 'goleador', expr: 'happy', text: '¡No te vas a arrepentir! Bueno, igual un poco. Pero poco.' }];
         },
       },
       {
         text: 'Los tira el 11, que no falla.',
-        effect: 'Penaltis para el 11. El 9 se pica: −2 de sangre fría.',
+        effect: 'Los penaltis los tira el 11. El 9 se pica (su moral baja); al 11 le hace ilusión.',
         pick: (c) => {
           c.penaltyTaker = pid(c, 'penaltiSeguro');
-          addMods(c, pid(c, 'goleador'), { composure: -2 }, 'Picado porque no tira los penaltis.');
+          morale(c, pid(c, 'goleador'), -8, 'No le dejaste tirar los penaltis');
+          morale(c, pid(c, 'penaltiSeguro'), 4, 'Le diste los penaltis');
           return [{ who: 'goleador', expr: 'angry', text: 'El 11. Vale. Pues que marque también los de jugada, a ver.' }];
         },
       },
@@ -423,27 +422,27 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Los goles llegarán. Sigue rematando.',
-        effect: 'Sangre fría +2 esta semana.',
+        effect: 'Su moral sube: le arropas.',
         pick: (c) => {
-          addMods(c, pid(c, 'goleador'), { composure: 2 }, 'Arropado por el míster en el bar.');
+          morale(c, pid(c, 'goleador'), 7, 'El míster le arropó en el bar');
           return [{ who: 'goleador', expr: 'happy', text: 'Tienes razón. Soy un depredador. Un depredador con mala suerte, pero depredador.' }];
         },
       },
       {
         text: 'Quizá te venga bien una semana en el banquillo.',
-        effect: 'Si no es titular el domingo, la semana siguiente vuelve con hambre (+3 tiro). Si lo es, juega picado.',
+        effect: 'Su moral baja: le has dicho que se juega el puesto.',
         pick: (c) => {
           c.flags.goleadorAvisado = true;
-          addMods(c, pid(c, 'goleador'), { composure: -1, workRate: 2 }, 'Avisado de que se juega el puesto.');
+          morale(c, pid(c, 'goleador'), -6, 'El míster le dijo que se juega el puesto');
           return [{ who: 'goleador', expr: 'angry', text: '¿Banquillo? ¿A mí? Vale. Vale, vale. Ya verás el domingo.' }];
         },
       },
       {
         text: 'Manolo, ponle unas bravas. Invito yo.',
-        effect: '−6 € de tu cartera. Sangre fría +1 y trabajo +1 esta semana.',
+        effect: '−6 € de tu cartera. Su moral sube: le invitas tú.',
         pick: (c) => {
           c.coach.wallet -= 6;
-          addMods(c, pid(c, 'goleador'), { composure: 1, workRate: 1 }, 'Bravas del míster: moral de hierro.');
+          morale(c, pid(c, 'goleador'), 6, 'El míster le invitó a unas bravas');
           return [{ who: 'manolo', expr: 'happy', text: 'Bravas para el chaval. Que las penas con patatas son menos.' }];
         },
       },
@@ -462,7 +461,7 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Adelante, abuela. El club paga.',
-        effect: '−30 € de la caja. +4 aficionados y la pancarta irá a todos los partidos.',
+        effect: '−30 € de la caja. La pancarta irá a todos los partidos y se verá desde la calle: vendrá más gente.',
         pick: (c) => {
           c.money -= 30;
           c.fans += 4;
@@ -472,7 +471,7 @@ export const SCENES: VNScene[] = [
       },
       {
         text: 'La de la B al revés tiene su encanto.',
-        effect: 'Gratis. +1 aficionado (la foto se hace viral en el grupo de WhatsApp del barrio).',
+        effect: 'Gratis. La foto corre por el grupo de WhatsApp del barrio.',
         pick: (c) => {
           c.fans += 1;
           return [{ who: 'abuela', expr: 'smug', text: 'Eso digo yo. Es estilo. Como Picasso.' }];
@@ -497,7 +496,6 @@ export const SCENES: VNScene[] = [
         pick: (c) => {
           c.money -= STADIUM_LEVELS[1].cost;
           c.stadiumLevel = 1;
-          c.boardTrust = Math.min(100, c.boardTrust + 4);
           return [{ who: 'presidente', expr: 'happy', text: '¡Mañana mismo llamo a mi primo el de los jardines! Y a mi otro primo el de los focos.' }];
         },
       },
@@ -524,28 +522,30 @@ export const SCENES: VNScene[] = [
     choices: [
       {
         text: 'Cuelgas sin decir nada.',
-        effect: 'Se lo cuentas al vestuario: todos +2 de trabajo y +1 de agresividad el domingo.',
+        effect: 'Se lo cuentas al vestuario: se pican (la moral del once sube).',
         pick: (c) => {
-          for (const id of c.lineup) addMods(c, id, { workRate: 2, aggression: 1 }, 'Picado por la llamada del míster rival.');
+          for (const id of c.lineup) morale(c, id, 4, 'Picados por la llamada del míster rival');
           return [{ who: 'narrador', text: 'El grupo de WhatsApp del equipo arde. Alguien pone un gif de un león.' }];
         },
       },
       {
         text: '«¿Cinco? Con ese ascensor no llegáis ni al segundo.»',
-        effect: 'Todos +2 de sangre fría el domingo y +3 aficionados (se entera todo el bar).',
+        effect: 'La moral de todo el equipo sube y se entera todo el bar (más gente vendrá el domingo).',
         req: { stat: 'labia', lv: 3 },
         pick: (c) => {
-          for (const id of c.lineup) addMods(c, id, { composure: 2 }, 'El míster le ganó el duelo dialéctico al rival.');
+          for (const p of c.squad) morale(c, p.id, 6, 'El míster le ganó el duelo dialéctico al rival');
           c.fans += 3;
           return [{ who: 'rivalMister', expr: 'angry', text: '¿Qué...? Eso... Eso no tiene gracia. ¡Ya hablaremos el domingo!' }];
         },
       },
       {
         text: '«Puede ser. Sois los favoritos.»',
-        effect: 'Sin presión para los tuyos (+1 sangre fría), pero Don Ramón se entera: −2 de confianza.',
+        effect: 'Quitas presión a los nerviosos, pero a los ambiciosos les sienta mal que des el partido por perdido.',
         pick: (c) => {
-          for (const id of c.lineup) addMods(c, id, { composure: 1 }, 'Sin presión: el rival es favorito.');
-          c.boardTrust -= 2;
+          for (const p of c.squad) {
+            if (p.traits.includes('nervioso')) morale(c, p.id, 4, 'Sin presión: el rival es favorito');
+            else if (p.traits.some((t) => t === 'goleadorNato' || t === 'egoista' || t === 'lenero')) morale(c, p.id, -4, 'El míster dio el partido por perdido');
+          }
           return [{ who: 'rivalMister', expr: 'happy', text: 'Hombre, al menos eres realista. Me gusta. El domingo os tratamos con cariño.' }];
         },
       },

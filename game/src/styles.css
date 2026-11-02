@@ -264,6 +264,15 @@ canvas.px,
   display: block;
   image-rendering: pixelated;
 }
+.hud-coach[data-warn='true'] {
+  border-color: var(--bad);
+  animation: warn 0.9s ease-in-out infinite alternate;
+}
+@keyframes warn {
+  to {
+    box-shadow: 0 0 10px var(--bad);
+  }
+}
 .hud-coach[data-up='true'] {
   border-color: var(--gold);
   animation: glow 1s ease-in-out infinite alternate;
@@ -918,6 +927,13 @@ canvas.px,
 }
 .stat .row b {
   font: 800 1rem/1 var(--cond);
+}
+.morale {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--edge);
 }
 .stat .lv {
   font: 400 0.95rem/1 var(--pixel);

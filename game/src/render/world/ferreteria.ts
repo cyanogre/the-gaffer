@@ -12,6 +12,7 @@ import { Location, canvas, pixTex, v3, type Walker } from './location';
 export class FerreteriaView extends Location {
   private lights: InteriorLights;
   private ramon: Walker | null = null;
+  private nextMove = 3;
 
   constructor() {
     super();
@@ -141,7 +142,10 @@ export class FerreteriaView extends Location {
 
   setState(c: Career) {
     this.lights.apply(c, this.scene);
-    if (!this.ramon) this.ramon = this.addWalker(NPC.presidente.look, NPC.presidente.clothes, -1, true, v3(3.1, 0, -0.9), 'front');
+    if (!this.ramon) {
+      this.ramon = this.addWalker(NPC.presidente.look, NPC.presidente.clothes, -1, true, v3(3.1, 0, -0.9), 'front');
+      this.ramon.speed = 1.1;
+    }
   }
 
   protected tintAt(_p: THREE.Vector3, out: THREE.Color) {
@@ -149,7 +153,10 @@ export class FerreteriaView extends Location {
   }
 
   protected tick() {
-    // Don Ramón ordena el mostrador
-    if (this.ramon) this.ramon.target.z = -0.9 + Math.sin(this.time * 0.2) * 0.5;
+    // Don Ramón va y viene del mostrador a la puerta del despacho, con sus pausas
+    if (this.ramon && this.time > this.nextMove) {
+      this.nextMove = this.time + 4 + ((this.time * 5.1) % 3);
+      this.ramon.target.z = this.ramon.target.z > -0.9 ? -1.4 : -0.4;
+    }
   }
 }

@@ -1,7 +1,8 @@
 import { FORMATIONS } from '../sim/formations';
 import { rivalProfile } from '../content/teams';
 import type { Attributes, Role } from '../sim/types';
-import { DAYS, MATCH_DAY, gainXp, maxEnergy, rivalOf, rngFor, type Career, type LocationId, type StatId } from './career';
+import { DAYS, MATCH_DAY, decayStats, gainXp, maxEnergy, rivalOf, rngFor, type Career, type LocationId, type StatId } from './career';
+import { changeMorale, moraleLabel } from './morale';
 import { FOCUS, attrLabel, isTrainingSlot, recover, train, type Focus } from './squad';
 
 /**
@@ -47,17 +48,17 @@ function xp(c: Career, r: ActionResult, s: StatId, n: number) {
   }
 }
 
-/** Charla en el bar: cada personalidad se convence (o no) a su manera. */
-const CHATS: Record<string, { ok: string; ko: string; mods: Partial<Attributes> }> = {
-  goleadorNato: { ok: 'Le convences de que la sequía es pura estadística. Se va a casa silbando.', ko: 'Te enseña cuarenta vídeos de sus goles en alevines. Pagas tú.', mods: { composure: 3 } },
-  egoista: { ok: 'Le prometes grabarle un vídeo si da tres pases. Acepta el reto.', ko: 'Se pasa la tarde contestando comentarios en el móvil.', mods: { workRate: 2, composure: 1 } },
-  lenero: { ok: 'Le pides que el domingo no se haga expulsar. Promete «tocar menos».', ko: 'Dice que el árbitro le tiene manía desde 2017. No hay forma.', mods: { aggression: -4 } },
-  padel: { ok: 'Una hora hablando de pádel. A cambio, promete correr el domingo.', ko: 'Te ha apuntado a un torneo de pádel. Sin preguntar.', mods: { workRate: 3 } },
-  pulmon: { ok: 'Te propone correr juntos el sábado. Le dices que sí por educación.', ko: 'Pide agua del grifo y se va a las nueve a dormir.', mods: { stamina: 1, workRate: 1 } },
-  artista: { ok: 'Le pides pases sencillos. Dice que la sencillez también es arte.', ko: 'Te explica una jugada con servilletas. Ocupa toda la barra.', mods: { composure: 2, passing: 1 } },
-  piscinero: { ok: 'Le pides que no se tire. Jura por su profesora de teatro.', ko: 'Se cae del taburete para enseñarte su técnica. Manolo no se ríe.', mods: { composure: 2 } },
-  nervioso: { ok: 'Le das confianza. Por primera vez en semanas, no tiembla al coger el vaso.', ko: 'Le has puesto más nervioso hablándole del domingo.', mods: { composure: 3 } },
-  none: { ok: 'Charla de fútbol y de la vida. Sale con ganas de que llegue el domingo.', ko: 'Habláis del tiempo. Del tiempo atmosférico. Una hora.', mods: { composure: 1, workRate: 1 } },
+/** Un café a solas: cada carácter se gana (o no) a su manera. Si sale bien, le sube la moral. */
+const CHATS: Record<string, { ok: string; ko: string }> = {
+  goleadorNato: { ok: 'Le convences de que la sequía es pura estadística. Se va a casa silbando.', ko: 'Te enseña cuarenta vídeos de sus goles en alevines. Pagas tú.' },
+  egoista: { ok: 'Le prometes grabarle un vídeo si da tres pases. Acepta el reto.', ko: 'Se pasa la tarde contestando comentarios en el móvil.' },
+  lenero: { ok: 'Le pides que el domingo no se haga expulsar. Promete intentarlo.', ko: 'Dice que el árbitro le tiene manía desde hace años. No hay forma.' },
+  padel: { ok: 'Una hora hablando de pádel. Se siente escuchado.', ko: 'Te ha apuntado a un torneo de pádel. Sin preguntar.' },
+  pulmon: { ok: 'Te propone correr juntos el sábado. Le dices que sí por educación.', ko: 'Pide agua del grifo y se va a las nueve a dormir.' },
+  artista: { ok: 'Te explica su jugada soñada. La escuchas entera. Le encanta.', ko: 'Te explica una jugada con servilletas. Ocupa toda la barra.' },
+  piscinero: { ok: 'Le pides que no se tire. Jura por su profesora de teatro.', ko: 'Se cae del taburete para enseñarte su técnica. Manolo no se ríe.' },
+  nervioso: { ok: 'Le das confianza. Por primera vez en semanas, no tiembla al coger el vaso.', ko: 'Le has puesto más nervioso hablándole del domingo.' },
+  none: { ok: 'Charla de fútbol y de la vida. Sale con ganas de que llegue el domingo.', ko: 'Habláis del tiempo. Del tiempo atmosférico. Una hora.' },
 };
 
 export const ACTIONS: ActionDef[] = [
@@ -197,7 +198,7 @@ export const ACTIONS: ActionDef[] = [
     where: 'bar',
     hotspot: 'mesa',
     label: 'Invitar a alguien',
-    hint: 'Charla individual · cambia cómo juega el domingo',
+    hint: 'Charla a solas · le sube la moral si sale bien',
     energy: 10,
     wallet: 8,
     slots: [1, 2],
@@ -211,10 +212,8 @@ export const ACTIONS: ActionDef[] = [
       const ok = rngFor(c, `invitar:${p.id}`).chance(0.45 + 0.08 * lvl(c, 'labia') - hard);
       const r: ActionResult = { title: `Un café con ${firstName(c, p.id)}`, lines: [ok ? chat.ok : chat.ko], tone: ok ? 'good' : 'info' };
       if (ok) {
-        const cur = (c.mods[p.id] ??= {});
-        for (const [k, v] of Object.entries(chat.mods) as [keyof Attributes, number][]) cur[k] = (cur[k] ?? 0) + v;
-        c.modNotes[p.id] = chat.ok;
-        r.lines.push('Este domingo: ' + Object.entries(chat.mods).map(([k, v]) => `${attrLabel(k as keyof Attributes)} ${v > 0 ? '+' : ''}${v}`).join(', ') + '.');
+        changeMorale(c, p.id, 6 + lvl(c, 'labia'), 'Un café con el míster');
+        r.lines.push(`Su moral: ${moraleLabel(p.morale)}.`);
       }
       xp(c, r, 'labia', 2);
       return r;
@@ -244,13 +243,18 @@ export const ACTIONS: ActionDef[] = [
     slots: [0, 1],
     trains: 'labia',
     run: (c) => {
-      const pay = 22 + 4 * lvl(c, 'labia');
+      let pay = 22 + 4 * lvl(c, 'labia');
+      const owed = c.flags.adelanto ? Math.min(30, pay) : 0;
+      if (owed) {
+        pay -= owed;
+        delete c.flags.adelanto;
+      }
       c.coach.wallet += pay;
       c.boardTrust = Math.min(100, c.boardTrust + 1);
       const rng = rngFor(c, 'turno');
       const r: ActionResult = {
         title: 'Turno en la ferretería',
-        lines: [rng.pick(['Vendes 200 tornillos de uno en uno. Una señora pide «el de siempre». No sabes cuál es.', 'Un cliente quiere devolver un martillo «porque no clava solo».', 'Don Ramón te enseña a hacer copias de llaves. Te equivocas con la del bar.']), `+${pay} € en tu cartera · Don Ramón, contento (+1 confianza).`],
+        lines: [rng.pick(['Vendes 200 tornillos de uno en uno. Una señora pide «el de siempre». No sabes cuál es.', 'Un cliente quiere devolver un martillo «porque no clava solo».', 'Don Ramón te enseña a hacer copias de llaves. Te equivocas con la del bar.']), `+${pay} € en tu cartera${owed ? ` (te descuenta ${owed} € del adelanto)` : ''} · Don Ramón, contento (+1 confianza).`],
         tone: 'good',
       };
       xp(c, r, 'labia', 1);
@@ -363,6 +367,8 @@ export function advanceSlot(c: Career): boolean {
 
 /** Fin del día: se duerme. En casa y pronto, del tirón; si no, a medias. */
 export function endDay(c: Career, restful: boolean) {
+  // lo que no se ha trabajado hoy, baja (antes de reponer energía: la Forma decide el máximo)
+  c.dayNotes = decayStats(c);
   const max = maxEnergy(c);
   c.coach.energy = Math.min(max, c.coach.energy + (restful ? max : Math.round(max * 0.6)));
   recover(c);

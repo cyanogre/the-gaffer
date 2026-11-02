@@ -1,4 +1,4 @@
-import type { Career } from './career';
+import { migrateStats, type Career } from './career';
 
 /** Guardado automático en el navegador (una sola ranura). */
 const KEY = 'the-gaffer-partida';
@@ -18,6 +18,14 @@ export function loadGame(): Career | null {
     const c = JSON.parse(raw) as Career;
     if (!c || c.v !== 2) return null;
     c.guide ??= -1;
+    c.dayNotes ??= [];
+    c.promises ??= [];
+    for (const p of c.squad) {
+      p.morale ??= 60;
+      p.moraleLog ??= [];
+      p.form ??= [];
+    }
+    migrateStats(c);
     return c;
   } catch {
     return null;

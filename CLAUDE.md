@@ -27,7 +27,9 @@ Simulador de gestión y dirección técnica de fútbol: mezcla de Football Manag
 ## Reglas de trabajo
 
 - Diseño antes que código. Núcleo pequeño, funcional y divertido; ampliar por hitos verificables.
-- Nada de botones que no hacen nada: cada mecánica implementada tiene lógica, consecuencias y conexión con otros sistemas. No mostrar datos que el motor no tiene (p. ej. moral).
+- Nada de botones que no hacen nada: cada mecánica implementada tiene lógica, consecuencias y conexión con otros sistemas. No mostrar datos que el juego no tiene.
+- Gestión tipo Football Manager: las decisiones (historia, charlas, arenga) no suben ni bajan atributos a capricho; cambian la moral (con su motivo) o algo concreto (entrenos, penaltis, contratos). La moral cambia cómo juegan con una fórmula fija (`game/morale.ts`).
+- Estadísticas del míster tipo Punch Club: cuestan de subir y de mantener (bajan cada día que no se trabajan) y cada una sirve para algo tangible.
 - Las órdenes tácticas y los rasgos modifican decisiones de la IA, nunca dan bonificaciones arbitrarias.
 - Motor (`src/sim`) puro y determinista: sin DOM, sin `Math.random`; todo azar por `Rng`. La UI solo envía comandos.
 - El humor sale de eventos del motor y rasgos de personalidad, no de chistes aleatorios.

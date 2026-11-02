@@ -46,6 +46,7 @@ export class BarView extends Location {
   private manolo: Walker | null = null;
   private regulars: Walker[] = [];
   private mood: 'normal' | 'sulk' = 'normal';
+  private nextMove = 2;
 
   constructor() {
     super();
@@ -187,6 +188,7 @@ export class BarView extends Location {
   private people(c: Career) {
     if (!this.manolo) {
       this.manolo = this.addWalker(NPC.manolo.look, NPC.manolo.clothes, -1, true, v3(1.2, 0, -2.45), 'front');
+      this.manolo.speed = 1.3;
       const rng = new Rng(404);
       for (const [x, z] of [
         [-2.9, 0.25],
@@ -239,7 +241,10 @@ export class BarView extends Location {
     sg.fillRect(3, 10, 10, 7);
     pixelText(sg, '777', 8, 10, Math.floor(t * 2) % 2 ? '#c8102e' : '#1a1226', 12);
     this.slotTex.needsUpdate = true;
-    // Manolo seca vasos de lado a lado
-    if (this.manolo && this.mood === 'normal') this.manolo.target.x = 1.2 + Math.sin(t * 0.35) * 1.2;
+    // Manolo va de un lado a otro de la barra: camina, se para a secar vasos y vuelve
+    if (this.manolo && this.mood === 'normal' && t > this.nextMove) {
+      this.nextMove = t + 3 + ((t * 7.3) % 3);
+      this.manolo.target.x = this.manolo.target.x > 1.2 ? 0.2 : 2.2;
+    }
   }
 }

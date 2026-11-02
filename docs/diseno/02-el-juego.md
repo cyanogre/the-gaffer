@@ -29,14 +29,14 @@ Cierre: taquilla, patrocinio, alquiler, liga, confianza → nueva semana
 | **Interacción** | Bar Manolo, entrenamiento, charla del domingo | Invitar a un jugador, elegir foco de entreno, arenga | Cambios de atributos (sangre fría, trabajo, agresividad) que la IA usa en sus decisiones |
 | **Progresión** | Casa, campo, bar, ferretería | Estudiar, correr, ojear, trabajar | Sube las estadísticas del míster y la cartera |
 
-## 3. El míster
+## 3. El míster (tipo Punch Club)
 
-Cuatro estadísticas con nivel y experiencia. Cada una tiene efectos concretos:
+Cuatro estadísticas con un valor de 0 a 100 (nivel = 1 + una decena por nivel). **Cuestan de subir**: cada sesión rinde menos cuanto más alta está. **Cuestan de mantener**: cada día que no se trabajan bajan (0,3 + 1,8 % de su valor), así que mantenerlas arriba exige constancia. La ficha del míster dice para qué sirve cada una, qué desbloquea el siguiente nivel y cuánto bajará esta noche; el retrato avisa si alguna está a punto de perder nivel.
 
-- **Táctica**: multiplica lo que aprenden los jugadores al entrenar y lo rápido que asimilan la formación (*familiaridad*). Desbloquea órdenes de partido: nivel 2 las señales (presión total, contraataque), nivel 3 la libertad individual.
-- **Labia**: decisiones de novela que piden labia, éxito al charlar con jugadores, aficionados que ganas en el bar, lo que cobras en la ferretería y la fuerza de la arenga.
-- **Ojo**: lo que averiguas al ojear al rival (formación → jugador peligroso → punto débil) y en el informe previo al partido.
-- **Forma**: energía máxima.
+- **Táctica** (pizarra, vídeos, entrenos): cuánto aprenden en cada entreno (+8 % por nivel) y lo rápido que asimilan la formación. Nivel 2: señales en el partido. Nivel 3: libertad individual.
+- **Labia** (bar, charlas, ferretería): cuánto les llega la arenga y las charlas, sueldo en la ferretería (+4 € por turno y nivel) y respuestas especiales en la historia.
+- **Ojo** (vídeos, ojear al rival): formación del rival (1), su jugador peligroso (2), su punto débil (3).
+- **Forma** (correr): energía máxima (+10 por nivel).
 
 ## 4. La plantilla
 
@@ -47,6 +47,19 @@ Cuatro estadísticas con nivel y experiencia. Cada una tiene efectos concretos:
 - **Carga**: entrenar cansa. Lo que no se recupera antes del domingo sale al campo como cansancio inicial. Un entreno físico el sábado se paga el domingo.
 - **Familiaridad** con cada formación (0–1): a más familiaridad, menos desorden posicional en el motor (las líneas se mantienen mejor). No es una bonificación: cambia dónde se colocan.
 - En el partido: hasta 5 cambios. El que entra sale fresco (con su carga de la semana).
+
+### Moral (gestión tipo Football Manager)
+
+Cada jugador tiene moral (0–100) con sus motivos a la vista («No jugó», «Le diste los penaltis», «Gran partido (8,1)»). Cambia por:
+
+- **Resultados y notas**: cada partido se puntúa a cada jugador (1–10) con lo que ha hecho (goles, tiros a puerta, pases, entradas, paradas, faltas, tarjetas, goles encajados el portero).
+- **Minutos**: a los habituales y a los que se creen imprescindibles no jugar les sienta mal.
+- **Promesas**: prometer minutos alegra ahora; si el domingo no juega, se paga caro.
+- **Charlas desde su ficha** (una por semana): elogiar su forma (funciona si de verdad jugó bien), pedirle más (a algunos les pica para bien, a otros les hunde), prometer minutos o preguntarle cómo está. Un café en el bar también ayuda.
+- **Arenga** del domingo: cada carácter reacciona a su manera; al que llega hundido le va bien la calma.
+- **Historia**: las decisiones cambian la moral con su motivo o algo concreto (entrenos, penaltis, contratos), nunca atributos a capricho.
+
+Efecto en el campo (fórmula única, en `game/morale.ts`): sangre fría + (moral − 55) / 10 y trabajo + (moral − 55) / 14. Con la moral alta juegan sueltos y corren; hundidos, se precipitan y se esconden. Con los días, la moral vuelve poco a poco hacia lo normal.
 
 ## 5. Lugares (escenarios 3D)
 

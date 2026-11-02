@@ -2,6 +2,7 @@ import { addMods, clampAttrs, rivalProfile } from '../content/teams';
 import { conditionsFor, type MatchConditions } from '../sim/conditions';
 import { FORMATIONS } from '../sim/formations';
 import type { Attributes, PlayerProfile, Role, TeamProfile } from '../sim/types';
+import { moraleMods } from './morale';
 import { MATERIAL_LEVELS, STADIUM_LEVELS, gainXp, rivalOf, weatherOf, type Career, type SquadPlayer } from './career';
 
 /**
@@ -152,12 +153,14 @@ export function recover(c: Career, amount = 0.09) {
 }
 
 // ───────────────────────── al partido ─────────────────────────
-export function withMods(c: Career, p: SquadPlayer): PlayerProfile {
-  const { load, goals, apps, ...base } = p;
+/** Cómo sale al campo: sus atributos con el efecto de su moral (ver morale.ts) y su carga de la semana. */
+export function withMods(_c: Career, p: SquadPlayer): PlayerProfile {
+  const { load, goals, apps, morale, moraleLog, form, ...base } = p;
   void goals;
   void apps;
-  const m = c.mods[p.id];
-  return { ...base, attrs: clampAttrs({ ...p.attrs, ...addMods(p.attrs, m) }), startFatigue: Math.min(0.4, load) };
+  void moraleLog;
+  void form;
+  return { ...base, attrs: clampAttrs({ ...p.attrs, ...addMods(p.attrs, moraleMods(morale)) }), startFatigue: Math.min(0.4, load) };
 }
 
 export function homeProfile(c: Career): TeamProfile {
