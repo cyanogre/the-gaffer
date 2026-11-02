@@ -503,9 +503,11 @@ export abstract class Location {
       const m = o as THREE.Mesh;
       if (!m.isMesh || m.userData.structure) return;
       const box = new THREE.Box3().setFromObject(m);
+      const id: string | undefined = m.userData.furniture;
       if (box.max.y < 0.06) return;
-      if (box.min.z <= this.b.backZ + 0.3 || box.min.x <= this.b.leftX + 0.3) return;
-      props.push({ m, box, id: m.userData.furniture });
+      // los muebles con nombre siempre cuentan (la cama, aunque esté contra la pared)
+      if (!id && (box.min.z <= this.b.backZ + 0.3 || box.min.x <= this.b.leftX + 0.3)) return;
+      props.push({ m, box, id });
     });
     const area = (b: THREE.Box3) => (b.max.x - b.min.x) * (b.max.z - b.min.z);
     props.sort((a, b) => (a.id ? 0 : 1) - (b.id ? 0 : 1) || area(b.box) - area(a.box));

@@ -86,6 +86,7 @@ export class CasaView extends Location {
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(7, 6), new THREE.MeshLambertMaterial({ map: ft }));
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
+    floor.userData.structure = true;
     s.add(floor);
     // papel pintado con manchas de humedad
     const [wc, wg] = cv(64, 32);
@@ -110,6 +111,10 @@ export class CasaView extends Location {
     left.position.set(-3.5, 1.5, 0);
     left.receiveShadow = true;
     s.add(left);
+    // paredes: estructura (no tapan a nadie) y lo pegado a ellas tampoco
+    back.userData.structure = left.userData.structure = true;
+    this.b.backZ = -3;
+    this.b.leftX = -3.5;
     box(7, 0.12, 0.2, '#6e4c30', 0, 0, -2.88);
     box(0.2, 0.12, 6, '#6e4c30', -3.38, 0, 0);
     const plane = (w: number, h: number, t: THREE.Texture, x: number, y: number, z: number, ry = 0, emissive = false) => {
