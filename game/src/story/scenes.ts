@@ -114,7 +114,7 @@ const gx = (g: Gender, m: string, f: string) => (g === 'f' ? f : m);
 const pid = (c: Career, k: keyof typeof SQUAD_INDEX) => c.squad[SQUAD_INDEX[k]].id;
 const nick = (c: Career, k: keyof typeof SQUAD_INDEX) => {
   const p = c.squad[SQUAD_INDEX[k]];
-  return p.nick ?? p.name.split(' ')[0];
+  return p.name.split(' ')[0];
 };
 /** Las decisiones no tocan atributos: cambian la moral (con su motivo) o algo concreto del club. */
 const morale = (c: Career, id: string, delta: number, reason: string) => changeMorale(c, id, delta, reason);

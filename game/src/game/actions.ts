@@ -45,7 +45,7 @@ const WORKDAYS = [0, 1, 2, 3, 4, 5];
 const lvl = (c: Career, s: StatId) => c.coach.stats[s].lv;
 const firstName = (c: Career, id: string) => {
   const p = c.squad.find((x) => x.id === id)!;
-  return p.nick ?? p.name.split(' ')[0];
+  return p.name.split(' ')[0];
 };
 function xp(c: Career, r: ActionResult, s: StatId, n: number) {
   const up = gainXp(c, s, n);
@@ -361,7 +361,7 @@ export function scoutReport(c: Career): string[] {
   if (lv >= 2) {
     const best = [...team.players].slice(1).sort((a, b) => b.attrs.shooting + b.attrs.dribbling - (a.attrs.shooting + a.attrs.dribbling))[0];
     const top = (Object.entries(best.attrs) as [keyof Attributes, number][]).filter(([k]) => k !== 'keeping').sort((a, b) => b[1] - a[1])[0];
-    out.push(`Peligro: ${best.nick ? `«${best.nick}»` : best.name} (#${best.num}), destaca en ${attrLabel(top[0])} (${Math.floor(top[1])}).`);
+    out.push(`Peligro: ${best.name} (#${best.num}), destaca en ${attrLabel(top[0])} (${Math.floor(top[1])}).`);
   } else out.push('Con más ojo sabrías quién es el peligroso.');
   if (lv >= 3) {
     const roles: Role[] = ['DEF', 'MED', 'DEL'];

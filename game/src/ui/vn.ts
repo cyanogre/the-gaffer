@@ -62,7 +62,7 @@ export class VNPlayer {
     a?.();
   }
 
-  private who(id: CharId, c: Career, expr?: Expression, idx?: number): { name: string; role: string; img: HTMLCanvasElement | null } {
+  private who(id: CharId, c: Career, expr?: Expression, idx?: number): { name: string; nick?: string; role: string; img: HTMLCanvasElement | null } {
     if (id === 'narrador' || (id === 'jugador' && idx === undefined)) return { name: '', role: '', img: null };
     const draw = (spec: Parameters<typeof pixelPortrait>[0]) => {
       const out = pixelPortrait({ ...spec, expr });
@@ -73,12 +73,12 @@ export class VNPlayer {
     if (id === 'jugador' && idx !== undefined) {
       const p = c.squad[idx];
       const pos = { POR: c.gender === 'f' ? 'Portera' : 'Portero', DEF: 'Defensa', MED: 'Centrocampista', DEL: c.gender === 'f' ? 'Delantera' : 'Delantero' }[p.role];
-      return { name: p.nick ? `${p.name.split(' ')[0]} «${p.nick}»` : p.name, role: `${pos} · #${p.num} · ${p.age ?? ''} años`, img: draw({ look: p.look, kit: c.club.kit, traits: p.traits, num: p.num, seed: p.num * 13 }) };
+      return { name: p.nick ? p.name.split(' ')[0] : p.name, nick: p.nick, role: `${pos} · #${p.num} · ${p.age ?? ''} años`, img: draw({ look: p.look, kit: c.club.kit, traits: p.traits, num: p.num, seed: p.num * 13 }) };
     }
     if (id === 'padel' || id === 'goleador') {
       const p = c.squad[SQUAD_INDEX[id]];
       const role = id === 'padel' ? 'Centrocampista' : c.gender === 'f' ? 'Delantera' : 'Delantero';
-      return { name: p.nick ? `${p.name.split(' ')[0]} «${p.nick}»` : p.name, role: `${role} · #${p.num}`, img: draw({ look: p.look, kit: c.club.kit, traits: p.traits, num: p.num, seed: p.num * 13 }) };
+      return { name: p.nick ? p.name.split(' ')[0] : p.name, nick: p.nick, role: `${role} · #${p.num}`, img: draw({ look: p.look, kit: c.club.kit, traits: p.traits, num: p.num, seed: p.num * 13 }) };
     }
     const n = id === 'mister' ? coachCharacter(c.coach.gender, c.coach.name) : NPC[id as keyof typeof NPC];
     return { name: n.name, role: n.role, img: draw({ look: n.look, kit: n.clothes, traits: [], num: 0, seed: id.length * 31 }) };
@@ -89,6 +89,13 @@ export class VNPlayer {
       const w = this.who(line.who, c, line.expr, line.idx);
       this.root.dataset.narrator = String(line.who === 'narrador');
       this.name.textContent = w.name;
+      // el apodo (si se lo ha ganado), aparte y en color
+      if (w.nick) {
+        const a = document.createElement('span');
+        a.className = 'apodo';
+        a.textContent = ` «${w.nick}»`;
+        this.name.append(a);
+      }
       this.role.textContent = w.role;
       if (w.img) this.portrait.replaceChildren(w.img);
       else this.portrait.replaceChildren();

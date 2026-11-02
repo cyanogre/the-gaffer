@@ -5,7 +5,8 @@ import { Rng } from '../sim/rng';
 import type { MatchEventKind, TraitId } from '../sim/types';
 import { attendance, division, maxEnergy, rivalOf, seasonWeeks, toSquad, type Career } from './career';
 import { newLeague, playRound, positionOf } from './league';
-import { changeMorale } from './morale';
+import { changeMorale, type PlayerMatchStats } from './morale';
+import { earnNicknames, type EarnedNick } from './nicknames';
 import { bestEleven } from './squad';
 
 /**
@@ -39,7 +40,7 @@ export function teamTalk(c: Career, kind: Talk): string[] {
     if (p.morale > 75 && kind === 'calma') d -= 2;
     d = Math.round(d * k);
     changeMorale(c, p.id, d, `Arenga: «${t.label}»`);
-    const n = p.nick ?? p.name.split(' ')[0];
+    const n = p.name.split(' ')[0];
     if (d >= 5) up.push(n);
     else if (d < 0) down.push(n);
   }
@@ -64,6 +65,8 @@ export interface MatchOutcome {
   ownGoals: [number, number];
   /** Nota de cada uno de los tuyos que ha jugado (id → nota). */
   ratings?: Record<string, number>;
+  /** Lo que ha hecho cada uno de los tuyos (paradas, goles, recuperaciones...). */
+  stats?: Record<string, PlayerMatchStats>;
 }
 
 export interface Summary {
@@ -75,6 +78,8 @@ export interface Summary {
   position: number;
   headline: string;
   sub: string;
+  /** Apodos que se han ganado en este partido (la interfaz los pinta en color). */
+  nicknames: EarnedNick[];
 }
 
 /** Portada de «El Eco del Barrio»: sale de lo que ha pasado en el partido. */
@@ -83,7 +88,7 @@ export function headline(c: Career, o: MatchOutcome): { headline: string; sub: s
   const rival = rivalOf(c);
   const name = (id: string) => {
     const p = c.squad.find((x) => x.id === id)!;
-    return p.nick ?? p.name.split(' ').slice(-1)[0];
+    return p.name.split(' ').slice(-1)[0];
   };
   const goleador = c.club.id === 'barrio' ? c.squad[SQUAD_INDEX.goleador] : c.squad[9];
   const slips = (o.counts[0].slip ?? 0) + (o.counts[1].slip ?? 0);
@@ -159,13 +164,14 @@ export function closeWeek(c: Career, o: MatchOutcome): Summary {
     else if (o.played.includes(p.id)) p.drought++;
   }
   moraleAfterMatch(c, o, result, rival.short);
+  const nicknames = earnNicknames(c, o.played, o.stats ?? {});
   // tu ánimo también depende del domingo
   c.coach.mood = Math.max(0, Math.min(100, c.coach.mood + (result === 'win' ? 15 : result === 'loss' ? -12 : 2)));
   const rated = Object.entries(o.ratings ?? {}).sort((x, y) => y[1] - x[1]);
   if (rated.length) {
     const nm = (id: string) => {
       const p = c.squad.find((x) => x.id === id)!;
-      return p.nick ?? p.name.split(' ').slice(-1)[0];
+      return p.name.split(' ').slice(-1)[0];
     };
     const [bestId, best] = rated[0];
     const [worstId, worst] = rated[rated.length - 1];
@@ -202,7 +208,7 @@ export function closeWeek(c: Career, o: MatchOutcome): Summary {
   c.coach.energy = maxEnergy(c);
   if (c.boardTrust < 10) c.status = 'fired';
   else if (c.week > seasonWeeks(c)) c.status = 'seasonEnd';
-  return { lines, fansDelta: fans, moneyDelta: money, trustDelta: trust, result, position, headline: paper.headline, sub: paper.sub };
+  return { lines, fansDelta: fans, moneyDelta: money, trustDelta: trust, result, position, headline: paper.headline, sub: paper.sub, nicknames };
 }
 
 /** Moral tras el partido: resultado, nota, goles, minutos y promesas. Cada cambio, con su motivo. */

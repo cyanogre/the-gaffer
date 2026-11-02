@@ -3,6 +3,8 @@ import { ACTIONS, blocked, perform } from '../src/game/actions';
 import { maxEnergy, newCareer, rivalOf, setLeagueGender, type Career } from '../src/game/career';
 import { roundRobin, standings } from '../src/game/league';
 import { matchSetup } from '../src/game/squad';
+import { earnNicknames } from '../src/game/nicknames';
+import { emptyStats, type PlayerMatchStats } from '../src/game/morale';
 import { closeWeek, nextSeason, seasonEnd, teamTalk, type MatchOutcome } from '../src/game/week';
 import { MatchSim } from '../src/sim/match';
 import { pendingScenes, SCENES } from '../src/story/scenes';
@@ -224,5 +226,27 @@ describe('motor: cambios y familiaridad', () => {
       return sim.players.filter((p) => p.team === 0).reduce((s, p) => s + Math.abs(p.jx) + Math.abs(p.jy), 0);
     };
     expect(spread(0.1)).toBeGreaterThan(spread(0.95) * 2);
+  });
+});
+
+describe('apodos', () => {
+  it('nadie empieza con apodo; se ganan en el campo y no se repiten', () => {
+    const c = newCareer('m', 'm', '', 41);
+    setLeagueGender(c, 'f');
+    expect(c.squad.every((p) => !p.nick)).toBe(true);
+    const gk = c.squad.find((p) => p.role === 'POR')!;
+    const [d1, d2] = c.squad.filter((p) => p.role === 'DEL');
+    const st = (o: Partial<PlayerMatchStats>) => ({ ...emptyStats(), ...o });
+    const got = earnNicknames(c, [gk.id, d1.id, d2.id], { [gk.id]: st({ saves: 8, conceded: 1 }), [d1.id]: st({ goals: 4 }), [d2.id]: st({ goals: 3 }) });
+    expect(gk.nick).toBe(`Santa ${gk.name.split(' ')[0]}`);
+    expect(d1.nick).toBe('Pichichi');
+    expect(d2.nick).toBeUndefined();
+    expect(got.map((g) => g.nick)).toEqual([gk.nick, 'Pichichi']);
+    expect(gk.moraleLog[0].reason).toContain('apodo');
+    // el apodo se queda: no se gana otro ni se repite el de otra
+    d2.nick = undefined;
+    earnNicknames(c, [d1.id, d2.id], { [d1.id]: st({ goals: 5 }), [d2.id]: st({ goals: 5 }) });
+    expect(d1.nick).toBe('Pichichi');
+    expect(d2.nick).toBeUndefined();
   });
 });

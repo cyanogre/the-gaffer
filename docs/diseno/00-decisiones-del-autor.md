@@ -41,6 +41,8 @@ Decisiones tomadas por el autor durante el diseño. Mandan sobre cualquier docum
   consecuencias.
 - **Gestión tipo Football Manager**: nada de parámetros que suben y bajan sin fundamento dentro de la novela
   visual. Las decisiones tienen consecuencias concretas y la moral de los jugadores sale de lo que pasa.
+- **Nombres realistas y sin apodos de salida**: chavales de instituto con nombres de su edad. Los apodos se
+  ganan por lo que pasa en los partidos y se muestran en color, para que se vea que son un apodo.
 - **Las elecciones de diálogo no anuncian lo que va a pasar** (nada de textos grises debajo de cada opción:
   aburre). Lo que hace falta para decidir (precios, sueldos, condiciones) lo dicen los personajes; las
   consecuencias se descubren después (respuesta del personaje, moral con su motivo, caja, cartera). Las

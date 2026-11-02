@@ -103,7 +103,7 @@ export function train(c: Career, focus: Focus): TrainingReport {
   const absent: string[] = [];
   for (const p of c.squad) {
     if (c.absent[p.id]) {
-      absent.push(p.nick ?? p.name.split(' ')[0]);
+      absent.push(p.name.split(' ')[0]);
       continue;
     }
     const w = p.role === 'POR' ? f.gk : f.attrs;
@@ -139,7 +139,7 @@ export function train(c: Career, focus: Focus): TrainingReport {
   }
   for (const g of gains) {
     const p = c.squad.find((x) => x.id === g.id)!;
-    lines.push(`${p.nick ?? p.name.split(' ')[0]} sube su ${ATTR_LABEL[g.attr]} a ${Math.floor(g.to)}.`);
+    lines.push(`${p.name.split(' ')[0]} sube su ${ATTR_LABEL[g.attr]} a ${Math.floor(g.to)}.`);
   }
   if (!gains.length) lines.push('Nadie llega hoy al siguiente punto, pero todo suma.');
   const up = gainXp(c, 'tactica', 3);

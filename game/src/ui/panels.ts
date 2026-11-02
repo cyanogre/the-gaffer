@@ -25,7 +25,7 @@ import { moraleLabel, moraleMods } from '../game/morale';
 import { coachCharacter } from '../story/scenes';
 import type { GuideEvent } from './guide';
 import { drawCrest } from './pixelart';
-import { h, portrait, tier, type Tab } from './dom';
+import { h, nameEl, portrait, tier, type Tab } from './dom';
 
 /**
  * Contenido de las hojas: Club (plantilla, pizarra, liga, caja) y Míster (estadísticas).
@@ -41,7 +41,6 @@ export interface PanelCtx {
 }
 
 const ROLE_ES: Record<string, string> = { POR: 'POR', DEF: 'DEF', MED: 'MED', DEL: 'DEL' };
-const nameOf = (p: SquadPlayer) => (p.nick ? `${p.name.split(' ')[0]} «${p.nick}»` : p.name);
 const ROLE_DIV: Record<Role, number> = { POR: 2.8, DEF: 2.8, MED: 3.1, DEL: 3.7 };
 /** Lo bien que haría un puesto (misma escala para todos: sale de los atributos que cuentan ahí). */
 export const roleScore = (p: SquadPlayer, role: Role) => Math.round(fitFor(p, role) / ROLE_DIV[role]);
@@ -80,7 +79,7 @@ export function playerCard(c: Career, p: SquadPlayer, onTalk?: () => void, forRo
       h(
         'div',
         {},
-        h('b', { text: `#${p.num} ${nameOf(p)}` }),
+        h('b', {}, nameEl(p, 'full', `#${p.num} `)),
         h('p', { class: 'note', text: `${ROLE_ES[p.role]} · ${p.age ?? '?'} años · ${p.goals} goles en ${p.apps} partidos` }),
         h(
           'div',
@@ -130,7 +129,7 @@ function moraleBox(c: Career, p: SquadPlayer, onTalk?: () => void) {
     onTalk
       ? talked
         ? h('p', { class: 'note', text: 'Ya habéis hablado esta semana.' })
-        : h('button', { type: 'button', class: 'btn', onclick: () => onTalk() }, `Hablar con ${p.nick ?? p.name.split(' ')[0]}`)
+        : h('button', { type: 'button', class: 'btn', onclick: () => onTalk() }, `Hablar con ${p.name.split(' ')[0]}`)
       : null,
   );
 }
@@ -165,7 +164,7 @@ export function clubTabs(ctx: PanelCtx, state: { slot: number; focus: string | n
               },
             },
             portrait(p.look, p.role === 'POR' ? c.club.gkKit : c.club.kit, p.traits, p.num, 34),
-            h('span', { text: `${s.label} ${p.nick ?? p.name.split(' ').slice(-1)[0]}` }),
+            p.nick ? h('span', {}, `${s.label} `, h('span', { class: 'apodo', text: p.nick })) : h('span', { text: `${s.label} ${p.name.split(' ').slice(-1)[0]}` }),
           );
           map.append(b);
         });
@@ -198,7 +197,7 @@ export function clubTabs(ctx: PanelCtx, state: { slot: number; focus: string | n
               },
               h('span', { class: 'slot', 'data-bad': String(!!bad), text: at >= 0 ? slots[at].label : '—' }),
               portrait(p.look, p.role === 'POR' ? c.club.gkKit : c.club.kit, p.traits, p.num, 40),
-              h('span', {}, h('b', { text: `#${p.num} ${nameOf(p)}` }), h('small', { text: `${ROLE_ES[p.role]} · ${p.age ?? ''} años${c.absent[p.id] ? ' · falta al entreno' : ''} · moral ${moraleLabel(p.morale).toLowerCase()}` })),
+              h('span', {}, h('b', {}, nameEl(p, 'full', `#${p.num} `)), h('small', { text: `${ROLE_ES[p.role]} · ${p.age ?? ''} años${c.absent[p.id] ? ' · falta al entreno' : ''} · moral ${moraleLabel(p.morale).toLowerCase()}` })),
               h('span', { class: 'tags' }, p.load > 0.2 ? h('span', { class: 'pill warn', text: 'cargado' }) : null, h('span', { class: 'ovr', title: pick ? `En ${ROLE_LONG[pick]}` : 'En su puesto', text: String(pick ? roleScore(p, pick) : ovr(p)) })),
             ),
           );
@@ -263,7 +262,7 @@ export function clubTabs(ctx: PanelCtx, state: { slot: number; focus: string | n
           ),
           h('h3', { text: 'Penaltis' }),
           seg(
-            [{ v: '', label: 'Que decidan' }, ...lineupPlayers.slice(-6).map((p) => ({ v: p.id, label: `#${p.num}`, small: p.nick ?? p.name.split(' ')[0] }))],
+            [{ v: '', label: 'Que decidan' }, ...lineupPlayers.slice(-6).map((p) => ({ v: p.id, label: `#${p.num}`, small: p.name.split(' ')[0] }))],
             c.penaltyTaker ?? '',
             (v) => (c.penaltyTaker = v || null),
           ),

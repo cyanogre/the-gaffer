@@ -59,11 +59,11 @@ const BARRIO_M: Seed[] = [
   { name: 'Álvaro Barrios', num: 4, role: 'DEF', traits: ['lenero'], quirk: 'Lleva una tarjeta amarilla dibujada con boli en el brazo. Dice que es de la suerte.', look: { body: 'stocky', hair: 'buzz', brows: 'uni', nose: 'hook', celebration: 'ear' }, attrs: ROLES.cb1 },
   { name: 'Marcos Ferrer', num: 5, role: 'DEF', traits: [], quirk: 'Juega con gafas deportivas. Las otras se le rompieron en un córner el curso pasado.', look: { accessory: 'glasses', hair: 'short', body: 'normal' }, attrs: ROLES.cb2 },
   { name: 'Izan Cano', num: 3, role: 'DEF', traits: [], quirk: 'El más rápido del barrio. Frena peor de lo que acelera.', look: { hair: 'afro', body: 'slim', celebration: 'dance' }, attrs: ROLES.lb },
-  { name: 'Bruno Medina', nick: 'Profe', num: 6, role: 'MED', traits: ['artista'], quirk: 'Ve pases que no existen. A veces, por desgracia, los intenta.', look: { hair: 'long', accessory: 'headband', accColor: '#ffffff', celebration: 'plane' }, attrs: ROLES.cm1 },
-  { name: 'Nico Rodríguez', nick: 'Pádel', num: 8, role: 'MED', traits: ['padel'], quirk: 'Se compró dos palas de carbono con el dinero de la comunión. Al entrenamiento llega con muñequeras.', look: { hair: 'fade', celebration: 'dance' }, attrs: ROLES.dm },
-  { name: 'Daniel Ortega', nick: 'Dani', num: 10, role: 'MED', traits: ['nervioso'], quirk: 'En los entrenamientos es Zidane. Con público, un flan con botas.', look: { hair: 'curly', body: 'slim', brows: 'thin' }, attrs: ROLES.cm2 },
+  { name: 'Bruno Medina', num: 6, role: 'MED', traits: ['artista'], quirk: 'Ve pases que no existen. A veces, por desgracia, los intenta.', look: { hair: 'long', accessory: 'headband', accColor: '#ffffff', celebration: 'plane' }, attrs: ROLES.cm1 },
+  { name: 'Nico Rodríguez', num: 8, role: 'MED', traits: ['padel'], quirk: 'Se compró dos palas de carbono con el dinero de la comunión. Al entrenamiento llega con muñequeras.', look: { hair: 'fade', celebration: 'dance' }, attrs: ROLES.dm },
+  { name: 'Daniel Ortega', num: 10, role: 'MED', traits: ['nervioso'], quirk: 'En los entrenamientos es Zidane. Con público, un flan con botas.', look: { hair: 'curly', body: 'slim', brows: 'thin' }, attrs: ROLES.cm2 },
   { name: 'Thiago Mendoza', num: 7, role: 'DEL', traits: ['egoista'], quirk: 'Tiene 40.000 seguidores. Ninguno le ha visto dar un pase.', look: { hair: 'bun', hairColor: '#d8b25c', boots: '#ff4fa3', celebration: 'ear' }, attrs: ROLES.rw },
-  { name: 'Adrián Peralta', nick: 'Adri', num: 9, role: 'DEL', traits: ['goleadorNato'], drought: 14, quirk: 'Asegura ser un goleador nato. Lleva 14 partidos sin marcar.', look: { hair: 'quiff', hairColor: '#8a2f1c', facial: 'none', body: 'stocky', celebration: 'knees', boots: '#ffb000' }, attrs: ROLES.st },
+  { name: 'Adrián Peralta', num: 9, role: 'DEL', traits: ['goleadorNato'], drought: 14, quirk: 'Asegura ser un goleador nato. Lleva 14 partidos sin marcar.', look: { hair: 'quiff', hairColor: '#8a2f1c', facial: 'none', body: 'stocky', celebration: 'knees', boots: '#ffb000' }, attrs: ROLES.st },
   { name: 'Mario Castillo', num: 11, role: 'DEL', traits: ['piscinero'], quirk: 'Va a clases de teatro los jueves. Se nota en cada contacto.', look: { hair: 'short', hairColor: '#1f1a17', celebration: 'plane' }, attrs: ROLES.lw },
 ];
 
@@ -73,11 +73,11 @@ const BARRIO_F: Seed[] = [
   { name: 'Carla Barrios', num: 4, role: 'DEF', traits: ['lenero'], quirk: 'Lleva una tarjeta amarilla dibujada con boli en el brazo. Dice que es de la suerte.', look: { body: 'stocky', hair: 'pixie', hairColor: '#1f1a17', brows: 'uni', nose: 'hook', celebration: 'ear' }, attrs: ROLES.cb1 },
   { name: 'Celia Ferrer', num: 5, role: 'DEF', traits: [], quirk: 'Juega con gafas deportivas. Las otras acabaron en el córner el curso pasado.', look: { accessory: 'glasses', hair: 'braids', hairColor: '#6b4428', body: 'normal' }, attrs: ROLES.cb2 },
   { name: 'Noa Cano', num: 3, role: 'DEF', traits: [], quirk: 'La más rápida del barrio. Frena peor de lo que acelera.', look: { hair: 'afro', body: 'slim', celebration: 'dance' }, attrs: ROLES.lb },
-  { name: 'Martina Medina', nick: 'Profe', num: 6, role: 'MED', traits: ['artista'], quirk: 'Ve pases que no existen. A veces, por desgracia, los intenta.', look: { hair: 'long', hairColor: '#a8743c', accessory: 'headband', accColor: '#ffffff', celebration: 'plane' }, attrs: ROLES.cm1 },
-  { name: 'Vega Rodríguez', nick: 'Pádel', num: 8, role: 'MED', traits: ['padel'], quirk: 'Se gastó el dinero de la comunión en una pala de carbono. Al entrenamiento llega con la mochila del pádel.', look: { hair: 'pigtails', hairColor: '#d8b25c', accessory: 'headband', accColor: '#25a55f', celebration: 'dance' }, attrs: ROLES.dm },
-  { name: 'Daniela Ortega', nick: 'Dani', num: 10, role: 'MED', traits: ['nervioso'], quirk: 'En los entrenamientos es una estrella. Con público, un flan con botas.', look: { hair: 'curly', hairColor: '#1f1a17', body: 'slim' }, attrs: ROLES.cm2 },
+  { name: 'Martina Medina', num: 6, role: 'MED', traits: ['artista'], quirk: 'Ve pases que no existen. A veces, por desgracia, los intenta.', look: { hair: 'long', hairColor: '#a8743c', accessory: 'headband', accColor: '#ffffff', celebration: 'plane' }, attrs: ROLES.cm1 },
+  { name: 'Vega Rodríguez', num: 8, role: 'MED', traits: ['padel'], quirk: 'Se gastó el dinero de la comunión en una pala de carbono. Al entrenamiento llega con la mochila del pádel.', look: { hair: 'pigtails', hairColor: '#d8b25c', accessory: 'headband', accColor: '#25a55f', celebration: 'dance' }, attrs: ROLES.dm },
+  { name: 'Daniela Ortega', num: 10, role: 'MED', traits: ['nervioso'], quirk: 'En los entrenamientos es una estrella. Con público, un flan con botas.', look: { hair: 'curly', hairColor: '#1f1a17', body: 'slim' }, attrs: ROLES.cm2 },
   { name: 'Aitana Mendoza', num: 7, role: 'DEL', traits: ['egoista'], quirk: 'Tiene 40.000 seguidoras. Ninguna le ha visto dar un pase.', look: { hair: 'long', hairColor: '#ece4cf', boots: '#ff4fa3', celebration: 'ear' }, attrs: ROLES.rw },
-  { name: 'Valeria Peralta', nick: 'Valen', num: 9, role: 'DEL', traits: ['goleadorNato'], drought: 14, quirk: 'Asegura ser una goleadora nata. Lleva 14 partidos sin marcar.', look: { hair: 'ponytail', hairColor: '#8a2f1c', body: 'stocky', celebration: 'knees', boots: '#ffb000' }, attrs: ROLES.st },
+  { name: 'Valeria Peralta', num: 9, role: 'DEL', traits: ['goleadorNato'], drought: 14, quirk: 'Asegura ser una goleadora nata. Lleva 14 partidos sin marcar.', look: { hair: 'ponytail', hairColor: '#8a2f1c', body: 'stocky', celebration: 'knees', boots: '#ffb000' }, attrs: ROLES.st },
   { name: 'Jimena Castillo', num: 11, role: 'DEL', traits: ['piscinero'], quirk: 'Va a clases de teatro los jueves. Se nota en cada contacto.', look: { hair: 'bob', hairColor: '#3b2a1e', celebration: 'plane' }, attrs: ROLES.lw },
 ];
 
@@ -101,13 +101,6 @@ const FIRST: Record<Gender, { young: string[]; adult: string[] }> = {
   },
 };
 const LAST = ['Alcántara', 'Bermejo', 'Cifuentes', 'Domínguez', 'Escudero', 'Fuentes', 'Garrido', 'Herrero', 'Iglesias', 'Jurado', 'Lozano', 'Montero', 'Navarro', 'Pastor', 'Quintana', 'Robles', 'Salcedo', 'Toledo', 'Urrutia', 'Vidal'];
-/** Apodos de verdad: el diminutivo del nombre (como se llaman entre ellos)... */
-const SHORT: Record<string, string> = {
-  Alejandro: 'Álex', Daniel: 'Dani', Nicolás: 'Nico', Gonzalo: 'Gonzo', Rodrigo: 'Rodri', Adrián: 'Adri', Javier: 'Javi', Miguel: 'Migue', Alberto: 'Berto', Christian: 'Chris', Samuel: 'Samu', Sergio: 'Sergi',
-  Valeria: 'Valen', Daniela: 'Dani', Martina: 'Martu', Candela: 'Cande', Ariadna: 'Ari', Cristina: 'Cris', Patricia: 'Patri', Natalia: 'Nati', Noelia: 'Noe', Miriam: 'Miri', Lorena: 'Lore', Sofía: 'Sofi', Claudia: 'Clau',
-};
-/** ...o alguno de toda la vida en el fútbol de barrio (de adultos). */
-const NICKS: Record<Gender, string[]> = { m: ['Rubio', 'Pecas', 'Flaco', 'Rizos', 'Peque'], f: ['Rubia', 'Pecas', 'Flaca', 'Rizos', 'Peque'] };
 /** Manías. Las de `young` son de críos de instituto (nada de trabajar en el polígono). */
 const QUIRKS: Record<Gender, Record<TraitId | 'none' | 'noneYoung', string[]>> = {
   m: {
@@ -150,12 +143,9 @@ function generated(rng: Rng, gender: Gender, id: string, num: number, role: Role
   used.add(last);
   const traits: TraitId[] = role !== 'POR' && rng.chance(traitChance) ? [rng.pick(TRAIT_POOL)] : [];
   const over: Partial<Attributes> = role === 'POR' ? { keeping: rng.int(level, level + 4), pace: rng.int(5, 9) } : {};
-  // apodo: casi siempre el diminutivo (si lo tiene); de adultos, a veces uno de toda la vida
-  const nick = SHORT[first] && rng.chance(0.5) ? SHORT[first] : !young && rng.chance(0.15) ? rng.pick(NICKS[gender]) : undefined;
   return {
     id,
     name: `${first} ${last}`,
-    nick,
     num,
     role,
     traits,

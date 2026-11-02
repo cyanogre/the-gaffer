@@ -79,7 +79,18 @@ export class Overlay {
       const q = pos(i);
       const s = r.project(q.x, q.y, 0);
       el.hidden = !s.visible;
-      el.textContent = `${p.profile.num} · ${shortName(p.profile)}`;
+      // con apodo ganado, el apodo (en color); si no, el apellido. Solo se rehace si cambia.
+      const key = `${p.profile.num}${p.profile.nick ?? shortName(p.profile)}`;
+      if (el.dataset.key !== key) {
+        el.dataset.key = key;
+        el.replaceChildren(`${p.profile.num} · `);
+        if (p.profile.nick) {
+          const a = document.createElement('span');
+          a.className = 'apodo';
+          a.textContent = p.profile.nick;
+          el.append(a);
+        } else el.append(shortName(p.profile));
+      }
       el.dataset.team = String(p.team);
       el.style.transform = `translate(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px)`;
     };

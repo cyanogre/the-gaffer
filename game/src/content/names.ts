@@ -14,9 +14,11 @@ export function displayName(p: Pick<PlayerProfile, 'name'>, policy: NamePolicy =
   return rest.length ? `${first[0]}. ${rest.join(' ')}` : first;
 }
 
-/** Cómo se le llama en la crónica: por su apodo si lo tiene, si no por el apellido. */
-export function shortName(p: Pick<PlayerProfile, 'name' | 'nick'>) {
-  if (p.nick) return p.nick;
+/**
+ * Cómo se le llama en la crónica y en los rótulos: por el apellido. El apodo (si se lo ha ganado)
+ * va aparte y en color, para que se vea que es un apodo (ver `nickTag` en la interfaz).
+ */
+export function shortName(p: Pick<PlayerProfile, 'name'>) {
   const parts = p.name.split(' ');
   return parts[parts.length - 1];
 }

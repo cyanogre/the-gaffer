@@ -384,7 +384,7 @@ async function useHotspot(id: string) {
   if (a.needs === 'player') {
     const options = c.squad.filter((p) => !c.weekDone[`invitar:${p.id}`]);
     const i = await card('¿A quién invitas?', ['Una charla a solas cambia cómo juega el domingo (si sale bien). Cada carácter se convence a su manera.'], {
-      choices: options.map((p) => ({ label: `#${p.num} ${p.nick ?? p.name}`, small: p.traits.length ? p.traits.join(', ').replace('goleadorNato', 'goleador nato').replace('lenero', 'leñero').replace('piscinero', 'piscinero') : 'sin manías conocidas' })),
+      choices: options.map((p) => ({ label: `#${p.num} ${p.name}`, small: p.traits.length ? p.traits.join(', ').replace('goleadorNato', 'goleador nato').replace('lenero', 'leñero').replace('piscinero', 'piscinero') : 'sin manías conocidas' })),
     });
     if (i < 0) return;
     arg = options[i].id;
@@ -508,7 +508,9 @@ async function finishMatch(o: MatchOutcome) {
   await goTo('casa');
   busy = true;
   if (c.club.id === 'barrio') await vn.play(postMatchScene(c, summary, o.score), c);
-  await card(`${summary.result === 'win' ? 'Victoria' : summary.result === 'draw' ? 'Empate' : 'Derrota'} · ${o.score[0]}–${o.score[1]}`, summary.lines, { tone: summary.result === 'win' ? 'good' : summary.result === 'loss' ? 'bad' : 'info' });
+  // apodos ganados en el partido: el apodo, en color
+  const nickLines = summary.nicknames.map((n) => h('span', {}, `Desde hoy, en el barrio a ${n.name} ${c.gender === 'f' ? 'la' : 'le'} llaman `, h('span', { class: 'apodo', text: `«${n.nick}»` }), ` (${n.why}).`));
+  await card(`${summary.result === 'win' ? 'Victoria' : summary.result === 'draw' ? 'Empate' : 'Derrota'} · ${o.score[0]}–${o.score[1]}`, [...summary.lines, ...nickLines], { tone: summary.result === 'win' ? 'good' : summary.result === 'loss' ? 'bad' : 'info' });
   const paper = h('div', { class: 'paper' }, h('p', { class: 'mast', text: 'EL ECO DEL BARRIO' }), h('p', { class: 'head', text: summary.headline }), h('p', { text: summary.sub }));
   await card('Lunes por la mañana', [paper], { ok: 'A por la semana', className: 'paper-card' });
   busy = false;

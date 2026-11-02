@@ -1712,3 +1712,15 @@ canvas.px,
   padding: 12px;
   font-size: 1.1rem;
 }
+
+/* apodo ganado en el campo: aparte y en color (dorado sobre oscuro, ámbar sobre papel) */
+.apodo {
+  color: var(--gold);
+  font-weight: 800;
+}
+.vn-box .apodo,
+.result .apodo,
+.mg-box .apodo,
+.paper .apodo {
+  color: #b86a00;
+}

@@ -10,7 +10,7 @@ import { FORMATION_NAMES } from '../sim/formations';
 import { MatchSim } from '../sim/match';
 import { TRAITS, traitLabel } from '../sim/traits';
 import type { Block, Command, Formation, Freedom, MatchEventKind, PassStyle, SimPlayer } from '../sim/types';
-import { $, h, portrait, type Sheet } from './dom';
+import { $, h, nameEl, portrait, type Sheet } from './dom';
 import { Overlay } from './overlay';
 import { drawCrest, iconSvg } from './pixelart';
 
@@ -266,7 +266,7 @@ export class MatchScreen {
                     },
                     h('span', { class: 'slot', text: b.role }),
                     portrait(b.look, b.role === 'POR' ? this.c.club.gkKit : this.c.club.kit, b.traits, b.num, 40),
-                    h('span', {}, h('b', { text: `#${b.num} ${b.nick ?? b.name}` }), h('small', { text: b.quirk })),
+                    h('span', {}, h('b', {}, nameEl(b, 'full', `#${b.num} `)), h('small', { text: b.quirk })),
                     h('span', { class: 'ovr', text: 'Entra' }),
                   ),
                 ),
@@ -344,7 +344,7 @@ export class MatchScreen {
       const p = this.c.squad.find((x) => x.id === id);
       ratings[id] = rating(this.pstats.get(id) ?? emptyStats(), p?.role === 'POR', result);
     }
-    return { score: [g, a], scorers: this.scorers, played: [...this.played], counts: this.counts, ownGoals: this.ownGoals, ratings };
+    return { score: [g, a], scorers: this.scorers, played: [...this.played], counts: this.counts, ownGoals: this.ownGoals, ratings, stats: Object.fromEntries(this.pstats) };
   }
 
   frame(dt: number) {
@@ -365,7 +365,9 @@ export class MatchScreen {
         const banner = $('banner');
         banner.hidden = false;
         banner.dataset.team = String(e.team);
-        $('bannerWho').textContent = e.detail === 'og' ? 'en propia puerta' : shortName(scorer.profile);
+        // el goleador por su apellido; si tiene apodo ganado, el apodo en color
+        if (e.detail === 'og') $('bannerWho').textContent = 'en propia puerta';
+        else $('bannerWho').replaceChildren(scorer.profile.nick ? h('span', { class: 'apodo', text: scorer.profile.nick }) : shortName(scorer.profile));
         banner.classList.remove('pop');
         void banner.offsetWidth;
         banner.classList.add('pop');

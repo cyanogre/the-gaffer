@@ -22,6 +22,18 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, props: Record<s
   return el;
 }
 
+/**
+ * Nombre de un jugador con su apodo (si se lo ha ganado en el campo) aparte y en color, para que se
+ * vea que es un apodo y no su nombre: «Lucía «Santa Lucía»».
+ */
+export function nameEl(p: { name: string; nick?: string }, mode: 'first' | 'full' | 'last' = 'full', prefix = '') {
+  const parts = p.name.split(' ');
+  const base = mode === 'first' ? parts[0] : mode === 'last' ? parts[parts.length - 1] : p.name;
+  const el = h('span', { class: 'pname' }, prefix + base);
+  if (p.nick) el.append(' ', h('span', { class: 'apodo', title: 'Apodo que se ha ganado en el campo', text: `«${p.nick}»` }));
+  return el;
+}
+
 let toastTimer = 0;
 export function toast(text: string, ms = 2600) {
   const t = $('toast');
